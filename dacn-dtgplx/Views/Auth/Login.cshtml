@@ -1,0 +1,29 @@
+﻿@{
+    ViewData["Title"] = "Đăng nhập";
+    Layout = "_Layout";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-lg border-0 rounded-4">
+            <div class="card-body p-4">
+                <h4 class="text-center mb-4 text-primary"><i class="fa fa-right-to-bracket me-2"></i>Đăng nhập</h4>
+                <form asp-controller="Auth" asp-action="Login" method="post">
+                    <div class="form-floating mb-3">
+                        <input name="username" class="form-control" placeholder="Username hoặc Email" required />
+                        <label>Tên đăng nhập hoặc Email</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input name="password" type="password" class="form-control" placeholder="Mật khẩu" required />
+                        <label>Mật khẩu</label>
+                    </div>
+                    <button class="btn btn-primary w-100">Đăng nhập</button>
+                </form>
+                <div class="text-center mt-3">
+                    <a asp-action="ForgotPassword" class="text-decoration-none">Quên mật khẩu?</a><br />
+                    <a asp-action="Register" class="text-decoration-none">Chưa có tài khoản? Đăng ký</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
