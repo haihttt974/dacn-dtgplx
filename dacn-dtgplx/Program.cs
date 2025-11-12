@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models; // 👈 thêm namespace này
+using Microsoft.OpenApi.Models;
 using System.Text;
 using dacn_dtgplx.Models;
 using dacn_dtgplx.Services;
@@ -19,6 +19,8 @@ builder.Services.AddDbContext<DtGplxContext>(options =>
 
 // 🔹 Thêm MVC (Controller + View)
 builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddRazorRuntimeCompilation();
 
 // 🔹 Razor render service
 builder.Services.AddScoped<IViewRenderService, ViewRenderService>();
