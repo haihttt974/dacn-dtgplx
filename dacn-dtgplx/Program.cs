@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models; // 👈 thêm namespace này
 using System.Text;
 using dacn_dtgplx.Models;
 using dacn_dtgplx.Services;
@@ -18,6 +19,8 @@ builder.Services.AddDbContext<DtGplxContext>(options =>
 
 // 🔹 Thêm MVC (Controller + View)
 builder.Services.AddControllersWithViews();
+
+// 🔹 Razor render service
 builder.Services.AddScoped<IViewRenderService, ViewRenderService>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
@@ -40,6 +43,36 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 builder.Services.AddSession();
 
+// 🔹 ✅ Bật Swagger/OpenAPI
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    // Thêm cấu hình JWT cho Swagger UI
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "Nhập JWT token vào đây (ví dụ: Bearer abcdef12345)",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[]{}
+        }
+    });
+});
+
 // ========================
 // 2️⃣  Build app
 // ========================
@@ -48,7 +81,17 @@ var app = builder.Build();
 // ========================
 // 3️⃣  Middleware pipeline
 // ========================
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
+{
+    // ✅ Bật Swagger khi ở chế độ Development
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "API dacn_dtgplx v1");
+        options.RoutePrefix = "swagger"; // truy cập qua /swagger
+    });
+}
+else
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
