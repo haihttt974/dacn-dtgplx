@@ -1,12 +1,13 @@
 ﻿@{
     var controller = Context.Request.RouteValues["controller"]?.ToString()?.ToLower();
 
-    if (controller == "admin")
+    // Controller nào cần layout admin
+    if (controller != null && controller.StartsWith("admin"))
     {
-        Layout = "_LayoutAdmin";
+        Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
     }
     else
     {
-        Layout = "_Layout";
+        Layout = "~/Views/Shared/_Layout.cshtml";
     }
 }

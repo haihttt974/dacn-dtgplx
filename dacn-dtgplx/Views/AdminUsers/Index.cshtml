@@ -1,0 +1,62 @@
+﻿@model IEnumerable<dacn_dtgplx.Models.User>
+@{
+    // Layout = "_LayoutAdmin.cshtml";
+    ViewData["Title"] = "Quản lý người dùng";
+}
+
+<div class="container-fluid">
+    <!-- Bộ lọc theo vai trò -->
+    <form method="get" class="mb-3">
+        <div class="form-inline">
+            <label class="mr-2">Lọc theo vai trò:</label>
+            <select name="roleId" class="form-control" onchange="this.form.submit()">
+                <option value="">-- Tất cả --</option>
+                @foreach (var r in ViewBag.Roles)
+                {
+                    var selected = (int?)ViewBag.CurrentRoleId == r.RoleId ? "selected" : null;
+                    <option value="@r.RoleId" selected="@selected">@r.RoleName</option>
+                }
+            </select>
+        </div>
+    </form>
+
+    <!-- Bảng danh sách -->
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Tên đăng nhập</th>
+                <th>Họ tên</th>
+                <th>Email</th>
+                <th>SĐT</th>
+                <th>Vai trò</th>
+                <th>Giáo viên</th>
+                <th>Trạng thái</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var u in Model)
+            {
+                <tr>
+                    <td>@u.UserId</td>
+                    <td>@u.Username</td>
+                    <td>@u.TenDayDu</td>
+                    <td>@u.Email</td>
+                    <td>@u.SoDienThoai</td>
+                    <td>@(u.Role?.RoleName ?? "—")</td>
+                    <td>@(u.LaGiaoVien ? "Có" : "Không")</td>
+                    <td>
+                        <span class="badge @(u.TrangThai ? "badge-success" : "badge-secondary")">
+                            @(u.TrangThai ? "Hoạt động" : "Khóa")
+                        </span>
+                    </td>
+                    <td>
+                        <a href="#" class="btn btn-sm btn-primary">Chi tiết</a>
+                        <a href="#" class="btn btn-sm btn-warning">Sửa</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
