@@ -1,0 +1,134 @@
+﻿@model dacn_dtgplx.Models.User
+@{
+    ViewData["Title"] = "Chi tiết người dùng";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+
+    // Chuẩn hóa đường dẫn avatar
+    string avatarPath = (Model.Avatar ?? "/images/avatar/default.png").Replace("wwwroot", "");
+}
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="card shadow-sm border-0">
+            <div class="card-header d-flex justify-content-between align-items-center bg-white border-bottom">
+                <div>
+                    <a asp-action="Edit" asp-route-id="@Model.UserId" class="btn btn-warning me-2">
+                        <i class="fas fa-edit"></i> Sửa
+                    </a>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <div class="row g-4">
+                    <!-- Cột Avatar -->
+                    <div class="col-md-4">
+                        <div class="card h-100 shadow-sm border-0 d-flex flex-column">
+                            <div class="card-body text-center d-flex flex-column justify-content-between">
+
+                                <div>
+                                    <img src="@avatarPath"
+                                         alt="Avatar"
+                                         class="rounded-3 shadow-sm border"
+                                         style="width:100%; max-height:330px; object-fit:cover; cursor:pointer;"
+                                         data-bs-toggle="modal"
+                                         data-bs-target="#avatarModal"
+                                         onerror="this.onerror=null;this.src='/images/avatar/default.png';" />
+                                </div>
+
+                                <div class="mt-3">
+                                    <p class="text-muted fw-semibold mb-2">@Model.TenDayDu</p>
+
+                                    <span class="badge @(Model.TrangThai ? "bg-success" : "bg-secondary") px-3 py-2">
+                                        @(Model.TrangThai ? "Hoạt động" : "Đã khóa")
+                                    </span>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cột thông tin -->
+                    <div class="col-md-8">
+                        <div class="card h-100 shadow-sm border-0">
+                            <div class="card-body d-flex flex-column justify-content-between">
+                                <dl class="row mb-0 info-list">
+
+                                    <dt class="col-sm-4 text-muted fw-semibold">Tên đăng nhập</dt>
+                                    <dd class="col-sm-8">@Model.Username</dd>
+
+                                    <dt class="col-sm-4 text-muted fw-semibold">Họ tên</dt>
+                                    <dd class="col-sm-8">@Model.TenDayDu</dd>
+
+                                    <dt class="col-sm-4 text-muted fw-semibold">Email</dt>
+                                    <dd class="col-sm-8">@Model.Email</dd>
+
+                                    <dt class="col-sm-4 text-muted fw-semibold">Điện thoại</dt>
+                                    <dd class="col-sm-8">@Model.SoDienThoai</dd>
+
+                                    <dt class="col-sm-4 text-muted fw-semibold">Giới tính</dt>
+                                    <dd class="col-sm-8">@Model.GioiTinh</dd>
+
+                                    <dt class="col-sm-4 text-muted fw-semibold">Ngày sinh</dt>
+                                    <dd class="col-sm-8">@Model.NgaySinh?.ToString("dd/MM/yyyy")</dd>
+
+                                    <dt class="col-sm-4 text-muted fw-semibold">Địa chỉ</dt>
+                                    <dd class="col-sm-8">@Model.DiaChi</dd>
+
+                                    <dt class="col-sm-4 text-muted fw-semibold">Vai trò</dt>
+                                    <dd class="col-sm-8">@Model.Role?.RoleName</dd>
+
+                                    <dt class="col-sm-4 text-muted fw-semibold">Ngày tạo</dt>
+                                    <dd class="col-sm-8">@Model.TaoLuc.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+
+                                    <dt class="col-sm-4 text-muted fw-semibold">Cập nhật lúc</dt>
+                                    <dd class="col-sm-8">@Model.CapNhatLuc.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div> <!-- /.card-body -->
+        </div>
+    </div>
+</section>
+
+<style>
+    dt {
+        min-width: 130px;
+    }
+
+    .card-body dl dd {
+        margin-bottom: 0.6rem;
+    }
+
+    .card-header h5 {
+        margin: 0;
+    }
+
+    .badge {
+        font-size: 0.85rem;
+    }
+
+    .info-list dt {
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+    }
+
+    .info-list dd {
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+    }
+
+    .card.h-100 {
+        min-height: 100%;
+    }
+
+    /* Làm 2 cột cân đều chiều cao */
+    .row.g-4 > div {
+        display: flex;
+    }
+</style>

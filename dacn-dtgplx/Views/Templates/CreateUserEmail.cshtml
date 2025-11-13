@@ -1,0 +1,20 @@
+﻿@model dacn_dtgplx.ViewModels.CreateUserEmailViewModel
+@{
+    Layout = null;
+}
+<div style="font-family:Segoe UI,Arial,sans-serif; padding:20px; color:#333; max-width:640px;">
+    <h2 style="color:#0d6efd; margin:0 0 10px 0;">Xin chào @Model.FullName,</h2>
+    <p>Tài khoản của bạn đã được tạo thành công trên hệ thống GPLX.</p>
+
+    <div style="background:#f8f9fa; border-left:4px solid #0d6efd; padding:12px 16px; margin:18px 0;">
+        <p><strong>📧 Email:</strong> @Model.Email</p>
+        <p><strong>🔑 Mật khẩu:</strong> @Model.Password</p>
+    </div>
+
+    <p>Vì lý do bảo mật, vui lòng <strong>đăng nhập và đổi mật khẩu ngay</strong> sau khi nhận email này.</p>
+    <p>👉 Truy cập: <a href="https://localhost:7112/Auth/Login" style="color:#0d6efd; text-decoration:none;">https://gplx.edu.vn</a></p>
+
+    <hr style="margin:24px 0; border:none; border-top:1px solid #eee;" />
+    <p style="font-size:13px; color:#666;">Email tự động, vui lòng không trả lời.</p>
+    <p style="font-size:13px; color:#666;">Trân trọng,<br><b>Đội ngũ GPLX</b></p>
+</div>

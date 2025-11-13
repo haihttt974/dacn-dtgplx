@@ -264,7 +264,7 @@
                 </div>
             </section>
         </div>
-        @await Html.PartialAsync("_Toast")
+        
         <!-- Footer -->
         <footer class="main-footer text-center">
             <strong>© @DateTime.Now.Year DT GPLX.</strong> Hệ thống quản lý đào tạo lái xe — ASP.NET Core MVC.
@@ -277,5 +277,6 @@
     <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
 
     @RenderSection("Scripts", required: false)
+    @await Html.PartialAsync("_Toast")
 </body>
 </html>
