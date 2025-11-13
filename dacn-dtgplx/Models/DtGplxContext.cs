@@ -549,6 +549,9 @@ public partial class DtGplxContext : DbContext
                 .HasColumnName("loaiHoSo");
             entity.Property(e => e.NgayDk).HasColumnName("ngayDk");
             entity.Property(e => e.UserId).HasColumnName("userId");
+            entity.Property(e => e.DaDuyet)
+                .HasColumnName("daDuyet");
+
 
             entity.HasOne(d => d.User).WithMany(p => p.HoSoThiSinhs)
                 .HasForeignKey(d => d.UserId)

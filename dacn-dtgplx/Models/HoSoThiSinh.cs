@@ -17,6 +17,8 @@ public partial class HoSoThiSinh
 
     public int UserId { get; set; }
 
+    public bool? DaDuyet { get; set; }
+
     public virtual ICollection<DangKyHoc> DangKyHocs { get; set; } = new List<DangKyHoc>();
 
     public virtual ICollection<KetQuaHocTap> KetQuaHocTaps { get; set; } = new List<KetQuaHocTap>();
