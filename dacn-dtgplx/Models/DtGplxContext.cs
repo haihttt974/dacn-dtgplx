@@ -940,8 +940,11 @@ public partial class DtGplxContext : DbContext
                 .HasPrecision(3)
                 .HasColumnName("lastActivity");
             entity.Property(e => e.UserId).HasColumnName("userId");
+            entity.Property(e => e.IsOnline)
+                .HasColumnName("isOnline")
+                .HasDefaultValue(false);
 
-            entity.HasOne(d => d.User).WithMany(p => p.WebsocketConnections)
+        entity.HasOne(d => d.User).WithMany(p => p.WebsocketConnections)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_WebsocketConnections_User");

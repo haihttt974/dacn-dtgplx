@@ -15,5 +15,7 @@ public partial class WebsocketConnection
 
     public int UserId { get; set; }
 
+    public bool IsOnline { get; set; }
+
     public virtual User User { get; set; } = null!;
 }
