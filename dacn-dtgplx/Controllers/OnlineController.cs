@@ -57,5 +57,18 @@ namespace dacn_dtgplx.Controllers
 
             return Ok(new { ok = true });
         }
+
+        [HttpGet("count")]
+        public async Task<IActionResult> GetOnlineCount()
+        {
+            // Quy ước: online = IsOnline = 1 và hoạt động trong 1 phút gần nhất
+            var threshold = DateTime.UtcNow.AddMinutes(-1);
+
+            int count = await _context.WebsocketConnections
+                .Where(x => x.IsOnline && x.LastActivity >= threshold)
+                .CountAsync();
+
+            return Json(new { count });
+        }
     }
 }

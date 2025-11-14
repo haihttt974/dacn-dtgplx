@@ -59,6 +59,8 @@ namespace dacn_dtgplx.Controllers
             HttpContext.Session.SetString("Username", user.Username);
             HttpContext.Session.SetInt32("UserId", user.UserId);
             HttpContext.Session.SetInt32("RoleId", user.RoleId ?? 0);
+            HttpContext.Session.SetString("UserId", user.UserId.ToString());
+            HttpContext.Session.SetString("Username", user.Username);
 
             // Set Online
             await MarkUserOnline(user.UserId);

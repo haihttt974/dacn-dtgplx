@@ -152,15 +152,24 @@
             .withUrl("/onlineHub")
             .build();
 
-        connection.start().then(() => {
-            console.log("Connected to OnlineHub");
+        // Nhận thông báo người online nhưng không hiển thị gì
+        connection.on("UpdateOnlineUsers", (count, users) => {
+            console.log("Users online:", count);
         });
 
-        // Gửi cập nhật hoạt động 20 giây/lần
+        connection.start().then(() => {
+            console.log("Connected (User Layout)");
+        }).catch(err => {
+            console.error("SignalR error:", err);
+        });
+
+        // Gửi hoạt động mỗi 20 giây
         setInterval(() => {
-            connection.invoke("UpdateActivity");
+            connection.invoke("UpdateActivity")
+                .catch(err => console.warn("UpdateActivity error", err));
         }, 20000);
     </script>
+
 
     @await Html.PartialAsync("_Toast")
     @RenderSection("Scripts", required: false)
