@@ -97,8 +97,7 @@
         @RenderBody()
     </main>
 
-    <!-- TOAST NOTIFICATION -->
-    @await Html.PartialAsync("_Toast")
+    
 
     <!-- FOOTER -->
     <footer class="mt-5 border-top">
@@ -146,6 +145,24 @@
 
     <!-- JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/onlineHub")
+            .build();
+
+        connection.start().then(() => {
+            console.log("Connected to OnlineHub");
+        });
+
+        // Gửi cập nhật hoạt động 20 giây/lần
+        setInterval(() => {
+            connection.invoke("UpdateActivity");
+        }, 20000);
+    </script>
+
+    @await Html.PartialAsync("_Toast")
     @RenderSection("Scripts", required: false)
 </body>
 </html>

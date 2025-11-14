@@ -1,0 +1,266 @@
+﻿@model BackendAPI.DTOs.DashboardVM
+@{
+    ViewData["Title"] = "Bảng điều khiển";
+}
+
+<section class="content-header">
+    <div class="container-fluid">
+        <h1 class="mb-3">Bảng điều khiển hệ thống GPLX</h1>
+    </div>
+</section>
+
+<style>
+    .small-box .icon {
+        pointer-events: none !important;
+    }
+
+    .small-box:hover {
+        transform: scale(1.03);
+        transition: transform 0.2s ease;
+    }
+</style>
+
+<section class="content">
+    <div class="container-fluid">
+
+        <!-- 4 BOX THỐNG KÊ NHANH -->
+        <div class="row">
+
+            <!-- Người dùng -->
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-info">
+                    <div class="inner">
+                        <h3>@Model.TongNguoiDung</h3>
+                        <p>Người dùng</p>
+                    </div>
+                    <div class="icon"><i class="fas fa-users"></i></div>
+                    <a href="/admin/NguoiDungsAdmin/Index" class="small-box-footer">
+                        Xem chi tiết <i class="fas fa-arrow-circle-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Hạng GPLX -->
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-success">
+                    <div class="inner">
+                        <h3>@Model.TongHang</h3>
+                        <p>Hạng GPLX</p>
+                    </div>
+                    <div class="icon"><i class="fas fa-id-card"></i></div>
+                    <a href="/admin/HangsAdmin/Index" class="small-box-footer">
+                        Xem chi tiết <i class="fas fa-arrow-circle-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Bộ đề thi thử -->
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-warning">
+                    <div class="inner">
+                        <h3>@Model.TongBoDe</h3>
+                        <p>Bộ đề trắc nghiệm</p>
+                    </div>
+                    <div class="icon"><i class="fas fa-book"></i></div>
+                    <a href="/admin/BoDeTnAdmin/Index" class="small-box-footer text-dark">
+                        Xem chi tiết <i class="fas fa-arrow-circle-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Bài làm -->
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-danger">
+                    <div class="inner">
+                        <h3>@Model.TongBaiLam</h3>
+                        <p>Bài làm</p>
+                    </div>
+                    <div class="icon"><i class="fas fa-file-alt"></i></div>
+                    <a href="/admin/BaiLamsAdmin/Index" class="small-box-footer">
+                        Xem chi tiết <i class="fas fa-arrow-circle-right"></i>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+
+        <!-- BIỂU ĐỒ -->
+        <div class="row">
+
+            <!-- Biểu đồ bài làm theo hạng -->
+            <div class="col-md-8">
+                <div class="card card-outline card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">Số lượng bài làm theo hạng GPLX</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="chartBaiLamTheoHang" style="height: 280px;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Biểu đồ User Active -->
+            <div class="col-md-4">
+                <div class="card card-outline card-success">
+                    <div class="card-header">
+                        <h3 class="card-title">Tỉ lệ người dùng theo trạng thái</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="chartNguoiDung" style="height: 280px;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+
+        <!-- BIỂU ĐỒ NGƯỜI DÙNG THEO THÁNG -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-outline card-info">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h3 class="card-title mb-0">Số người dùng đăng ký mới theo thời gian</h3>
+
+                        <select id="filterUserTime" class="form-control form-control-sm w-auto">
+                            <option value="all">Tất cả</option>
+                            <option value="1m">1 tháng gần nhất</option>
+                            <option value="6m">6 tháng gần nhất</option>
+                        </select>
+                    </div>
+
+                    <div class="card-body">
+                        <canvas id="chartNguoiDungTheoThang" style="height: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- BẢNG NGƯỜI DÙNG MỚI NHẤT -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-outline card-secondary">
+                    <div class="card-header">
+                        <h3 class="card-title">5 người dùng mới nhất</h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Họ tên</th>
+                                    <th>Điện thoại</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var u in Model.RecentUsers)
+                                {
+                                    <tr>
+                                        <td>@u.Email</td>
+                                        <td>@u.TenDayDu</td>
+                                        <td>@u.SoDienThoai</td>
+                                        <td>@(u.TrangThai
+                                            ? Html.Raw("<span class='badge badge-success'>Active</span>")
+                                            : Html.Raw("<span class='badge badge-secondary'>Inactive</span>")
+                                            )
+                                    </td>
+                                </tr>
+                                                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+</section>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        /* === BIỂU ĐỒ 1: Bài làm theo hạng === */
+        new Chart(document.getElementById('chartBaiLamTheoHang'), {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.HangLabels)),
+                datasets: [{
+                    label: "Số bài làm",
+                    data: @Html.Raw(Json.Serialize(Model.SoBaiLamTheoHang)),
+                    backgroundColor: "#007bff"
+                }]
+            },
+            options: {
+                scales: { y: { beginAtZero: true } },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        /* === BIỂU ĐỒ 2: User Active === */
+        new Chart(document.getElementById('chartNguoiDung'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Active', 'Inactive'],
+                datasets: [{
+                    data: [@Model.UserActive, @Model.UserInactive],
+                    backgroundColor: ['#28a745', '#6c757d']
+                }]
+            },
+            options: {
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+
+        /* === BIỂU ĐỒ 3: User theo tháng === */
+        const allLabels = @Html.Raw(Json.Serialize(ViewBag.ThangNguoiDung));
+        const allValues = @Html.Raw(Json.Serialize(ViewBag.SoNguoiMoi));
+
+        const ctx3 = document.getElementById('chartNguoiDungTheoThang').getContext('2d');
+        const userChart = new Chart(ctx3, {
+            type: 'line',
+            data: {
+                labels: allLabels,
+                datasets: [{
+                    label: 'Người dùng mới',
+                    data: allValues,
+                    fill: true,
+                    borderColor: '#17a2b8',
+                    backgroundColor: 'rgba(23,162,184,0.2)',
+                    tension: 0.3,
+                    pointBackgroundColor: '#17a2b8',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                plugins: { legend: { position: 'bottom' } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        /* --- Lọc tháng --- */
+        const filter = document.getElementById('filterUserTime');
+
+        filter.addEventListener('change', () => {
+            let filteredLabels = [...allLabels];
+            let filteredValues = [...allValues];
+
+            if (filter.value === "1m" && allLabels.length > 1) {
+                filteredLabels = [allLabels.at(-1)];
+                filteredValues = [allValues.at(-1)];
+            }
+            else if (filter.value === "6m") {
+                let start = Math.max(0, allLabels.length - 6);
+                filteredLabels = allLabels.slice(start);
+                filteredValues = allValues.slice(start);
+            }
+
+            userChart.data.labels = filteredLabels;
+            userChart.data.datasets[0].data = filteredValues;
+            userChart.update();
+        });
+    </script>
+}

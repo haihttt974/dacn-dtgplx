@@ -1,4 +1,5 @@
 ﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
 @inject dacn_dtgplx.Models.DtGplxContext _context
 @inject IHttpContextAccessor HttpContextAccessor
 
@@ -275,6 +276,46 @@
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+    <script>
+        const ws = new WebSocket("wss://" + window.location.host + "/ws/online");
+    </script>
+    <!-- SignalR -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
+    <script>
+        // Kết nối tới SignalR Hub
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/onlineHub")
+            .configureLogging(signalR.LogLevel.Information)
+            .build();
+
+        // Hàm nhận số lượng online
+        connection.on("UpdateOnlineUsers", function (count) {
+            const el = document.getElementById("onlineCount");
+            if (el) el.innerText = count;
+        });
+
+        // Khởi động kết nối
+        connection.start()
+            .then(() => console.log("SignalR Connected to /onlineHub"))
+            .catch(err => console.error("SignalR Error:", err));
+
+        (function () {
+            // Chỉ ping khi đã đăng nhập
+            var isLoggedIn = '@(HttpContextAccessor.HttpContext?.Session.GetString("Username") != null ? "1" : "0")';
+
+            if (isLoggedIn === "1") {
+                setInterval(function () {
+                    fetch('/online/ping', {
+                        method: 'GET',
+                        cache: 'no-cache'
+                    }).catch(function (e) {
+                        console.warn('Ping online lỗi', e);
+                    });
+                }, 5000); // 5s
+            }
+        })();
+    </script>
 
     @RenderSection("Scripts", required: false)
     @await Html.PartialAsync("_Toast")
