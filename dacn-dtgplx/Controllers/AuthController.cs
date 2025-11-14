@@ -25,9 +25,9 @@ namespace dacn_dtgplx.Controllers
             _emailService = new EmailService(config);
         }
 
-        // ============================
-        //       LOGIN
-        // ============================
+        // ================================================================
+        //                            LOGIN
+        // ================================================================
         [HttpGet]
         public IActionResult Login() => View();
 
@@ -53,14 +53,14 @@ namespace dacn_dtgplx.Controllers
             user.LanDangNhapGanNhat = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
-            // ---- JWT ----
+            // JWT Token
             var token = GenerateJwtToken(user);
             HttpContext.Session.SetString("JWTToken", token);
             HttpContext.Session.SetString("Username", user.Username);
             HttpContext.Session.SetInt32("UserId", user.UserId);
             HttpContext.Session.SetInt32("RoleId", user.RoleId ?? 0);
 
-            // ---- ONLINE ----
+            // Set Online
             await MarkUserOnline(user.UserId);
 
             TempData["Success"] = $"Đăng nhập thành công, chào {user.TenDayDu ?? user.Username}!";
@@ -71,16 +71,14 @@ namespace dacn_dtgplx.Controllers
                 HttpContext.Session.SetString("Layout", "_LayoutAdmin");
                 return RedirectToAction("Index", "AdminDashboard");
             }
-            else
-            {
-                HttpContext.Session.SetString("Layout", "_Layout");
-                return RedirectToAction("Index", "Home");
-            }
+
+            HttpContext.Session.SetString("Layout", "_Layout");
+            return RedirectToAction("Index", "Home");
         }
 
-        // ============================
-        //       REGISTER
-        // ============================
+        // ================================================================
+        //                            REGISTER
+        // ================================================================
         [HttpGet]
         public IActionResult Register() => View();
 
@@ -92,35 +90,30 @@ namespace dacn_dtgplx.Controllers
             string confirmPassword,
             string tenDayDu)
         {
-            // Kiểm tra username trùng
             if (await _context.Users.AnyAsync(u => u.Username == username))
             {
                 TempData["Error"] = "Tên đăng nhập đã tồn tại!";
                 return RedirectToAction("Register");
             }
 
-            // Kiểm tra email trùng
             if (await _context.Users.AnyAsync(u => u.Email == email))
             {
                 TempData["Error"] = "Email đã được sử dụng!";
                 return RedirectToAction("Register");
             }
 
-            // Check confirm password
             if (password != confirmPassword)
             {
                 TempData["Error"] = "Mật khẩu xác nhận không khớp!";
                 return RedirectToAction("Register");
             }
 
-            // Check password mạnh
             if (!IsStrongPassword(password))
             {
                 TempData["Error"] = "Mật khẩu phải tối thiểu 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt!";
                 return RedirectToAction("Register");
             }
 
-            // Tạo user
             var newUser = new User
             {
                 Username = username,
@@ -137,68 +130,167 @@ namespace dacn_dtgplx.Controllers
             _context.Users.Add(newUser);
             await _context.SaveChangesAsync();
 
-            // Gửi email chào mừng
+            // Gửi email template Razor
             var htmlBody = await _viewRender.RenderToStringAsync(
                 this,
                 "~/Views/Templates/RegisterEmail.cshtml",
                 newUser
             );
+
             await _emailService.SendEmailAsync(email, "Đăng ký thành công", htmlBody);
 
             TempData["Success"] = "Đăng ký thành công! Vui lòng đăng nhập.";
             return RedirectToAction("Login");
         }
 
-        // ============================
-        //    FORGOT PASSWORD
-        // ============================
+        // ================================================================
+        //                FORGOT PASSWORD — OTP 60s
+        // ================================================================
         [HttpGet]
         public IActionResult ForgotPassword() => View();
 
         [HttpPost]
-        public async Task<IActionResult> ForgotPassword(string email)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendOtp(string email)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-            if (user == null)
+            if (string.IsNullOrWhiteSpace(email))
             {
-                TempData["Error"] = "Không tìm thấy người dùng với email này.";
+                TempData["Error"] = "Vui lòng nhập email.";
                 return RedirectToAction("ForgotPassword");
             }
 
-            var newPass = Guid.NewGuid().ToString("N").Substring(0, 8);
-            user.Password = BCrypt.Net.BCrypt.HashPassword(newPass);
-            await _context.SaveChangesAsync();
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email == email.Trim());
+            if (user == null)
+            {
+                TempData["Error"] = "Email không tồn tại trong hệ thống!";
+                return RedirectToAction("ForgotPassword");
+            }
 
+            // Tạo OTP 6 số
+            string otp = new Random().Next(100000, 999999).ToString();
+
+            // Lưu OTP vào Session (60s)
+            HttpContext.Session.SetString("OTP_Code", otp);
+            HttpContext.Session.SetString("OTP_Email", email.Trim());
+            HttpContext.Session.SetString("OTP_Expire", DateTime.UtcNow.AddSeconds(60).ToString("O"));
+
+            // Render template Razor cho email OTP
             var htmlBody = await _viewRender.RenderToStringAsync(
                 this,
                 "~/Views/Templates/ForgotPasswordEmail.cshtml",
-                newPass
+                new
+                {
+                    OTP = otp,
+                    Email = email.Trim(),
+                    Username = user.TenDayDu ?? user.Username
+                }
             );
-            await _emailService.SendEmailAsync(email, "Khôi phục mật khẩu", htmlBody);
 
-            TempData["Info"] = "Mật khẩu mới đã được gửi đến email của bạn.";
+            // Gửi email
+            await _emailService.SendEmailAsync(
+                email.Trim(),
+                "Mã OTP xác thực đặt lại mật khẩu",
+                htmlBody
+            );
+
+            TempData["Success"] = "Mã OTP đã được gửi tới email của bạn. Mã có hiệu lực trong 60 giây.";
+            return RedirectToAction("VerifyOtp");
+        }
+
+        [HttpGet]
+        public IActionResult VerifyOtp()
+        {
+            if (HttpContext.Session.GetString("OTP_Email") == null)
+                return RedirectToAction("ForgotPassword");
+
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult VerifyOtp(string otp)
+        {
+            string? code = HttpContext.Session.GetString("OTP_Code");
+            string? expire = HttpContext.Session.GetString("OTP_Expire");
+
+            if (code == null || expire == null)
+                return RedirectToAction("ForgotPassword");
+
+            if (DateTime.UtcNow > DateTime.Parse(expire))
+            {
+                TempData["Error"] = "Mã OTP đã hết hạn!";
+                return RedirectToAction("VerifyOtp");
+            }
+
+            if (otp != code)
+            {
+                TempData["Error"] = "OTP không chính xác!";
+                return RedirectToAction("VerifyOtp");
+            }
+
+            return RedirectToAction("ResetPassword");
+        }
+
+        [HttpGet]
+        public IActionResult ResetPassword()
+        {
+            if (HttpContext.Session.GetString("OTP_Email") == null)
+                return RedirectToAction("ForgotPassword");
+
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ResetPassword(string newPassword, string confirmPassword)
+        {
+            var email = HttpContext.Session.GetString("OTP_Email");
+
+            if (email == null)
+                return RedirectToAction("ForgotPassword");
+
+            if (newPassword != confirmPassword)
+            {
+                TempData["Error"] = "Mật khẩu xác nhận không khớp!";
+                return RedirectToAction("ResetPassword");
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email == email);
+            if (user == null)
+            {
+                TempData["Error"] = "Không tìm thấy người dùng!";
+                return RedirectToAction("ForgotPassword");
+            }
+
+            user.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            await _context.SaveChangesAsync();
+
+            // Xóa Session
+            HttpContext.Session.Remove("OTP_Code");
+            HttpContext.Session.Remove("OTP_Email");
+            HttpContext.Session.Remove("OTP_Expire");
+
+            TempData["Success"] = "Đặt lại mật khẩu thành công!";
             return RedirectToAction("Login");
         }
 
-        // ============================
-        //          LOGOUT
-        // ============================
+        // ================================================================
+        //                             LOGOUT
+        // ================================================================
         public async Task<IActionResult> Logout()
         {
             var userId = HttpContext.Session.GetInt32("UserId");
+
             if (userId != null)
-            {
                 await MarkUserOffline(userId.Value);
-            }
 
             HttpContext.Session.Clear();
             TempData["Info"] = "Đăng xuất thành công!";
+
             return RedirectToAction("Login");
         }
 
-        // ============================
-        //      JWT Token Generator
-        // ============================
+        // ================================================================
+        //                        JWT GENERATOR
+        // ================================================================
         private string GenerateJwtToken(User user)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
@@ -220,10 +312,9 @@ namespace dacn_dtgplx.Controllers
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        // ============================
-        //      HELPER FUNCTIONS
-        // ============================
-
+        // ================================================================
+        //                   HELPER: PASSWORD CHECK
+        // ================================================================
         private bool IsStrongPassword(string pass)
         {
             return pass.Length >= 8 &&
@@ -233,6 +324,9 @@ namespace dacn_dtgplx.Controllers
                    pass.Any(ch => !char.IsLetterOrDigit(ch));
         }
 
+        // ================================================================
+        //              HELPER: MARK USER ONLINE / OFFLINE
+        // ================================================================
         private async Task MarkUserOnline(int userId)
         {
             var now = DateTime.UtcNow;
