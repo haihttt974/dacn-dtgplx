@@ -1,32 +1,36 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
-using System.Text;
+﻿using dacn_dtgplx.Hubs;
 using dacn_dtgplx.Models;
 using dacn_dtgplx.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ========================
-// 1️⃣  Add services
-// ========================
+// =============================================
+// 1️⃣ Đăng ký Services
+// =============================================
 
-// 🔹 Kết nối SQL Server
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// Database
 builder.Services.AddDbContext<DtGplxContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 🔹 Thêm MVC (Controller + View)
-builder.Services.AddControllersWithViews();
+// MVC + View + Runtime Compilation
 builder.Services.AddControllersWithViews()
     .AddRazorRuntimeCompilation();
 
-// 🔹 Razor render service
+// View Renderer (nếu bạn dùng gửi email template)
 builder.Services.AddScoped<IViewRenderService, ViewRenderService>();
+
+// Session + HttpContext
+builder.Services.AddSession();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
-// 🔹 Cấu hình JWT Authentication
+// SignalR (đang dùng hiển thị online realtime)
+builder.Services.AddSignalR();
+
+// JWT Authentication (API dùng)
 var jwt = builder.Configuration.GetSection("Jwt");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -38,60 +42,26 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = jwt["Issuer"],
             ValidAudience = jwt["Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Key"]!))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Key"]))
         };
     });
 
 builder.Services.AddAuthorization();
-builder.Services.AddSession();
 
-// 🔹 ✅ Bật Swagger/OpenAPI
+// Swagger (nếu dùng API)
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
-{
-    // Thêm cấu hình JWT cho Swagger UI
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Description = "Nhập JWT token vào đây (ví dụ: Bearer abcdef12345)",
-        Name = "Authorization",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
-    });
+builder.Services.AddSwaggerGen();
 
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[]{}
-        }
-    });
-});
-
-// ========================
-// 2️⃣  Build app
-// ========================
 var app = builder.Build();
 
-// ========================
-// 3️⃣  Middleware pipeline
-// ========================
+// =============================================
+// 2️⃣ Middleware Pipeline
+// =============================================
+
 if (app.Environment.IsDevelopment())
 {
-    // ✅ Bật Swagger khi ở chế độ Development
     app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "API dacn_dtgplx v1");
-        options.RoutePrefix = "swagger"; // truy cập qua /swagger
-    });
+    app.UseSwaggerUI();
 }
 else
 {
@@ -103,20 +73,25 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
 app.UseSession();
 
-// ---- Thứ tự rất quan trọng ----
-app.UseAuthentication();   // <== phải nằm trước Authorization
+// ---- THỨ TỰ BẮT BUỘC ----
+app.UseAuthentication();
 app.UseAuthorization();
 
-// ========================
-// 4️⃣  Map routes
-// ========================
+// WebSocket (đang dùng cho realtime online)
+app.UseWebSockets();
+app.MapHub<OnlineHub>("/onlineHub");
 
-// API controllers (ví dụ AuthController)
+// =============================================
+// 3️⃣ Routing
+// =============================================
+
+// Nếu dùng API Controller (Auth, Online,...)
 app.MapControllers();
 
-// MVC controllers
+// Route MVC mặc định
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
