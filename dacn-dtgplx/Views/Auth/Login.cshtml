@@ -5,20 +5,55 @@
 
 <div class="row justify-content-center mt-5">
     <div class="col-md-6 col-lg-4">
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm">
+                <i class="fa fa-circle-exclamation me-2"></i>@TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show shadow-sm">
+                <i class="fa fa-check-circle me-2"></i>@TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
         <div class="card shadow-lg border-0 rounded-4">
             <div class="card-body p-4">
-                <h4 class="text-center mb-4 text-primary"><i class="fa fa-right-to-bracket me-2"></i>Đăng nhập</h4>
+
+                <h4 class="text-center mb-4 text-primary fw-bold">
+                    <i class="fa fa-right-to-bracket me-2"></i>Đăng nhập
+                </h4>
+
                 <form asp-controller="Auth" asp-action="Login" method="post">
+
+                    <!-- Username / Email -->
                     <div class="form-floating mb-3">
                         <input name="username" class="form-control" placeholder="Username hoặc Email" required />
-                        <label>Tên đăng nhập hoặc Email</label>
+                        <label for="username">Tên đăng nhập hoặc Email</label>
                     </div>
-                    <div class="form-floating mb-3">
-                        <input name="password" type="password" class="form-control" placeholder="Mật khẩu" required />
-                        <label>Mật khẩu</label>
+
+                    <!-- Password -->
+                    <div class="form-floating mb-3 position-relative">
+                        <input id="password" name="password" type="password" class="form-control" placeholder="Mật khẩu" required />
+                        <label for="password">Mật khẩu</label>
+
+                        <button type="button" class="btn btn-sm btn-light position-absolute top-50 end-0 translate-middle-y me-2"
+                                onclick="togglePassword()" style="border:none;">
+                            <i id="iconPwd" class="fa fa-eye"></i>
+                        </button>
                     </div>
-                    <button class="btn btn-primary w-100">Đăng nhập</button>
+
+                    <!-- Button -->
+                    <button class="btn btn-primary w-100 py-2 fw-semibold">
+                        <i class="fa fa-unlock-keyhole me-2"></i>Đăng nhập
+                    </button>
                 </form>
+
                 <div class="text-center mt-3">
                     <a asp-action="ForgotPassword" class="text-decoration-none">Quên mật khẩu?</a><br />
                     <a asp-action="Register" class="text-decoration-none">Chưa có tài khoản? Đăng ký</a>
@@ -27,3 +62,22 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        function togglePassword() {
+            let input = document.getElementById("password");
+            let icon = document.getElementById("iconPwd");
+
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
+            } else {
+                input.type = "password";
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
+            }
+        }
+    </script>
+}
