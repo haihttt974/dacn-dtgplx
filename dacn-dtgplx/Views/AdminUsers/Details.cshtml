@@ -1,4 +1,5 @@
-﻿@model dacn_dtgplx.Models.User
+﻿@using System.Text.Json
+@model dacn_dtgplx.Models.User
 @{
     ViewData["Title"] = "Chi tiết người dùng";
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
@@ -6,6 +7,27 @@
     // Chuẩn hóa đường dẫn avatar
     string avatarPath = (Model.Avatar ?? "/images/avatar/default.png").Replace("wwwroot", "");
 }
+@{
+    Dictionary<string, string> colorMap = new()
+    {
+        { "A1", "bg-success text-white" },
+        { "A",  "bg-success text-white" },
+        { "B1", "bg-primary text-white" },
+        { "B",  "bg-primary text-white" },
+        { "C1", "bg-warning text-dark" },
+        { "C",  "bg-warning text-dark" },
+        { "D1", "bg-danger text-white" },
+        { "D2", "bg-danger text-white" },
+        { "D",  "bg-danger text-white" },
+        { "BE",  "bg-info text-dark" },
+        { "C1E", "bg-info text-dark" },
+        { "CE",  "bg-info text-dark" },
+        { "D1E", "bg-info text-dark" },
+        { "D2E", "bg-info text-dark" },
+        { "DE",  "bg-info text-dark" }
+    };
+}
+
 
 <section class="content">
     <div class="container-fluid">
@@ -87,6 +109,44 @@
                                     <dd class="col-sm-8">@Model.CapNhatLuc.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
 
                                 </dl>
+                                @if (Model.LaGiaoVien && Model.TtGiaoViens.Any())
+                                {
+                                    var gv = Model.TtGiaoViens.First();   // Lấy 1 bản ghi duy nhất
+                                    <hr />
+                                    <h5 class="fw-bold text-primary mb-3"><i class="fa fa-chalkboard-teacher me-2"></i>Thông tin giáo viên</h5>
+                                    <dl class="row mb-0 info-list">
+                                        <dt class="col-sm-4 text-muted fw-semibold">Chuyên môn</dt>
+                                        <dd class="col-sm-8">@gv.ChuyenMon</dd>
+
+                                        <dt class="col-sm-4 text-muted fw-semibold">Chuyên đào tạo</dt>
+                                        <dd class="col-sm-8">
+                                            @if (!string.IsNullOrEmpty(gv.ChuyenDaoTao))
+                                            {
+                                                try
+                                                {
+                                                    var arr = JsonSerializer.Deserialize<List<string>>(gv.ChuyenDaoTao);
+
+                                                    foreach (var item in arr)
+                                                    {
+                                                        <span class="badge @(colorMap.ContainsKey(item) ? colorMap[item] : "bg-primary") me-1 px-2 py-1">
+                                                            @item
+                                                        </span>
+                                                    }
+                                                }
+                                                catch
+                                                {
+                                                    <span class="text-danger">Dữ liệu không hợp lệ</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Không có dữ liệu</span>
+                                            }
+                                        </dd>
+                                        <dt class="col-sm-4 text-muted fw-semibold">Ngày bắt đầu làm</dt>
+                                        <dd class="col-sm-8">@gv.NgayBatDauLam?.ToString("dd/MM/yyyy")</dd>
+                                    </dl>
+                                }
                             </div>
                         </div>
                     </div>

@@ -68,6 +68,7 @@ namespace dacn_dtgplx.Controllers
         {
             var user = await _context.Users
                 .Include(u => u.Role)
+                .Include(u => u.TtGiaoViens)
                 .FirstOrDefaultAsync(u => u.UserId == id);
 
             if (user == null)
