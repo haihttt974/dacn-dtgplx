@@ -19,6 +19,9 @@
     {
         avatar = "/" + avatar;
     }
+
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
 }
 
 <!DOCTYPE html>
@@ -176,9 +179,11 @@
                             </a>
                             <ul class="nav nav-treeview ms-3">
                                 <li class="nav-item">
-                                    <a asp-controller="AdminCourses" asp-action="Index" class="nav-link">
-                                        <i class="fa fa-circle nav-icon"></i>
-                                        <p>Danh sách khóa</p>
+                                    <a asp-controller="AdminCourses"
+                                       asp-action="Index"
+                                       class="nav-link @(currentController == "AdminCourses" ? "active" : "")">
+                                        <i class="fa fa-list-ul nav-icon"></i>
+                                        <p>Khóa học</p>
                                     </a>
                                 </li>
                                 <li class="nav-item">

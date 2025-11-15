@@ -9,9 +9,9 @@ public partial class KhoaHoc
 
     public string? TenKhoaHoc { get; set; }
 
-    public DateOnly? NgayBatDau { get; set; }
+    public DateTime? NgayBatDau { get; set; }
 
-    public DateOnly? NgayKetThuc { get; set; }
+    public DateTime? NgayKetThuc { get; set; }
 
     public int? SlToiDa { get; set; }
 
@@ -23,7 +23,7 @@ public partial class KhoaHoc
 
     public virtual ICollection<DangKyHoc> DangKyHocs { get; set; } = new List<DangKyHoc>();
 
-    public virtual Hang IdHangNavigation { get; set; } = null!;
+    public virtual Hang? IdHangNavigation { get; set; }
 
     public virtual ICollection<LichHoc> LichHocs { get; set; } = new List<LichHoc>();
 }

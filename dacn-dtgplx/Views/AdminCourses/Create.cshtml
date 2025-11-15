@@ -1,0 +1,103 @@
+﻿@model dacn_dtgplx.Models.KhoaHoc
+@{
+    ViewData["Title"] = "Thêm khóa học";
+}
+
+<section class="content">
+    <div class="container-fluid">
+
+        <!-- TempData -->
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger shadow-sm">
+                <i class="fa fa-times-circle me-2"></i>@TempData["Error"]
+            </div>
+        }
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success shadow-sm">
+                <i class="fa fa-check-circle me-2"></i>@TempData["Success"]
+            </div>
+        }
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fa fa-plus-circle me-1"></i> Thêm khóa học mới
+                </h5>
+            </div>
+
+            <div class="card-body">
+
+                <form asp-action="Create" method="post">
+
+                    <div class="row g-3">
+
+                        <!-- Hạng GPLX -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Hạng GPLX</label>
+                            <select asp-for="IdHang" class="form-select">
+                                <option value="">-- Chọn hạng --</option>
+                                @foreach (var h in ViewBag.Hangs)
+                                {
+                                    <option value="@h.IdHang">@h.TenDayDu (@h.MaHang)</option>
+                                }
+                            </select>
+                            <span asp-validation-for="IdHang" class="text-danger"></span>
+                        </div>
+
+                        <!-- Số lượng tối đa -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Số lượng học viên tối đa</label>
+                            <input asp-for="SlToiDa" type="number" class="form-control" placeholder="VD: 30" min="1" />
+                            <span asp-validation-for="SlToiDa" class="text-danger"></span>
+                        </div>
+
+                        <!-- Ngày bắt đầu -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Ngày bắt đầu học</label>
+                            <input asp-for="NgayBatDau" type="date" class="form-control" />
+                            <span asp-validation-for="NgayBatDau" class="text-danger"></span>
+                        </div>
+
+                        <!-- Số ngày học -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Số ngày học</label>
+                            <input name="SoNgayHoc" type="number" class="form-control" placeholder="VD: 15" min="1" required />
+                        </div>
+
+                        <!-- Mô tả -->
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold">Mô tả khóa học</label>
+                            <textarea asp-for="MoTa" class="form-control" rows="4" placeholder="Nhập mô tả khóa học..."></textarea>
+                        </div>
+
+                        <!-- Trạng thái (ẩn) -->
+                        <input type="hidden" asp-for="IsActive" value="false" />
+
+                    </div>
+
+                    <div class="mt-4 d-flex justify-content-between">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="fa fa-arrow-left me-1"></i> Quay lại
+                        </a>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-save me-1"></i> Lưu khóa học
+                        </button>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+</section>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
