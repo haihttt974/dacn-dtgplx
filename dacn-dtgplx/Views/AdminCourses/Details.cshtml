@@ -7,7 +7,7 @@
 <div class="container mt-4">
 
     <h3 class="mb-3 text-primary">
-        <i class="fa fa-info-circle"></i> Chi tiết khóa học
+        <i class="fa fa-info-circle"></i> Thông tin khóa học
     </h3>
 
     <div class="card shadow-sm border-0">
@@ -44,6 +44,19 @@
             <div class="mb-3">
                 <label class="fw-bold">Mô tả khóa học:</label>
                 <div>@(string.IsNullOrEmpty(Model.MoTa) ? "(Không có mô tả)" : Model.MoTa)</div>
+            </div>
+
+            <!-- Số buổi học -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">Số buổi học:</label>
+                <span class="badge bg-primary">
+                    @Model.LichHocs.Count buổi học
+                </span>
+
+                <a class="btn btn-info btn-sm ms-2"
+                   href="/admin/courses/schedule/@Model.KhoaHocId">
+                    Chi tiết lịch học >>
+                </a>
             </div>
 
             <div class="mb-3">

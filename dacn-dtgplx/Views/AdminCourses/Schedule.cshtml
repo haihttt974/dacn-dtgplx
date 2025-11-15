@@ -1,0 +1,36 @@
+﻿@model dacn_dtgplx.Models.KhoaHoc
+
+<h3 class="mb-3">
+    Lịch học của @Model.TenKhoaHoc
+</h3>
+
+<a href="@Url.Action("Details", "AdminCourses", new { id = Model.KhoaHocId })"
+   class="btn btn-secondary">
+    ← Quay lại khóa học
+</a>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Ngày học</th>
+            <th>Thời gian</th>
+            <th>Nội dung</th>
+            <th>Địa điểm</th>
+            <th>Xe tập lái</th>
+            <th>Lớp học</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var lh in Model.LichHocs.OrderBy(x => x.NgayHoc))
+        {
+            <tr>
+                <td>@lh.NgayHoc.ToString("dd/MM/yyyy")</td>
+                <td>@lh.TgBatDau - @lh.TgKetThuc</td>
+                <td>@lh.NoiDung</td>
+                <td>@lh.DiaDiem</td>
+                <td>@lh.XeTapLai?.LoaiXe</td>
+                <td>@lh.LopHoc?.TenLop</td>
+            </tr>
+        }
+    </tbody>
+</table>

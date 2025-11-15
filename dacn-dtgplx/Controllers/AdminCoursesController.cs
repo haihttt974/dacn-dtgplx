@@ -281,5 +281,24 @@ namespace dacn_dtgplx.Controllers
             TempData["Success"] = "Cập nhật khóa học thành công!";
             return RedirectToAction(nameof(Index));
         }
+
+        [HttpGet("/admin/courses/schedule/{id}")]
+        public async Task<IActionResult> Schedule(int id)
+        {
+            var khoaHoc = await _context.KhoaHocs
+                .Include(k => k.LichHocs)
+                .ThenInclude(l => l.XeTapLai)
+                .Include(k => k.LichHocs)
+                .ThenInclude(l => l.LopHoc)
+                .FirstOrDefaultAsync(k => k.KhoaHocId == id);
+
+            if (khoaHoc == null)
+            {
+                TempData["Error"] = "Không tìm thấy khóa học.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            return View(khoaHoc);
+        }
     }
 }
