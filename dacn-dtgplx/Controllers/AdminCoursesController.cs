@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace dacn_dtgplx.Controllers
 {
-    [Route("admin/[controller]/[action]")]
+    [Route("admin/courses")]
     public class AdminCoursesController : Controller
     {
         private readonly DtGplxContext _context;
@@ -14,7 +14,7 @@ namespace dacn_dtgplx.Controllers
             _context = context;
         }
 
-        [HttpGet]
+        [HttpGet("")]
         public async Task<IActionResult> Index(string search, int? hang, int? status, int page = 1)
         {
             int pageSize = 15;
@@ -61,7 +61,7 @@ namespace dacn_dtgplx.Controllers
         }
 
         // GET: /admin/courses/create
-        [HttpGet]
+        [HttpGet("create")]
         public IActionResult Create()
         {
             ViewBag.Hangs = _context.Hangs.ToList();
@@ -69,7 +69,7 @@ namespace dacn_dtgplx.Controllers
         }
 
         // POST: /admin/courses/create
-        [HttpPost]
+        [HttpPost("create")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(KhoaHoc model, int SoNgayHoc)
         {
@@ -152,7 +152,7 @@ namespace dacn_dtgplx.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        [HttpGet]
+        [HttpGet("details/{id:int}")]
         public async Task<IActionResult> Details(int id)
         {
             if (id <= 0)
@@ -176,7 +176,7 @@ namespace dacn_dtgplx.Controllers
             return View(khoaHoc);
         }
 
-        [HttpGet("edit/{id}")]
+        [HttpGet("edit/{id:int}")]
         public async Task<IActionResult> Edit(int id)
         {
             if (id <= 0)
@@ -208,7 +208,7 @@ namespace dacn_dtgplx.Controllers
             return View(model);
         }
 
-        [HttpPost("edit/{id}")]
+        [HttpPost("edit/{id:int}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, KhoaHoc model, int SoNgayHoc)
         {
@@ -282,7 +282,7 @@ namespace dacn_dtgplx.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        [HttpGet("/admin/courses/schedule/{id}")]
+        [HttpGet("schedule/{id:int}")]
         public async Task<IActionResult> Schedule(int id)
         {
             var khoaHoc = await _context.KhoaHocs
@@ -299,6 +299,211 @@ namespace dacn_dtgplx.Controllers
             }
 
             return View(khoaHoc);
+        }
+
+        [HttpGet("schedule/add/{khoaHocId:int}")]
+        public async Task<IActionResult> AddSchedule(int khoaHocId)
+        {
+            var khoaHoc = await _context.KhoaHocs
+                .Include(k => k.LichHocs)
+                .FirstOrDefaultAsync(k => k.KhoaHocId == khoaHocId);
+
+            if (khoaHoc == null)
+            {
+                TempData["Error"] = "Không tìm thấy khóa học.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            ViewBag.KhoaHoc = khoaHoc;
+
+            // Dropdown hình thức
+            ViewBag.HinhThucList = new List<string> { "Lý thuyết", "Mô phỏng", "Thực hành" };
+
+            // Xe rảnh
+            ViewBag.XeList = await _context.XeTapLais
+                .Where(x => x.TrangThaiXe == true)
+                .ToListAsync();
+
+            // Lớp rảnh
+            ViewBag.LopList = await _context.LopHocs
+                .Where(l => l.TrangThaiLop == true)
+                .ToListAsync();
+
+            return View(khoaHoc); // Model chính là KhoaHoc
+        }
+
+        [HttpPost("schedule/add/{khoaHocId:int}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddSchedule(
+            int khoaHocId,
+            LichHoc model,
+            string hinhThuc)
+        {
+            var khoaHoc = await _context.KhoaHocs
+                .Include(k => k.LichHocs)
+                .FirstOrDefaultAsync(k => k.KhoaHocId == khoaHocId);
+
+            if (khoaHoc == null)
+            {
+                TempData["Error"] = "Khóa học không tồn tại.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // -----------------------------
+            // 1) VALIDATE NGÀY HỌC
+            // -----------------------------
+            if (model.NgayHoc < DateOnly.FromDateTime(khoaHoc.NgayBatDau.Value) ||
+                model.NgayHoc > DateOnly.FromDateTime(khoaHoc.NgayKetThuc.Value))
+            {
+                TempData["Error"] = "Ngày học phải nằm trong phạm vi khóa học.";
+                return Redirect($"/admin/courses/schedule/add/{khoaHocId}");
+            }
+
+            // -----------------------------
+            // 2) VALIDATE GIỜ
+            // -----------------------------
+            if (model.TgBatDau >= model.TgKetThuc)
+            {
+                TempData["Error"] = "Giờ bắt đầu phải nhỏ hơn giờ kết thúc.";
+                return Redirect($"/admin/courses/schedule/add/{khoaHocId}");
+            }
+
+            // -----------------------------
+            // 3) CHECK BUỔI (Không học 2 lần trong 1 buổi)
+            // -----------------------------
+            string buoiMoi = (model.TgBatDau.Hour < 12) ? "Sang" : "Chieu";
+
+            var lichTrongNgay = khoaHoc.LichHocs
+                .Where(l => l.NgayHoc == model.NgayHoc)
+                .ToList();
+
+            foreach (var lich in lichTrongNgay)
+            {
+                string buoiDaCo = (lich.TgBatDau.Hour < 12) ? "Sang" : "Chieu";
+
+                if (buoiMoi == buoiDaCo)
+                {
+                    TempData["Error"] = $"Buổi {buoiMoi} đã có lịch học rồi, vui lòng chọn buổi khác.";
+                    return Redirect($"/admin/courses/schedule/add/{khoaHocId}");
+                }
+            }
+
+            // -----------------------------
+            // 4) KIỂM TRA XE / LỚP CÓ ĐANG BỊ TRÙNG GIỜ KHÔNG (TOÀN HỆ THỐNG)
+            // -----------------------------
+            var tatCaLich = await _context.LichHocs.ToListAsync();
+
+            foreach (var lich in tatCaLich)
+            {
+                bool cungNgay = lich.NgayHoc == model.NgayHoc;
+
+                bool giaoThoaThoiGian =
+                    model.TgBatDau < lich.TgKetThuc &&
+                    model.TgKetThuc > lich.TgBatDau;
+
+                if (cungNgay && giaoThoaThoiGian)
+                {
+                    // Nếu là thực hành → check xe
+                    if (hinhThuc == "Thực hành" && lich.XeTapLaiId == model.XeTapLaiId)
+                    {
+                        TempData["Error"] = "Xe này đã có lịch học trùng thời gian. Vui lòng chọn xe khác.";
+                        return Redirect($"/admin/courses/schedule/add/{khoaHocId}");
+                    }
+
+                    // Nếu là lý thuyết/mô phỏng → check lớp
+                    if ((hinhThuc == "Lý thuyết" || hinhThuc == "Mô phỏng")
+                        && lich.LopHocId == model.LopHocId)
+                    {
+                        TempData["Error"] = "Lớp học này đã có lịch trùng thời gian. Vui lòng chọn lớp khác.";
+                        return Redirect($"/admin/courses/schedule/add/{khoaHocId}");
+                    }
+                }
+            }
+
+            // -----------------------------
+            // 5) GÁN ĐỊA ĐIỂM
+            // -----------------------------
+            switch (hinhThuc)
+            {
+                case "Thực hành":
+                    model.DiaDiem = "Sân tập";
+                    break;
+                case "Lý thuyết":
+                    model.DiaDiem = "Phòng A";
+                    break;
+                case "Mô phỏng":
+                    model.DiaDiem = "Phòng M";
+                    break;
+            }
+
+            // GÁN KHÓA HỌC
+            model.KhoaHocId = khoaHocId;
+
+            // Xét loại (chỉ 1 trong 2 được phép null)
+            if (hinhThuc == "Thực hành")
+                model.LopHocId = null;
+            else
+                model.XeTapLaiId = null;
+
+            _context.Add(model);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Thêm lịch học thành công!";
+            return Redirect($"/admin/courses/schedule/{khoaHocId}");
+        }
+
+        [HttpPost("check-availability")]
+        public async Task<IActionResult> CheckAvailability(
+            DateOnly ngayHoc,
+            TimeOnly tgBatDau,
+            TimeOnly tgKetThuc,
+            string hinhThuc)
+        {
+            // Lấy lịch theo ngày
+            var lichTrongNgay = await _context.LichHocs
+                .Where(l => l.NgayHoc == ngayHoc)
+                .ToListAsync();
+
+            // Danh sách bị khóa theo giờ trùng
+            List<int> xeBlocked = new();
+            List<int> lopBlocked = new();
+
+            // ==== 1. KIỂM TRA XE/LỚP TRÙNG GIỜ ======================================
+            foreach (var l in lichTrongNgay)
+            {
+                bool giaoThoa = tgBatDau < l.TgKetThuc && tgKetThuc > l.TgBatDau;
+
+                if (giaoThoa)
+                {
+                    if (l.XeTapLaiId.HasValue)
+                        xeBlocked.Add(l.XeTapLaiId.Value);
+
+                    if (l.LopHocId.HasValue)
+                        lopBlocked.Add(l.LopHocId.Value);
+                }
+            }
+
+            // ==== 2. KIỂM TRA BUỔI (SÁNG – CHIỀU – TỐI) =============================
+
+            string GetBuoi(TimeOnly gio)
+            {
+                if (gio.Hour < 12) return "Sáng";
+                if (gio.Hour < 18) return "Chiều";
+                return "Tối";
+            }
+
+            var buoiMoi = GetBuoi(tgBatDau);
+
+            bool buoiBlocked = lichTrongNgay
+                .Any(x => GetBuoi(x.TgBatDau) == buoiMoi);
+
+            // Trả về Ajax
+            return Json(new
+            {
+                buoiBlocked = buoiBlocked,
+                xeBlocked = xeBlocked,
+                lopBlocked = lopBlocked
+            });
         }
     }
 }

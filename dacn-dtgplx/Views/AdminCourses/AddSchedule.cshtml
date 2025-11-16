@@ -1,0 +1,171 @@
+﻿@{
+    var khoa = ViewBag.KhoaHoc as KhoaHoc;
+    var xeList = ViewBag.XeList as List<XeTapLai>;
+    var lopList = ViewBag.LopList as List<LopHoc>;
+}
+
+<div class="card shadow p-4">
+    <h4>Thêm lịch học cho khóa: @khoa.TenKhoaHoc</h4>
+    <hr />
+
+    <form method="post">
+
+        <!-- NGÀY HỌC -->
+        <div class="mb-3">
+            <label class="form-label">Ngày học</label>
+            <input type="date"
+                   name="NgayHoc"
+                   class="form-control"
+                   required
+                   min="@khoa.NgayBatDau?.ToString("yyyy-MM-dd")"
+                   max="@khoa.NgayKetThuc?.ToString("yyyy-MM-dd")" />
+
+            <small class="text-muted">
+                @khoa.NgayBatDau?.ToShortDateString() → @khoa.NgayKetThuc?.ToShortDateString()
+            </small>
+        </div>
+
+        <!-- THỜI GIAN -->
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label>Giờ bắt đầu</label>
+                <input type="time" name="TgBatDau" class="form-control" required />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label>Giờ kết thúc</label>
+                <input type="time" name="TgKetThuc" class="form-control" required />
+            </div>
+        </div>
+
+        <!-- HÌNH THỨC -->
+        <div class="mb-3">
+            <label class="form-label">Hình thức</label>
+            <select id="hinhThucSelect" name="HinhThuc" class="form-control" required>
+                <option value="">-- Chọn --</option>
+                <option value="Lý thuyết">Lý thuyết</option>
+                <option value="Mô phỏng">Mô phỏng</option>
+                <option value="Thực hành">Thực hành</option>
+            </select>
+        </div>
+
+        <!-- XE HOẶC LỚP -->
+        <div class="mb-3" id="xeGroup" style="display:none;">
+            <label>Chọn xe tập lái</label>
+            <select name="XeTapLaiId" class="form-control">
+                <option value="">-- Chọn xe --</option>
+                @foreach (var xe in xeList)
+                {
+                    <option value="@xe.XeTapLaiId">@xe.LoaiXe</option>
+                }
+            </select>
+        </div>
+
+        <div class="mb-3" id="lopGroup" style="display:none;">
+            <label>Chọn lớp học</label>
+            <select name="LopHocId" class="form-control">
+                <option value="">-- Chọn lớp --</option>
+                @foreach (var lop in lopList)
+                {
+                    <option value="@lop.LopHocId">@lop.TenLop</option>
+                }
+            </select>
+        </div>
+
+        <!-- GHI CHÚ -->
+        <div class="mb-3">
+            <label>Ghi chú</label>
+            <textarea class="form-control" name="GhiChu"></textarea>
+        </div>
+
+        <button class="btn btn-primary">Lưu lịch học</button>
+        <a href="/admin/courses/schedule/@khoa.KhoaHocId" class="btn btn-secondary">Quay lại</a>
+
+    </form>
+</div>
+
+<script>
+    const ngay = document.querySelector("input[name='NgayHoc']");
+    const batdau = document.querySelector("input[name='TgBatDau']");
+    const ketthuc = document.querySelector("input[name='TgKetThuc']");
+    const hinhThuc = document.getElementById("hinhThucSelect");
+
+    const xeGroup = document.getElementById("xeGroup");
+    const lopGroup = document.getElementById("lopGroup");
+
+    const xeSelect = document.querySelector("select[name='XeTapLaiId']");
+    const lopSelect = document.querySelector("select[name='LopHocId']");
+
+    function checkAvailability() {
+        if (!ngay.value || !batdau.value || !ketthuc.value || !hinhThuc.value)
+            return;
+
+        $.ajax({
+            type: "POST",
+            url: "/admin/courses/check-availability",
+            data: {
+                ngayHoc: ngay.value,
+                tgBatDau: batdau.value,
+                tgKetThuc: ketthuc.value,
+                hinhThuc: hinhThuc.value
+            },
+            success: function (res) {
+
+                // ----------------------------
+                // ẨN XE KHÔNG HỢP LỆ
+                // ----------------------------
+                if (hinhThuc.value === "Thực hành") {
+                    xeGroup.style.display = "block";
+                    lopGroup.style.display = "none";
+
+                    [...xeSelect.options].forEach(op => {
+                        if (op.value === "") return;
+                        if (res.xeBlocked.includes(parseInt(op.value)))
+                            op.style.display = "none";
+                        else
+                            op.style.display = "block";
+                    });
+                } else {
+                    // Lý thuyết / Mô phỏng
+                    xeGroup.style.display = "none";
+                    lopGroup.style.display = "block";
+
+                    [...lopSelect.options].forEach(op => {
+                        if (op.value === "") return;
+                        if (res.lopBlocked.includes(parseInt(op.value)))
+                            op.style.display = "none";
+                        else
+                            op.style.display = "block";
+                    });
+                }
+
+                // ----------------------------
+                // TÔ ĐỎ GIỜ BỊ KHÓA 5 GIÂY RỒI TẮT
+                // ----------------------------
+                if (res.buoiBlocked) {
+                    batdau.classList.add("is-invalid");
+                    ketthuc.classList.add("is-invalid");
+
+                    setTimeout(() => {
+                        batdau.classList.remove("is-invalid");
+                        ketthuc.classList.remove("is-invalid");
+                    }, 5000);
+                } else {
+                    batdau.classList.remove("is-invalid");
+                    ketthuc.classList.remove("is-invalid");
+                }
+            }
+        });
+    }
+
+    ngay.addEventListener("change", checkAvailability);
+    batdau.addEventListener("change", checkAvailability);
+    ketthuc.addEventListener("change", checkAvailability);
+    hinhThuc.addEventListener("change", checkAvailability);
+</script>
+
+<style>
+    .is-invalid {
+        border-color: red !important;
+        background-color: #ffe5e5 !important;
+    }
+</style>
