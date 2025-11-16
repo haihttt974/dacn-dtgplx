@@ -1,6 +1,7 @@
 ﻿using BCrypt.Net;
 using dacn_dtgplx.Models;
 using dacn_dtgplx.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -59,9 +60,19 @@ namespace dacn_dtgplx.Controllers
             HttpContext.Session.SetString("Username", user.Username);
             HttpContext.Session.SetInt32("UserId", user.UserId);
             HttpContext.Session.SetInt32("RoleId", user.RoleId ?? 0);
-            HttpContext.Session.SetString("UserId", user.UserId.ToString());
-            HttpContext.Session.SetString("Username", user.Username);
+            //HttpContext.Session.SetString("UserId", user.UserId.ToString());
+            //HttpContext.Session.SetString("Username", user.Username);
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                new Claim("UserId", user.UserId.ToString()),
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Role, user.RoleId.ToString())
+            };
 
+            var identity = new ClaimsIdentity(claims, "local");
+            var principal = new ClaimsPrincipal(identity);
+            await HttpContext.SignInAsync("Cookies", principal);
             // Set Online
             await MarkUserOnline(user.UserId);
 

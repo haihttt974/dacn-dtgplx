@@ -62,10 +62,8 @@ namespace dacn_dtgplx.Hubs
             var http = Context.GetHttpContext();
             var userIdStr = http.Session.GetString("UserId");
 
-            if (userIdStr != null)
+            if (!string.IsNullOrWhiteSpace(userIdStr) && int.TryParse(userIdStr, out int userId))
             {
-                int userId = int.Parse(userIdStr);
-
                 var existing = await _context.WebsocketConnections
                     .FirstOrDefaultAsync(x => x.UserId == userId);
 

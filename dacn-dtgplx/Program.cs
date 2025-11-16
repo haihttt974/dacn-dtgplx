@@ -29,6 +29,17 @@ builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
 // SignalR (đang dùng hiển thị online realtime)
 builder.Services.AddSignalR();
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = "Cookies";
+    options.DefaultSignInScheme = "Cookies";
+    options.DefaultChallengeScheme = "Cookies";
+})
+.AddCookie("Cookies", options =>
+{
+    options.LoginPath = "/auth/login";
+    options.LogoutPath = "/auth/logout";
+});
 
 // JWT Authentication (API dùng)
 var jwt = builder.Configuration.GetSection("Jwt");

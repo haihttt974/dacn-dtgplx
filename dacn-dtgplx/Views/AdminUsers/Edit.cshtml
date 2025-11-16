@@ -4,8 +4,9 @@
     ViewData["Title"] = "Cập nhật người dùng";
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
 
-    string avatarPath = (Model.Avatar ?? "/images/avatar/default.png").Replace("wwwroot", "");
+    int currentUserId = ViewBag.CurrentUserId;
 
+    string avatarPath = (Model.Avatar ?? "/images/avatar/default.png").Replace("wwwroot", "");
     // Lấy bản ghi TT giáo viên (nếu có)
     var gv = Model.TtGiaoViens?.FirstOrDefault();
 
@@ -97,6 +98,12 @@
                                 </div>
 
                                 <div class="col-md-6">
+                                    <label class="form-label fw-semibold">CCCD</label>
+                                    <input asp-for="Cccd" class="form-control" />
+                                    <span asp-validation-for="Cccd" class="text-danger"></span>
+                                </div>
+
+                                <div class="col-md-6">
                                     <label class="form-label fw-semibold">Địa chỉ</label>
                                     <input asp-for="DiaChi" class="form-control" />
                                 </div>
@@ -115,27 +122,50 @@
                                     <input asp-for="NgaySinh" type="date" class="form-control" />
                                 </div>
 
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Vai trò</label>
-                                    <select asp-for="RoleId" class="form-select"
-                                            asp-items="@(new SelectList(ViewBag.Roles, "RoleId", "RoleName"))">
-                                    </select>
-                                </div>
-
-                                <div class="col-md-6 d-flex align-items-end justify-content-end">
-                                    <div class="text-end">
-                                        <label class="form-label fw-semibold d-block">Trạng thái</label>
-                                        <div class="form-check form-switch">
-                                            <input asp-for="TrangThai" class="form-check-input" type="checkbox" />
-                                            <label class="form-check-label" for="TrangThai">Kích hoạt tài khoản</label>
-                                        </div>
+                                @if (Model.UserId != ViewBag.CurrentUserId)
+                                {
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Vai trò</label>
+                                        <select asp-for="RoleId" class="form-select"
+                                                asp-items="@(new SelectList(ViewBag.Roles, "RoleId", "RoleName"))">
+                                        </select>
                                     </div>
-                                </div>
+                                }
+                                else
+                                {
+                                    <!-- Nếu là chính mình → vẫn hiển thị tên role để xem, nhưng không sửa -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Vai trò</label>
+                                        <input class="form-control bg-light" value="@Model.Role.RoleName" readonly />
+                                    </div>
+                                }
 
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Ngày tạo</label>
                                     <input class="form-control bg-light" readonly
                                            value="@(Model.TaoLuc.ToLocalTime().ToString("dd/MM/yyyy HH:mm"))" />
+                                </div>
+
+                                <div class="col-md-6 d-flex align-items-end justify-content-end">
+                                    <div class="text-end">
+                                        <label class="form-label fw-semibold d-block">Trạng thái</label>
+                                        @if (Model.UserId != ViewBag.CurrentUserId)
+                                        {
+                                            <div class="form-check form-switch">
+                                                <input asp-for="TrangThai" class="form-check-input" type="checkbox" />
+                                                <label class="form-check-label" for="TrangThai">Kích hoạt tài khoản</label>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox"
+                                                       @(Model.TrangThai ? "checked" : "")
+                                                       disabled />
+                                                <label class="form-check-label">Kích hoạt tài khoản</label>
+                                            </div>
+                                        }
+                                    </div>
                                 </div>
 
                                 <div class="col-md-6">
@@ -145,61 +175,65 @@
                                 </div>
                             </div>
                         </div>
-                        <hr class="my-4" />
 
-                        <div class="row">
-                            <div class="col-12">
-                                <h5 class="fw-semibold mb-3 text-primary">
-                                    <i class="fas fa-chalkboard-teacher me-2"></i> Thông tin giáo viên
-                                </h5>
-                            </div>
+                        @if (Model.RoleId == 3)
+                        {
+                            <hr class="my-4" />
 
-                            <!-- Chuyên môn -->
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-semibold">Chuyên môn</label>
-                                <input type="text"
-                                       name="ChuyenMon"
-                                       class="form-control"
-                                       value="@gv?.ChuyenMon" />
-                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <h5 class="fw-semibold mb-3 text-primary">
+                                        <i class="fas fa-chalkboard-teacher me-2"></i> Thông tin giáo viên
+                                    </h5>
+                                </div>
 
-                            <!-- Ngày bắt đầu làm -->
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-semibold">Ngày bắt đầu làm</label>
-                                <input type="date"
-                                       name="NgayBatDauLam"
-                                       class="form-control"
-                                       value="@(gv?.NgayBatDauLam?.ToString("yyyy-MM-dd"))" />
-                            </div>
+                                <!-- Chuyên môn -->
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Chuyên môn</label>
+                                    <input type="text"
+                                           name="ChuyenMon"
+                                           class="form-control"
+                                           value="@gv?.ChuyenMon" />
+                                </div>
 
-                            <!-- Chuyên đào tạo (checkbox) -->
-                            <div class="col-md-12 mb-2">
-                                <label class="form-label fw-semibold d-block">Chuyên đào tạo (các hạng GPLX)</label>
+                                <!-- Ngày bắt đầu làm -->
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">Ngày bắt đầu làm</label>
+                                    <input type="date"
+                                           name="NgayBatDauLam"
+                                           class="form-control"
+                                           value="@(gv?.NgayBatDauLam?.ToString("yyyy-MM-dd"))" />
+                                </div>
 
-                                <div class="card border-0 bg-light">
-                                    <div class="card-body py-2">
-                                        <div class="d-flex flex-wrap">
-                                            @foreach (var hang in hangList)
-                                            {
-                                                var isChecked = selectedChuyen.Contains(hang);
+                                <!-- Chuyên đào tạo (checkbox) -->
+                                <div class="col-md-12 mb-2">
+                                    <label class="form-label fw-semibold d-block">Chuyên đào tạo (các hạng GPLX)</label>
 
-                                                <label class="check-pill">
-                                                    <input type="checkbox"
-                                                           name="ChuyenDaoTaoArr"
-                                                           value="@hang"
-                                                           class="check-pill-input"
-                                                           @(isChecked ? "checked" : "") />
-                                                    <span class="check-pill-text">Hạng @hang</span>
-                                                </label>
-                                            }
+                                    <div class="card border-0 bg-light">
+                                        <div class="card-body py-2">
+                                            <div class="d-flex flex-wrap">
+                                                @foreach (var hang in hangList)
+                                                {
+                                                    var isChecked = selectedChuyen.Contains(hang);
+
+                                                    <label class="check-pill">
+                                                        <input type="checkbox"
+                                                               name="ChuyenDaoTaoArr"
+                                                               value="@hang"
+                                                               class="check-pill-input"
+                                                               @(isChecked ? "checked" : "") />
+                                                        <span class="check-pill-text">Hạng @hang</span>
+                                                    </label>
+                                                }
+                                            </div>
                                         </div>
                                     </div>
+                                    <small class="text-muted">
+                                        Tích chọn các hạng mà giáo viên này có thể đào tạo.
+                                    </small>
                                 </div>
-                                <small class="text-muted">
-                                    Tích chọn các hạng mà giáo viên này có thể đào tạo.
-                                </small>
                             </div>
-                        </div>
+                            }
                     </div>
                 </div>
 

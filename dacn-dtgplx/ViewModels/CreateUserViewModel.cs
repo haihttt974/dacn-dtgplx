@@ -27,5 +27,6 @@ namespace dacn_dtgplx.ViewModels
         // Upload avatar
         [Display(Name = "Ảnh đại diện")]
         public IFormFile? AvatarFile { get; set; }
+        public string? Cccd { get; set; }
     }
 }

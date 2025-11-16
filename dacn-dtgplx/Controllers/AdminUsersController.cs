@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Net.Mail;
+using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -87,6 +88,14 @@ namespace dacn_dtgplx.Controllers
 
             if (user == null) return NotFound();
 
+            string? claimId =
+                User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                User.FindFirstValue("UserId") ??
+                User.FindFirstValue("sub");
+
+            int currentUserId = claimId != null ? int.Parse(claimId) : 0;
+
+            ViewBag.CurrentUserId = currentUserId;
             ViewBag.Roles = await _context.Roles.ToListAsync();
 
             // danh sách hạng GPLX
@@ -122,6 +131,15 @@ namespace dacn_dtgplx.Controllers
 
             if (user == null) return NotFound();
 
+            // KHÔNG CHO TỰ CHỈNH ROLE & TRẠNG THÁI CỦA CHÍNH MÌNH
+            var claim = User.FindFirst("UserId");
+            int currentUserId = claim != null ? int.Parse(claim.Value) : 0;
+
+            if (model.UserId == currentUserId)
+            {
+                model.RoleId = user.RoleId;
+                model.TrangThai = user.TrangThai;
+            }
 
             user.TenDayDu = model.TenDayDu;
             user.Email = model.Email;
@@ -130,6 +148,7 @@ namespace dacn_dtgplx.Controllers
             user.GioiTinh = model.GioiTinh;
             user.NgaySinh = model.NgaySinh;
             user.RoleId = model.RoleId;
+            user.Cccd = model.Cccd;
             user.TrangThai = model.TrangThai;
             user.CapNhatLuc = DateTime.UtcNow;
 
@@ -171,27 +190,39 @@ namespace dacn_dtgplx.Controllers
             // UPDATE THÔNG TIN GIÁO VIÊN
 
             // Tìm TT giáo viên (1 user - 1 giáo viên)
+            // ===============================
+            // XỬ LÝ THÔNG TIN GIÁO VIÊN
+            // ===============================
             var tt = user.TtGiaoViens.FirstOrDefault();
 
-            // Nếu user có role giáo viên nhưng chưa có tt -> tạo mới
-            if (tt == null)
+            if (model.RoleId == 3)   // Chỉ xử lý nếu là giáo viên
             {
-                tt = new TtGiaoVien
+                // Nếu chưa có bản ghi giáo viên → tạo mới
+                if (tt == null)
                 {
-                    UserId = user.UserId
-                };
-                _context.TtGiaoViens.Add(tt);
+                    tt = new TtGiaoVien
+                    {
+                        UserId = user.UserId
+                    };
+                    _context.TtGiaoViens.Add(tt);
+                }
+
+                // Gán dữ liệu
+                tt.ChuyenMon = ChuyenMon;
+                tt.NgayBatDauLam = NgayBatDauLam;
+
+                // Convert từ checkbox sang JSON
+                tt.ChuyenDaoTao = ChuyenDaoTaoArr != null
+                    ? System.Text.Json.JsonSerializer.Serialize(ChuyenDaoTaoArr)
+                    : "[]";
             }
-
-            // Gán dữ liệu
-            tt.ChuyenMon = ChuyenMon;
-            tt.NgayBatDauLam = NgayBatDauLam;
-
-            // Convert mảng checkbox thành JSON string
-            if (ChuyenDaoTaoArr != null)
-                tt.ChuyenDaoTao = System.Text.Json.JsonSerializer.Serialize(ChuyenDaoTaoArr);
             else
-                tt.ChuyenDaoTao = "[]";
+            {
+                if (tt != null)
+                {
+                    _context.TtGiaoViens.Remove(tt);
+                }
+            }
 
             await _context.SaveChangesAsync();
 
@@ -216,27 +247,27 @@ namespace dacn_dtgplx.Controllers
             // ================== VALIDATE ==================
             if (string.IsNullOrWhiteSpace(vm.TenDayDu))
                 ModelState.AddModelError("TenDayDu", "Họ và tên không được để trống.");
-
+            if (string.IsNullOrWhiteSpace(vm.Cccd))
+                ModelState.AddModelError("Cccd", "CCCD không được để trống.");
+            else if (!Regex.IsMatch(vm.Cccd, @"^[0-9]{12}$"))
+                ModelState.AddModelError("Cccd", "CCCD phải có 12 số.");
+            else if (await _context.Users.AnyAsync(x => x.Cccd == vm.Cccd))
+                ModelState.AddModelError("Cccd", "CCCD đã được sử dụng.");
             if (string.IsNullOrWhiteSpace(vm.Email))
                 ModelState.AddModelError("Email", "Email không được để trống.");
             else if (!IsValidEmail(vm.Email))
                 ModelState.AddModelError("Email", "Email không hợp lệ.");
             else if (await _context.Users.AnyAsync(x => x.Email == vm.Email))
                 ModelState.AddModelError("Email", "Email đã được sử dụng.");
-
             if (!IsValidPhone(vm.SoDienThoai))
                 ModelState.AddModelError("SoDienThoai", "Số điện thoại không hợp lệ (10 số).");
-
             if (!string.IsNullOrWhiteSpace(vm.SoDienThoai) &&
                 await _context.Users.AnyAsync(x => x.SoDienThoai == vm.SoDienThoai))
                 ModelState.AddModelError("SoDienThoai", "Số điện thoại đã được sử dụng.");
-
             if (vm.RoleId == null || vm.RoleId <= 0)
                 ModelState.AddModelError("RoleId", "Bạn phải chọn vai trò.");
-
             if (string.IsNullOrWhiteSpace(vm.Password))
                 ModelState.AddModelError("Password", "Bạn phải random mật khẩu trước khi tạo.");
-
             if (!ModelState.IsValid)
             {
                 PushModelErrorsToTempData();
@@ -295,6 +326,7 @@ namespace dacn_dtgplx.Controllers
                 LaGiaoVien = (vm.RoleId == 3) ? true : false,
                 TrangThai = true,
                 TaoLuc = DateTime.UtcNow,
+                Cccd = vm.Cccd,
                 CapNhatLuc = DateTime.UtcNow
             };
 

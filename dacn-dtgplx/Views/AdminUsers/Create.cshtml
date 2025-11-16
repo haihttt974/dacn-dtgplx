@@ -66,6 +66,12 @@
                                 </div>
 
                                 <div class="col-md-6">
+                                    <label asp-for="Cccd" class="form-label fw-semibold"></label>
+                                    <input asp-for="Cccd" class="form-control" />
+                                    <span asp-validation-for="Cccd" class="text-danger"></span>
+                                </div>
+
+                                <div class="col-md-6">
                                     <label asp-for="RoleId" class="form-label fw-semibold"></label>
                                     <select asp-for="RoleId" class="form-select"
                                             asp-items="@(new SelectList(ViewBag.Roles, "RoleId", "RoleName"))">

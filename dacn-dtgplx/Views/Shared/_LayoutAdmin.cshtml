@@ -154,7 +154,9 @@
 
                         <!-- Dashboard -->
                         <li class="nav-item">
-                            <a asp-controller="AdminDashboard" asp-action="Index" class="nav-link">
+                            <a asp-controller="AdminDashboard"
+                               asp-action="Index"
+                               class="nav-link @(currentController == "AdminDashboard" ? "active" : "")">
                                 <i class="nav-icon fa fa-gauge-high"></i>
                                 <p>Bảng điều khiển</p>
                             </a>
@@ -162,37 +164,22 @@
 
                         <!-- Quản lý người dùng -->
                         <li class="nav-item">
-                            <a asp-controller="AdminUsers" asp-action="Index" class="nav-link">
+                            <a asp-controller="AdminUsers"
+                               asp-action="Index"
+                               class="nav-link @(currentController == "AdminUsers" ? "active" : "")">
                                 <i class="nav-icon fa fa-users"></i>
                                 <p>Người dùng</p>
                             </a>
                         </li>
 
                         <!-- Khóa học -->
-                        <li class="nav-item has-treeview">
-                            <a href="#" class="nav-link">
+                        <li class="nav-item">
+                            <a asp-controller="AdminCourses"
+                               asp-action="Index"
+                               class="nav-link @(currentController == "AdminCourses" ? "active" : "")">
                                 <i class="nav-icon fa fa-book"></i>
-                                <p>
-                                    Khóa học
-                                    <i class="fas fa-angle-left right"></i>
-                                </p>
+                                <p>Khóa học</p>
                             </a>
-                            <ul class="nav nav-treeview ms-3">
-                                <li class="nav-item">
-                                    <a asp-controller="AdminCourses"
-                                       asp-action="Index"
-                                       class="nav-link @(currentController == "AdminCourses" ? "active" : "")">
-                                        <i class="fa fa-list-ul nav-icon"></i>
-                                        <p>Khóa học</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a asp-controller="AdminSchedules" asp-action="Index" class="nav-link">
-                                        <i class="fa fa-calendar-days nav-icon"></i>
-                                        <p>Lịch học</p>
-                                    </a>
-                                </li>
-                            </ul>
                         </li>
 
                         <!-- Thi thử -->
