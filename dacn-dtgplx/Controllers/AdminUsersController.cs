@@ -81,30 +81,47 @@ namespace dacn_dtgplx.Controllers
         [HttpGet("edit/{id}")]
         public async Task<IActionResult> Edit(int id)
         {
-            var user = await _context.Users.FindAsync(id);
+            var user = await _context.Users
+                .Include(u => u.TtGiaoViens)       // <== LOAD TT GIÁO VIÊN
+                .FirstOrDefaultAsync(u => u.UserId == id);
+
             if (user == null) return NotFound();
 
             ViewBag.Roles = await _context.Roles.ToListAsync();
+
+            // danh sách hạng GPLX
+            ViewBag.HangDaoTaoList = new List<string> { "A1", "A", "B1", "B", "C1", "C", "D2", "D", "D1", "BE", "C1E", "CE", "D1E", "D2E", "DE" };
+
             return View(user);
         }
 
         // nhận thêm avatarFile từ form (name="AvatarFile")
         [HttpPost("edit/{id}")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, User model, IFormFile? AvatarFile)
+        public async Task<IActionResult> Edit(
+            int id,
+            User model,
+            IFormFile? AvatarFile,
+            string? ChuyenMon,
+            DateOnly? NgayBatDauLam,
+            string[]? ChuyenDaoTaoArr
+        )
         {
             if (id != model.UserId)
                 return BadRequest();
 
             if (!ModelState.IsValid)
             {
-                PushModelErrorsToTempData();
                 ViewBag.Roles = await _context.Roles.ToListAsync();
                 return View(model);
             }
 
-            var user = await _context.Users.FindAsync(id);
+            var user = await _context.Users
+                .Include(u => u.TtGiaoViens)
+                .FirstOrDefaultAsync(u => u.UserId == id);
+
             if (user == null) return NotFound();
+
 
             user.TenDayDu = model.TenDayDu;
             user.Email = model.Email;
@@ -116,63 +133,66 @@ namespace dacn_dtgplx.Controllers
             user.TrangThai = model.TrangThai;
             user.CapNhatLuc = DateTime.UtcNow;
 
-            // =========== XỬ LÝ ẢNH KHI SỬA ===========
             if (AvatarFile != null && AvatarFile.Length > 0)
             {
-                // 1. Xóa ảnh cũ nếu có và không phải default
-                if (!string.IsNullOrWhiteSpace(user.Avatar) &&
-                    !user.Avatar.EndsWith("default.png", StringComparison.OrdinalIgnoreCase))
+                // Xóa avatar cũ nếu không phải default
+                if (!string.IsNullOrEmpty(user.Avatar) &&
+                    !user.Avatar.Contains("default.png"))
                 {
-                    try
-                    {
-                        var avatarDbPath = user.Avatar.Replace("\\", "/");
-                        string relative;
+                    var oldPath = Path.Combine(_env.WebRootPath, user.Avatar);
 
-                        if (avatarDbPath.Contains("wwwroot", StringComparison.OrdinalIgnoreCase))
-                        {
-                            var idx = avatarDbPath.IndexOf("wwwroot", StringComparison.OrdinalIgnoreCase)
-                                     + "wwwroot".Length;
-                            relative = avatarDbPath.Substring(idx).TrimStart('/', '\\');
-                        }
-                        else
-                        {
-                            relative = avatarDbPath.TrimStart('/', '\\');
-                        }
-
-                        var oldPhysicalPath = Path.Combine(_env.WebRootPath,
-                            relative.Replace("/", Path.DirectorySeparatorChar.ToString()));
-
-                        if (System.IO.File.Exists(oldPhysicalPath))
-                            System.IO.File.Delete(oldPhysicalPath);
-                    }
-                    catch { /* ignore delete errors */ }
+                    if (System.IO.File.Exists(oldPath))
+                        System.IO.File.Delete(oldPath);
                 }
 
-                // 2. Lưu ảnh mới với tên <username>.<ext>
-                var username = user.Username; // username đã tồn tại
+                // Tạo path mới
                 var ext = Path.GetExtension(AvatarFile.FileName);
                 if (string.IsNullOrEmpty(ext)) ext = ".png";
 
-                var fileName = username + ext;
+                var fileName = user.Username + ext;
 
-                var folderPhysical = Path.Combine(_env.WebRootPath, "images", "avatar");
-                if (!Directory.Exists(folderPhysical))
-                    Directory.CreateDirectory(folderPhysical);
+                var relPath = Path.Combine("images", "avatar", fileName)
+                                  .Replace("\\", "/");
 
-                var newPhysicalPath = Path.Combine(folderPhysical, fileName);
+                var savePath = Path.Combine(_env.WebRootPath, relPath);
 
-                using (var stream = new FileStream(newPhysicalPath, FileMode.Create))
+                // Tạo folder nếu chưa có
+                Directory.CreateDirectory(Path.GetDirectoryName(savePath)!);
+
+                using (var stream = new FileStream(savePath, FileMode.Create))
                 {
                     await AvatarFile.CopyToAsync(stream);
                 }
 
-                // Lưu vào DB: wwwroot/images/avatar/<username>.<ext>
-                user.Avatar = Path
-                    .Combine("wwwroot", "images", "avatar", fileName)
-                    .Replace("\\", "/");
+                // CHỈ LƯU PATH TƯƠNG ĐỐI
+                user.Avatar = relPath;
             }
 
-            _context.Update(user);
+            // UPDATE THÔNG TIN GIÁO VIÊN
+
+            // Tìm TT giáo viên (1 user - 1 giáo viên)
+            var tt = user.TtGiaoViens.FirstOrDefault();
+
+            // Nếu user có role giáo viên nhưng chưa có tt -> tạo mới
+            if (tt == null)
+            {
+                tt = new TtGiaoVien
+                {
+                    UserId = user.UserId
+                };
+                _context.TtGiaoViens.Add(tt);
+            }
+
+            // Gán dữ liệu
+            tt.ChuyenMon = ChuyenMon;
+            tt.NgayBatDauLam = NgayBatDauLam;
+
+            // Convert mảng checkbox thành JSON string
+            if (ChuyenDaoTaoArr != null)
+                tt.ChuyenDaoTao = System.Text.Json.JsonSerializer.Serialize(ChuyenDaoTaoArr);
+            else
+                tt.ChuyenDaoTao = "[]";
+
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Cập nhật người dùng thành công!";
@@ -272,6 +292,7 @@ namespace dacn_dtgplx.Controllers
                 SoDienThoai = vm.SoDienThoai,
                 RoleId = vm.RoleId,
                 Avatar = avatarPath,
+                LaGiaoVien = (vm.RoleId == 3) ? true : false,
                 TrangThai = true,
                 TaoLuc = DateTime.UtcNow,
                 CapNhatLuc = DateTime.UtcNow
@@ -279,6 +300,23 @@ namespace dacn_dtgplx.Controllers
 
             _context.Users.Add(newUser);
             await _context.SaveChangesAsync();
+
+            // ===============================================
+            // TẠO THÔNG TIN GIÁO VIÊN NẾU ROLE LÀ GIÁO VIÊN
+            // ===============================================
+            if (vm.RoleId == 3) // 3 = Giáo viên
+            {
+                var tt = new TtGiaoVien
+                {
+                    UserId = newUser.UserId,
+                    ChuyenMon = null,               // để trống cho user tự cập nhật sau
+                    ChuyenDaoTao = "[]",            // JSON rỗng
+                    NgayBatDauLam = DateOnly.FromDateTime(DateTime.Now) // tự set ngày bắt đầu
+                };
+
+                _context.TtGiaoViens.Add(tt);
+                await _context.SaveChangesAsync();
+            }
 
             // ================== SEND EMAIL ==================
             await SendCreateUserEmailAsync(new CreateUserEmailViewModel
