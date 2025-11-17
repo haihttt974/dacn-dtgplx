@@ -293,7 +293,9 @@
 
     <script>
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/onlineHub")
+            .withUrl("/onlineHub", {
+                withCredentials: true   // <<<< RẤT QUAN TRỌNG
+            })
             .configureLogging(signalR.LogLevel.Information)
             .build();
 
@@ -329,6 +331,13 @@
 
         // Sau đó 5s cập nhật lại 1 lần
         setInterval(refreshOnlineCount, 5000);
+
+        setInterval(() => {
+            fetch("/online/ping", {
+                method: "GET",
+                cache: "no-cache"
+            });
+        }, 5000);
     </script>
 
     @RenderSection("Scripts", required: false)

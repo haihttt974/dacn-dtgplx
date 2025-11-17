@@ -17,13 +17,15 @@ namespace dacn_dtgplx.Controllers
         private readonly IConfiguration _config;
         private readonly EmailService _emailService;
         private readonly IViewRenderService _viewRender;
+        private readonly AutoUpdateKhoaHocService _autoUpdate;
 
-        public AuthController(DtGplxContext context, IConfiguration config, IViewRenderService viewRender)
+        public AuthController(DtGplxContext context, IConfiguration config, IViewRenderService viewRender, AutoUpdateKhoaHocService autoUpdate)
         {
             _context = context;
             _config = config;
             _viewRender = viewRender;
             _emailService = new EmailService(config);
+            _autoUpdate = autoUpdate;
         }
 
         // ================================================================
@@ -53,6 +55,7 @@ namespace dacn_dtgplx.Controllers
             // Cập nhật lần đăng nhập
             user.LanDangNhapGanNhat = DateTime.UtcNow;
             await _context.SaveChangesAsync();
+            await _autoUpdate.UpdateKhoaHocStatusAsync();
 
             // JWT Token
             var token = GenerateJwtToken(user);

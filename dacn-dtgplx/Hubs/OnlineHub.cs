@@ -18,9 +18,14 @@ namespace dacn_dtgplx.Hubs
             var username = http.Session.GetString("Username");
             var userIdStr = http.Session.GetString("UserId");
 
-            if (username == null || userIdStr == null)
+            //if (username == null || userIdStr == null)
+            //{
+            //    await base.OnConnectedAsync();
+            //    return;
+            //}
+            if (string.IsNullOrEmpty(userIdStr))
             {
-                await base.OnConnectedAsync();
+                Console.WriteLine("❌ Hub: Không nhận được Session UserId");
                 return;
             }
 

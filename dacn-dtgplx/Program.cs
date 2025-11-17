@@ -26,31 +26,29 @@ builder.Services.AddScoped<IViewRenderService, ViewRenderService>();
 // Session + HttpContext
 builder.Services.AddSession();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+builder.Services.AddScoped<AutoUpdateKhoaHocService>();
 
-// SignalR (đang dùng hiển thị online realtime)
 builder.Services.AddSignalR();
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = "Cookies";
-    options.DefaultSignInScheme = "Cookies";
-    options.DefaultChallengeScheme = "Cookies";
-})
-.AddCookie("Cookies", options =>
-{
-    options.LoginPath = "/auth/login";
-    options.LogoutPath = "/auth/logout";
-});
-
-// JWT Authentication (API dùng)
-var jwt = builder.Configuration.GetSection("Jwt");
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+builder.Services.AddHostedService<OnlineUserMonitor>();
+// Cookie Auth (dùng cho web + SignalR)
+builder.Services.AddAuthentication("Cookies")
+    .AddCookie("Cookies", options =>
     {
+        options.LoginPath = "/auth/login";
+        options.LogoutPath = "/auth/logout";
+    });
+
+// JWT Auth (dùng API)
+builder.Services.AddAuthentication()
+    .AddJwtBearer("Bearer", options =>
+    {
+        options.RequireHttpsMetadata = false;
+        options.SaveToken = true;
+        var jwt = builder.Configuration.GetSection("Jwt");
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidateAudience = true,
-            ValidateIssuerSigningKey = true,
             ValidIssuer = jwt["Issuer"],
             ValidAudience = jwt["Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Key"]))
@@ -95,7 +93,7 @@ app.UseAuthorization();
 
 // WebSocket (đang dùng cho realtime online)
 app.UseWebSockets();
-app.MapHub<OnlineHub>("/onlineHub");
+app.MapHub<OnlineHub>("/onlinehub");
 
 // =============================================
 // 3️⃣ Routing
