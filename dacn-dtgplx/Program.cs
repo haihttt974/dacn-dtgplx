@@ -1,10 +1,12 @@
 ﻿using dacn_dtgplx.Hubs;
 using dacn_dtgplx.Models;
 using dacn_dtgplx.Services;
+using dacn_dtgplx.ViewModels;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +29,7 @@ builder.Services.AddScoped<IViewRenderService, ViewRenderService>();
 builder.Services.AddSession();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddScoped<AutoUpdateKhoaHocService>();
+builder.Services.AddScoped<SemanticSearchService>();
 
 builder.Services.AddSignalR();
 builder.Services.AddHostedService<OnlineUserMonitor>();
@@ -56,6 +59,26 @@ builder.Services.AddAuthentication()
     });
 
 builder.Services.AddAuthorization();
+
+// ---- Load embeddings JSON ----
+builder.Services.AddSingleton(provider =>
+{
+    var env = provider.GetRequiredService<IWebHostEnvironment>();
+    var filePath = Path.Combine(env.ContentRootPath, "PythonScripts", "questions_with_emb.json");
+
+    var json = File.ReadAllText(filePath);
+
+    var options = new JsonSerializerOptions
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
+    var items = JsonSerializer.Deserialize<List<QuestionEmbeddingVM>>(json, options);
+    return items ?? new List<QuestionEmbeddingVM>();
+});
+
+// Đăng ký SemanticSearchService
+builder.Services.AddSingleton<SemanticSearchService>();
 
 // Swagger (nếu dùng API)
 builder.Services.AddEndpointsApiExplorer();

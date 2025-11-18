@@ -1,52 +1,42 @@
-from sentence_transformers import SentenceTransformer
-import numpy as np
+import sys
 import json
-import os
+import numpy as np
+from openai import OpenAI
 
-# Load model
-model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+client = OpenAI(api_key="YOUR_OPENAI_KEY")
 
-# Load dữ liệu đã có embedding
-file_path = os.path.join(os.path.dirname(__file__), "questions_with_emb.json")
-data = json.load(open(file_path, "r", encoding="utf8"))
+# Input từ C#
+raw = sys.stdin.read()
+data = json.loads(raw)
+query = data["query"]
 
-# Tách embedding thành numpy để tính nhanh
-embeddings = np.array([item["embedding"] for item in data])
+# Load embeddings
+with open("questions_with_emb.json", "r", encoding="utf8") as f:
+    QUESTIONS = json.load(f)
 
-def search(query, top_k=3):
-    query_emb = model.encode(query)
+# Tạo embedding cho query
+emb = client.embeddings.create(
+    model="text-embedding-3-small",
+    input=query
+).data[0].embedding
 
-    # Tính cosine similarity
-    scores = embeddings @ query_emb / (np.linalg.norm(embeddings, axis=1) * np.linalg.norm(query_emb))
+def cosine(a, b):
+    a = np.array(a)
+    b = np.array(b)
+    return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))
 
-    # Lấy các kết quả tốt nhất
-    top_idx = np.argsort(scores)[::-1][:top_k]
+# Tính độ giống nhau
+results = []
+for q in QUESTIONS:
+    score = cosine(emb, q["embedding"])
+    results.append({
+        "id": q["id"],
+        "similarity": score,
+        "question": q["question"]
+    })
 
-    results = []
-    for idx in top_idx:
-        results.append({
-            "image": data[idx]["image"],
-            "text": data[idx]["text"],
-            "score": float(scores[idx])
-        })
+# Lấy top 10
+results = sorted(results, key=lambda x: x["similarity"], reverse=True)[:10]
 
-    return results
-
-# Mode chạy trên CMD
-print("=== SEARCH MODE ===")
-print("Nhập từ khóa để tìm kiếm (gõ 'exit' để thoát).")
-
-while True:
-    q = input("\nTìm gì: ").strip()
-    if q.lower() == "exit":
-        break
-
-    results = search(q)
-
-    print("\nKết quả:")
-    for r in results:
-        print("\n-------------------------------")
-        print("Điểm giống:", round(r["score"], 3))
-        print("Ảnh:", r["image"])
-        print("Câu hỏi OCR được:")
-        print(r["text"])
+# Trả JSON về C#
+print(json.dumps(results, ensure_ascii=False))

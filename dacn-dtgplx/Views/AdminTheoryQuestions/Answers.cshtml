@@ -1,0 +1,130 @@
+﻿@model dacn_dtgplx.Models.CauHoiLyThuyet
+
+@{
+    ViewData["Title"] = "Đáp án câu hỏi";
+}
+
+<style>
+    .qa-card {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 0 12px rgba(0,0,0,0.08);
+        border: 1px solid #e5e7eb;
+    }
+
+    .qa-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #1e3a8a;
+    }
+
+    .img-box {
+        background: #fff;
+        border: 1px solid #dcdcdc;
+        padding: 10px;
+        border-radius: 10px;
+        height: 360px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .img-box img {
+            max-height: 330px;
+            width: auto;
+            object-fit: contain;
+        }
+
+    .answers-table tr td {
+        vertical-align: middle;
+        font-size: 1rem;
+    }
+
+    .answer-correct {
+        background: #d1fae5 !important;
+        color: #065f46 !important;
+        font-weight: bold;
+        border-radius: 6px;
+        padding: 6px 14px;
+    }
+
+    .answer-wrong {
+        background: #fee2e2 !important;
+        color: #991b1b !important;
+        border-radius: 6px;
+        padding: 6px 14px;
+    }
+
+    .tab-header {
+        font-weight: 600;
+        color: #2563eb;
+    }
+</style>
+
+<div class="qa-card mb-4">
+    <h2 class="qa-title">
+        Đáp án cho: <span class="text-primary">Câu hỏi số @Model.IdCauHoi</span>
+    </h2>
+
+    <div class="mt-4 row g-4">
+
+        <!-- Ảnh câu hỏi -->
+        <div class="col-md-6">
+            <div class="text-center mb-2 tab-header">Ảnh câu hỏi</div>
+            <div class="img-box shadow-sm">
+                <img src="@Model.HinhAnh?.Replace("wwwroot", "")" />
+            </div>
+        </div>
+
+        <!-- Ảnh mẹo -->
+        <div class="col-md-6">
+            <div class="text-center mb-2 tab-header">Ảnh mẹo giải thích</div>
+            <div class="img-box shadow-sm">
+                <img src="@Model.UrlAnhMeo?.Replace("wwwroot", "")" />
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- DANH SÁCH ĐÁP ÁN -->
+<div class="qa-card">
+
+    <h4 class="fw-bold mb-3" style="color:#065f46">
+        <i class="fa fa-list-check me-1"></i> Danh sách đáp án
+    </h4>
+
+    <table class="table table-hover answers-table">
+        <thead class="table-light">
+            <tr>
+                <th style="width:120px">Thứ tự</th>
+                <th style="width:180px" class="text-center">Đáp án đúng</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var item in Model.DapAns.OrderBy(x => x.ThuTu))
+            {
+                <tr>
+                    <td class="fw-semibold">@item.ThuTu</td>
+                    <td class="text-center">
+                        @if (item.DapAnDung)
+                        {
+                            <span class="answer-correct">
+                                ✔ ĐÚNG
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="answer-wrong">
+                                ✖ Sai
+                            </span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+</div>

@@ -1,0 +1,211 @@
+﻿@using dacn_dtgplx.ViewModels
+@model CauHoiIndexVM
+
+@{
+    ViewData["Title"] = "Câu hỏi & Đáp án";
+    var f = Model.Filter ?? new CauHoiFilter();
+
+    var colors = new[]
+    {
+        "#ff7675", "#74b9ff", "#55efc4",
+        "#ffeaa7", "#a29bfe", "#fab1a0"
+    };
+}
+
+<div class="container-fluid px-4">
+    <h3 class="fw-bold mt-3 mb-4">Câu hỏi</h3>
+
+    <!-- BỘ LỌC -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+
+                <!-- Chương -->
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label fw-semibold">Chương</label>
+                    <select id="filterChuong" class="form-select">
+                        <option value="">-- Tất cả --</option>
+                        @foreach (var c in Model.Chapters)
+                        {
+                            <option value="@c.ChuongId"
+                                    selected="@(f.ChuongId == c.ChuongId)">
+                                @c.TenChuong
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Câu liệt -->
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label fw-semibold">Câu liệt</label>
+                    <select id="filterLiet" class="form-select">
+                        <option value="">-- Tất cả --</option>
+                        <option value="true" selected="@(f.IsLiet == true)">Có</option>
+                        <option value="false" selected="@(f.IsLiet == false)">Không</option>
+                    </select>
+                </div>
+
+                <!-- Xe máy -->
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label fw-semibold">Xe máy</label>
+                    <select id="filterXeMay" class="form-select">
+                        <option value="">-- Tất cả --</option>
+                        <option value="true" selected="@(f.IsXeMay == true)">Có</option>
+                        <option value="false" selected="@(f.IsXeMay == false)">Không</option>
+                    </select>
+                </div>
+
+                <!-- Chú ý -->
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label fw-semibold">Chú ý</label>
+                    <select id="filterChuY" class="form-select">
+                        <option value="">-- Tất cả --</option>
+                        <option value="true" selected="@(f.IsChuY == true)">Có</option>
+                        <option value="false" selected="@(f.IsChuY == false)">Không</option>
+                    </select>
+                </div>
+
+                <!-- Keyword -->
+                <div class="col-lg-4 col-md-12">
+                    <label class="form-label fw-semibold">Tìm kiếm</label>
+                    <input id="filterKeyword"
+                           class="form-control"
+                           placeholder="Nhập nội dung câu hỏi..."
+                           value="@f.Keyword" />
+                </div>
+
+                <!-- Buttons -->
+                <div class="col-lg-2 col-md-12 d-flex align-items-end gap-2">
+                    <button id="btnFilter" type="button" class="btn btn-primary w-100">
+                        <i class="fa fa-filter me-1"></i> Lọc
+                    </button>
+                    <button id="btnReset" type="button" class="btn btn-secondary w-100">
+                        Reset
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- MÀU CHƯƠNG -->
+    <div class="mb-3 d-flex gap-4 flex-wrap">
+        @{
+            int idx = 0;
+            foreach (var c in Model.Chapters)
+            {
+                var color = colors[idx >= colors.Length ? colors.Length - 1 : idx];
+                <span class="d-flex align-items-center gap-2">
+                    <div style="width:14px;height:14px;border-radius:4px;background:@color;"></div>
+                    @c.TenChuong
+                </span>
+                ;
+                idx++;
+            }
+        }
+    </div>
+
+    <!-- KẾT QUẢ (AJAX) -->
+    <div id="questionsContainer">
+        @Html.Raw(ViewBag.InitialHtml as string ?? "")
+    </div>
+</div>
+
+<!-- MODAL PHÓNG TO -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <img id="modalImage" class="w-100" />
+        </div>
+    </div>
+</div>
+
+<style>
+    .question-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        background: #fff;
+        transition: 0.2s;
+    }
+
+        .question-card:hover {
+            box-shadow: 0 6px 18px rgba(0,0,0,.08);
+            transform: translateY(-1px);
+        }
+
+    .indicator-bar {
+        width: 6px;
+        border-radius: 6px 0 0 6px;
+    }
+
+    .thumb-img {
+        width: 120px;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        cursor: pointer;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+
+            // Enter để lọc
+            $("#filterKeyword").on("keyup", function (e) {
+                if (e.key === "Enter") $("#btnFilter").click();
+            });
+
+            function loadQuestions(page = 1) {
+                const params = new URLSearchParams();
+                params.append("partial", "true");
+                params.append("page", page);
+
+                const chuongId = $("#filterChuong").val();
+                const liet = $("#filterLiet").val();
+                const xeMay = $("#filterXeMay").val();
+                const chuY = $("#filterChuY").val();
+                const keyword = $("#filterKeyword").val();
+
+                if (chuongId) params.append("chuongId", chuongId);
+                if (liet !== "") params.append("liet", liet);
+                if (xeMay !== "") params.append("xemay", xeMay);
+                if (chuY !== "") params.append("chuy", chuY);
+                if (keyword) params.append("keyword", keyword);
+
+                $("#questionsContainer").html("<div class='text-center p-5'>Đang tải...</div>");
+
+                $.get("/AdminTheoryQuestions?" + params.toString(), function (html) {
+                    $("#questionsContainer").html(html);
+                });
+            }
+
+            $("#btnFilter").click(() => loadQuestions(1));
+
+            $("#btnReset").click(() => {
+                $("#filterChuong").val("");
+                $("#filterLiet").val("");
+                $("#filterXeMay").val("");
+                $("#filterChuY").val("");
+                $("#filterKeyword").val("");
+                loadQuestions(1);
+            });
+
+            $("#questionsContainer").on("click", ".page-btn", function () {
+                const p = $(this).data("page");
+                if (p) loadQuestions(p);
+            });
+        });
+
+        function showImage(src) {
+            $("#modalImage").attr("src", src);
+            $("#imageModal").modal("show");
+        }
+
+        $("form").on("submit", function (e) {
+            e.preventDefault();
+            return false;
+        });
+
+    </script>
+}
