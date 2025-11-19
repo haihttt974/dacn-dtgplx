@@ -28,6 +28,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        cursor: pointer;
     }
 
         .img-box img {
@@ -62,25 +63,39 @@
     }
 </style>
 
-<div class="qa-card mb-4">
+<div class="d-flex justify-content-between align-items-center mb-3">
     <h2 class="qa-title">
         Đáp án cho: <span class="text-primary">Câu hỏi số @Model.IdCauHoi</span>
     </h2>
+
+    <!-- Nút sửa câu hỏi -->
+    <a href="/AdminTheoryQuestions/Edit/@Model.IdCauHoi" class="btn btn-warning text-white fw-semibold">
+        <i class="fa fa-edit me-1"></i> Sửa câu hỏi
+    </a>
+</div>
+
+<!-- HIỂN THỊ CHƯƠNG -->
+<div class="alert alert-info mb-4 shadow-sm">
+    <i class="fa fa-book me-2"></i>
+    <strong>Chương:</strong> @Model.Chuong?.TenChuong
+</div>
+
+<div class="qa-card mb-4">
 
     <div class="mt-4 row g-4">
 
         <!-- Ảnh câu hỏi -->
         <div class="col-md-6">
-            <div class="text-center mb-2 tab-header">Ảnh câu hỏi</div>
-            <div class="img-box shadow-sm">
+            <div class="text-center mb-2 tab-header">Câu hỏi</div>
+            <div class="img-box shadow-sm" onclick="showImage('@Model.HinhAnh?.Replace("wwwroot", "")')">
                 <img src="@Model.HinhAnh?.Replace("wwwroot", "")" />
             </div>
         </div>
 
         <!-- Ảnh mẹo -->
         <div class="col-md-6">
-            <div class="text-center mb-2 tab-header">Ảnh mẹo giải thích</div>
-            <div class="img-box shadow-sm">
+            <div class="text-center mb-2 tab-header">Đáp án và giải thích (mẹo)</div>
+            <div class="img-box shadow-sm" onclick="showImage('@Model.UrlAnhMeo?.Replace("wwwroot", "")')">
                 <img src="@Model.UrlAnhMeo?.Replace("wwwroot", "")" />
             </div>
         </div>
@@ -128,3 +143,22 @@
     </table>
 
 </div>
+
+<!-- MODAL PHÓNG TO ẢNH -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content bg-dark">
+            <img id="modalImage" class="w-100" />
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function showImage(src) {
+            if (!src) return;
+            $("#modalImage").attr("src", src);
+            $("#imageModal").modal("show");
+        }
+    </script>
+}

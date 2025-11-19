@@ -27,7 +27,7 @@ namespace dacn_dtgplx.Controllers
     int page = 1,
     bool partial = false)
         {
-            int pageSize = 12;
+            int pageSize = 40;
 
             var query = _context.CauHoiLyThuyets
                 .Include(x => x.Chuong)
@@ -47,28 +47,29 @@ namespace dacn_dtgplx.Controllers
                 query = query.Where(x => x.ChuY == chuy);
 
             // ====== SEMANTIC SEARCH ======
-            List<int>? listIds = null;
+            //List<int>? listIds = null;
 
-            if (!string.IsNullOrWhiteSpace(keyword))
-            {
-                keyword = keyword.Trim();
+            //if (!string.IsNullOrWhiteSpace(keyword))
+            //{
+            //    keyword = keyword.Trim();
 
-                // GỌI PYTHON SEARCH
-                listIds = await _semantic.SearchAsync(keyword);
+            //    // GỌI PYTHON SEARCH
+            //    listIds = await _semantic.SearchAsync(keyword);
 
-                if (listIds == null || listIds.Count == 0)
-                {
-                    // Fallback: tìm theo Nội dung nếu semantic không ra kết quả
-                    var kwLower = keyword.ToLower();
-                    query = query.Where(x =>
-                        x.NoiDung != null &&
-                        x.NoiDung.ToLower().Contains(kwLower));
-                }
-                else
-                {
-                    query = query.Where(x => listIds.Contains(x.IdCauHoi));
-                }
-            }
+            //    if (listIds == null || listIds.Count == 0)
+            //    {
+            //        // Fallback: tìm theo Nội dung nếu semantic không ra kết quả
+            //        var kwLower = keyword.ToLower();
+            //        query = query.Where(x =>
+            //            x.NoiDung != null &&
+            //            x.NoiDung.ToLower().Contains(kwLower));
+            //    }
+            //    else
+            //    {
+            //        query = query.Where(x => listIds.Contains(x.IdCauHoi));
+            //    }
+            //}
+            if (!string.IsNullOrWhiteSpace(keyword)) query = query.Where(x => x.NoiDung!.Contains(keyword));
 
             query = query
                 .OrderBy(x => x.Chuong.ThuTu)
@@ -81,10 +82,10 @@ namespace dacn_dtgplx.Controllers
                 .Take(pageSize)
                 .ToListAsync();
             
-            if (listIds != null && listIds.Count > 0 && !string.IsNullOrWhiteSpace(keyword))
-            {
-                items = items.OrderBy(x => listIds.IndexOf(x.IdCauHoi)).ToList();
-            }
+            //if (listIds != null && listIds.Count > 0 && !string.IsNullOrWhiteSpace(keyword))
+            //{
+            //    items = items.OrderBy(x => listIds.IndexOf(x.IdCauHoi)).ToList();
+            //}
 
             var vm = new CauHoiIndexVM
             {
@@ -131,7 +132,7 @@ namespace dacn_dtgplx.Controllers
                         ? ""
                         : q.UrlAnhMeo.Replace("wwwroot", "");
 
-                    sb.Append("<div class='col-12'>");
+                    sb.Append("<div class='col-lg-6 col-md-6 col-sm-12'>");
                     sb.Append("<div class='question-card d-flex align-items-stretch'>");
 
                     sb.AppendFormat(
@@ -263,12 +264,143 @@ namespace dacn_dtgplx.Controllers
         public async Task<IActionResult> Answers(int id)
         {
             var q = await _context.CauHoiLyThuyets
+                .Include(x => x.Chuong)
                 .Include(x => x.DapAns)
                 .FirstOrDefaultAsync(x => x.IdCauHoi == id);
 
             if (q == null) return NotFound();
 
             return View(q);
+        }
+
+        public async Task<IActionResult> Edit(int id)
+        {
+            var q = await _context.CauHoiLyThuyets
+                .Include(x => x.DapAns)
+                .FirstOrDefaultAsync(x => x.IdCauHoi == id);
+
+            if (q == null) return NotFound();
+
+            // ============================
+            //   CHUYỂN ĐƯỜNG DẪN ẢNH
+            // ============================
+            string FixPath(string? path)
+            {
+                if (string.IsNullOrWhiteSpace(path))
+                    return "";
+
+                // bỏ "wwwroot"
+                string fixedPath = path.Replace("wwwroot", "");
+
+                // thêm "/" nếu thiếu
+                if (!fixedPath.StartsWith("/"))
+                    fixedPath = "/" + fixedPath;
+
+                return fixedPath;
+            }
+
+            var vm = new CauHoiEditVM
+            {
+                IdCauHoi = q.IdCauHoi,
+                ChuongId = q.ChuongId,
+                NoiDung = q.NoiDung,
+
+                CauLiet = q.CauLiet ?? false,
+                ChuY = q.ChuY ?? false,
+                XeMay = q.XeMay ?? false,
+
+                // FIX ĐƯỜNG DẪN ẢNH TẠI ĐÂY
+                HinhAnh = FixPath(q.HinhAnh),
+                UrlAnhMeo = FixPath(q.UrlAnhMeo),
+
+                DapAns = q.DapAns.OrderBy(x => x.ThuTu)
+                    .Select(d => new DapAnVM
+                    {
+                        IdDapAn = d.IdDapAn,
+                        ThuTu = d.ThuTu,
+                        NoiDung = d.NoiDung,
+                        DapAnDung = d.DapAnDung
+                    })
+                    .ToList()
+            };
+
+            ViewBag.Chapters = await _context.Chuongs.OrderBy(x => x.ThuTu).ToListAsync();
+
+            return View(vm);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Edit(CauHoiEditVM vm)
+        {
+            var q = await _context.CauHoiLyThuyets
+                .Include(x => x.DapAns)
+                .FirstOrDefaultAsync(x => x.IdCauHoi == vm.IdCauHoi);
+
+            if (q == null) return NotFound();
+
+            // Cập nhật fields cơ bản
+            q.ChuongId = vm.ChuongId;
+            q.NoiDung = vm.NoiDung;
+            q.CauLiet = vm.CauLiet;
+            q.ChuY = vm.ChuY;
+            q.XeMay = vm.XeMay;
+
+            // ==========================
+            //        UPLOAD ẢNH
+            // ==========================
+
+            string wwwroot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+
+            if (!Directory.Exists(wwwroot))
+                Directory.CreateDirectory(wwwroot);
+
+            // Ảnh câu hỏi
+            if (vm.UploadHinhAnh != null)
+            {
+                string fileName = $"cauhoi_{q.IdCauHoi}_{DateTime.Now.Ticks}{Path.GetExtension(vm.UploadHinhAnh.FileName)}";
+                string filePath = Path.Combine(wwwroot, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await vm.UploadHinhAnh.CopyToAsync(stream);
+                }
+
+                q.HinhAnh = "/uploads/" + fileName;
+            }
+
+            // Ảnh mẹo
+            if (vm.UploadAnhMeo != null)
+            {
+                string fileName = $"meo_{q.IdCauHoi}_{DateTime.Now.Ticks}{Path.GetExtension(vm.UploadAnhMeo.FileName)}";
+                string filePath = Path.Combine(wwwroot, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await vm.UploadAnhMeo.CopyToAsync(stream);
+                }
+
+                q.UrlAnhMeo = "/uploads/" + fileName;
+            }
+
+            // ==========================
+            //        CẬP NHẬT ĐÁP ÁN
+            // ==========================
+
+            foreach (var daVM in vm.DapAns)
+            {
+                var da = q.DapAns.FirstOrDefault(x => x.IdDapAn == daVM.IdDapAn);
+                if (da != null)
+                {
+                    da.NoiDung = daVM.NoiDung;
+                    da.ThuTu = daVM.ThuTu;
+                    da.DapAnDung = daVM.DapAnDung;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Cập nhật câu hỏi thành công!";
+            return RedirectToAction(nameof(Answers), "AdminTheoryQuestions", new { id = q.IdCauHoi });
         }
     }
 }
