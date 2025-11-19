@@ -1,80 +1,70 @@
 ﻿import sys
+import os
 import json
 import math
-from openai import OpenAI
+from sentence_transformers import SentenceTransformer
+
+def safe_print(obj):
+    sys.stdout.write(json.dumps(obj, ensure_ascii=False))
+    sys.stdout.flush()
 
 def read_stdin_json():
     raw = sys.stdin.read()
-    return json.loads(raw)
+    if not raw.strip():
+        return {}
+    try:
+        return json.loads(raw)
+    except:
+        return {}
 
 def cosine(a, b):
-    if not a or not b:
-        return 0.0
-    if len(a) != len(b):
-        m = min(len(a), len(b))
-        a = a[:m]
-        b = b[:m]
-    dot = 0.0
-    mag1 = 0.0
-    mag2 = 0.0
-    for x, y in zip(a, b):
-        dot += x * y
-        mag1 += x * x
-        mag2 += y * y
-    if mag1 == 0 or mag2 == 0:
-        return 0.0
-    return dot / math.sqrt(mag1 * mag2)
+    dot = sum(x*y for x, y in zip(a,b))
+    mag1 = math.sqrt(sum(x*x for x in a))
+    mag2 = math.sqrt(sum(y*y for y in b))
+    return dot / (mag1 * mag2) if mag1 and mag2 else 0.0
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+JSON_PATH = os.path.join(BASE_DIR, "questions_with_emb.json")
+
+# Model NHỎ – Chạy nhanh
+model = SentenceTransformer("all-MiniLM-L6-v2")
 
 def main():
-    # Nhận dữ liệu từ C#: { "query": "...", "apiKey": "..."}
     data = read_stdin_json()
     query = data.get("query", "").strip()
-    api_key = data.get("apiKey", "").strip()
 
     if not query:
-        print("[]")
+        safe_print([])
         return
 
-    # Load embeddings đã precompute từ file JSON
-    # Cấu trúc: [ { "image": "001.jpg", "text": "...", "embedding": [ ... ] }, ... ]
-    with open("questions_with_emb.json", "r", encoding="utf-8") as f:
+    with open(JSON_PATH, "r", encoding="utf-8") as f:
         questions = json.load(f)
 
-    # Tạo embedding cho query
-    client = OpenAI(api_key=api_key)
-    emb_res = client.embeddings.create(
-        model="text-embedding-3-small",
-        input=query
-    )
-    query_vec = emb_res.data[0].embedding
+    qvec = model.encode(query).tolist()
 
     scored = []
 
     for q in questions:
-        emb = q.get("embedding", [])
-        score = cosine(query_vec, emb)
+        emb = q.get("embedding")
+        score = cosine(qvec, emb)
 
-        # image: "001.jpg" -> id: 1
+        # Lấy ID từ tên ảnh
         image = q.get("image", "")
-        name = image.split("/")[-1]            # bỏ path folder
-        name = name.split(".")[0]              # bỏ .jpg
-        name = name.lstrip("0") or "0"         # "001" -> "1"
+        name = image.split("/")[-1].split(".")[0]
+        name = name.lstrip("0") or "0"
+
         try:
             qid = int(name)
         except:
-            qid = 0
+            continue
 
-        if qid > 0:
-            scored.append((qid, score))
+        scored.append((qid, score))
 
-    # Sắp xếp giảm dần theo score
     scored.sort(key=lambda x: x[1], reverse=True)
 
-    top_ids = [item[0] for item in scored[:30]]
+    top_ids = [x[0] for x in scored[:50]]
 
-    # Trả về JSON list id: [12, 45, 7, ...]
-    print(json.dumps(top_ids, ensure_ascii=False))
-
+    safe_print(top_ids)
 
 if __name__ == "__main__":
     main()

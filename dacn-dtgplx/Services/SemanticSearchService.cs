@@ -1,107 +1,76 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
+﻿using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
 
 namespace dacn_dtgplx.Services
 {
     public class SemanticSearchService
     {
-        private readonly string _pythonExePath;
-        private readonly string _scriptPath;
-        private readonly string _apiKey;
+        private readonly string _py;
+        private readonly string _embedScript;
+        private readonly string _searchScript;
 
-        public SemanticSearchService(IConfiguration config, IWebHostEnvironment env)
+        public SemanticSearchService(IWebHostEnvironment env)
         {
-            // ĐƯỜNG DẪN PYTHON CỦA BẠN
-            _pythonExePath = @"C:\Users\MSI\AppData\Local\Programs\Python\Python313\python.exe";
-
-            // Đường dẫn tới script search_questions.py trong project
-            _scriptPath = Path.Combine(env.ContentRootPath, "PythonScripts", "search_questions.py");
-
-            _apiKey = config["OpenAI:ApiKey"] ?? "";
+            _py = @"C:\Users\MSI\AppData\Local\Programs\Python\Python313\python.exe";
+            _embedScript = Path.Combine(env.ContentRootPath, "PythonScripts", "embed_query.py");
+            _searchScript = Path.Combine(env.ContentRootPath, "PythonScripts", "search_questions.py");
         }
 
-        public async Task<List<int>> SearchAsync(string keyword, int take = 20)
+        private async Task<List<float>> EmbedQuery(string keyword)
         {
-            var resultIds = new List<int>();
-
-            if (string.IsNullOrWhiteSpace(keyword))
-                return resultIds;
-
-            try
+            var psi = new ProcessStartInfo
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = _pythonExePath,
-                    Arguments = $"\"{_scriptPath}\"",
-                    RedirectStandardInput = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    StandardOutputEncoding = Encoding.UTF8,
-                    StandardErrorEncoding = Encoding.UTF8
-                };
+                FileName = _py,
+                Arguments = $"\"{_embedScript}\"",
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
 
-                using var process = new Process { StartInfo = psi };
-                process.Start();
+            using var process = new Process { StartInfo = psi };
+            process.Start();
 
-                var payload = new
-                {
-                    query = keyword,
-                    apiKey = _apiKey
-                };
+            string json = JsonSerializer.Serialize(new { query = keyword });
+            await process.StandardInput.WriteAsync(json);
+            process.StandardInput.Close();
 
-                string jsonInput = JsonSerializer.Serialize(payload);
+            string result = await process.StandardOutput.ReadToEndAsync();
+            process.WaitForExit();
 
-                await process.StandardInput.WriteAsync(jsonInput);
-                process.StandardInput.Close();
+            return JsonSerializer.Deserialize<List<float>>(result) ?? new();
+        }
 
-                string stdout = await process.StandardOutput.ReadToEndAsync();
-                //string stderr = await process.StandardError.ReadToEndAsync();
-                string stderr = await process.StandardError.ReadToEndAsync();
-                Console.WriteLine("=== PYTHON STDERR ===");
-                Console.WriteLine(stderr);
-                Console.WriteLine("=== PYTHON STDOUT RAW ===");
-                Console.WriteLine(stdout);
+        public async Task<List<int>> SearchAsync(string keyword)
+        {
+            var emb = await EmbedQuery(keyword);
+            if (emb.Count == 0) return new();
 
-                process.WaitForExit();
-
-                if (!string.IsNullOrWhiteSpace(stderr))
-                {
-                    Console.WriteLine("PYTHON ERROR: " + stderr);
-                }
-
-                if (string.IsNullOrWhiteSpace(stdout) || stdout.Trim() == "[]")
-                    return resultIds;
-
-                try
-                {
-                    var ids = JsonSerializer.Deserialize<List<int>>(stdout);
-                    if (ids != null)
-                    {
-                        if (take > 0)
-                            ids = ids.GetRange(0, Math.Min(take, ids.Count));
-                        resultIds = ids;
-                    }
-                }
-                catch (Exception parseEx)
-                {
-                    Console.WriteLine("Parse python JSON error: " + parseEx.Message);
-                }
-            }
-            catch (Exception ex)
+            var psi = new ProcessStartInfo
             {
-                Console.WriteLine("SemanticSearchService error: " + ex.Message);
-            }
+                FileName = _py,
+                Arguments = $"\"{_searchScript}\"",
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
 
-            return resultIds;
+            using var process = new Process { StartInfo = psi };
+            process.Start();
+
+            string json = JsonSerializer.Serialize(new { embedding = emb });
+            await process.StandardInput.WriteAsync(json);
+            process.StandardInput.Close();
+
+            string result = await process.StandardOutput.ReadToEndAsync();
+            process.WaitForExit();
+
+            return JsonSerializer.Deserialize<List<int>>(result) ?? new();
         }
     }
+
 }

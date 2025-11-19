@@ -1,42 +1,42 @@
 import sys
 import json
 import numpy as np
-from openai import OpenAI
+from sentence_transformers import SentenceTransformer
+import os
 
-client = OpenAI(api_key="YOUR_OPENAI_KEY")
+# load model
+model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
-# Input từ C#
-raw = sys.stdin.read()
-data = json.loads(raw)
-query = data["query"]
+# load embedding đã build
+base = os.path.dirname(__file__)
+json_path = os.path.join(base, "questions_with_emb.json")
 
-# Load embeddings
-with open("questions_with_emb.json", "r", encoding="utf8") as f:
-    QUESTIONS = json.load(f)
+data = json.load(open(json_path, "r", encoding="utf8"))
 
-# Tạo embedding cho query
-emb = client.embeddings.create(
-    model="text-embedding-3-small",
-    input=query
-).data[0].embedding
+# lấy từ khóa từ ASP.NET
+keyword = sys.argv[1]
 
+# tạo embedding cho keyword
+key_emb = model.encode(keyword)
+
+# tính cosine similarity
 def cosine(a, b):
-    a = np.array(a)
-    b = np.array(b)
     return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))
 
-# Tính độ giống nhau
 results = []
-for q in QUESTIONS:
-    score = cosine(emb, q["embedding"])
+for q in data:
+    score = cosine(key_emb, q["embedding"])
     results.append({
-        "id": q["id"],
-        "similarity": score,
-        "question": q["question"]
+        "image": q["image"],
+        "text": q["text"],
+        "score": score
     })
 
-# Lấy top 10
-results = sorted(results, key=lambda x: x["similarity"], reverse=True)[:10]
+# sort giảm dần
+results = sorted(results, key=lambda x: x["score"], reverse=True)
 
-# Trả JSON về C#
+# chỉ lấy top 10
+results = results[:10]
+
+# xuất ra JSON cho ASP.NET
 print(json.dumps(results, ensure_ascii=False))
