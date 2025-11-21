@@ -1,0 +1,76 @@
+﻿@model IEnumerable<dacn_dtgplx.Models.BaiLam>
+
+<table class="table table-bordered table-hover align-middle">
+    <thead class="table-light text-center">
+        <tr>
+            <th>#</th>
+            <th>Thí sinh</th>
+            <th>Hạng</th>
+            <th>Bộ đề</th>
+            <th>Số câu sai</th>
+            <th>Kết quả</th>
+            <th>Thời gian</th>
+            <th>Ngày làm</th>
+            <th>Chi tiết</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (!Model.Any())
+        {
+            <tr>
+                <td colspan="9" class="text-center text-muted">
+                    <em>Không có dữ liệu</em>
+                </td>
+            </tr>
+        }
+        else
+        {
+            int stt = 1;
+            foreach (var r in Model)
+            {
+                var hang = r.IdBoDeNavigation.IdHangNavigation;
+                var soCauToiDa = hang.SoCauHoi;
+                var soCauSai = r.SoCauSai ?? 0;
+                var soCauDung = soCauToiDa - soCauSai;
+
+                <tr>
+                    <td class="text-center fw-bold">@stt</td>
+                    <td>@r.User.TenDayDu</td>
+                    <td class="text-center">@hang.MaHang</td>
+                    <td>@r.IdBoDeNavigation.TenBoDe</td>
+
+                    <td class="text-center">
+                        <b>@soCauDung / @soCauToiDa</b><br />
+                        <span class="badge bg-warning text-dark">Sai: @soCauSai</span>
+                    </td>
+
+                    <td class="text-center">
+                        @if (r.KetQua == true)
+                        {
+                            <span class="badge bg-success">Đậu</span>
+                        }
+                        else
+                        {
+
+                            <span class="badge bg-danger">Rớt</span>
+                        }
+                    </td>
+
+                    <td class="text-center">
+                        @($"{r.ThoiGianLamBai / 60} phút {r.ThoiGianLamBai % 60} giây")
+                    </td>
+
+                    <td>@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</td>
+
+                    <td class="text-center">
+                        <a asp-action="Details" asp-route-id="@r.BaiLamId" class="btn btn-sm btn-info text-white">
+                            <i class="fa fa-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+
+                stt++;
+            }
+        }
+    </tbody>
+</table>
