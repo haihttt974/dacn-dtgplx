@@ -1,0 +1,244 @@
+﻿@model dacn_dtgplx.Models.BoDeThiThu
+
+@{
+    ViewData["Title"] = "Chi tiết bộ đề";
+}
+
+<style>
+    /* Khung thông tin */
+    .card-info {
+        border-left: 5px solid #007bff;
+    }
+
+    /* Điều hướng Q1 Q2 Q3 */
+    .question-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 15px;
+    }
+
+    .question-btn {
+        padding: 6px 12px;
+        border: 2px solid #28a745;
+        color: #28a745;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: .2s;
+        background: white;
+    }
+
+        .question-btn:hover {
+            background: #28a745;
+            color: white;
+        }
+
+        .question-btn.active {
+            background: #28a745;
+            color: white;
+        }
+
+    /* Câu hỏi */
+    .question-box {
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background: #fafafa;
+    }
+
+    .answer {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-bottom: 6px;
+    }
+</style>
+
+<div class="container mt-3">
+
+    <!-- ======================= PHẦN 1: THÔNG TIN BỘ ĐỀ ======================= -->
+    <div class="card card-info mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fa fa-info-circle"></i> Thông tin bộ đề</h5>
+        </div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Tên bộ đề:</dt>
+                <dd class="col-sm-9">@Model.TenBoDe</dd>
+
+                <dt class="col-sm-3">Hạng GPLX:</dt>
+                <dd class="col-sm-9">@Model.IdHangNavigation?.MaHang</dd>
+
+                <dt class="col-sm-3">Thời gian:</dt>
+                <dd class="col-sm-9">@Model.ThoiGian phút</dd>
+
+                <dt class="col-sm-3">Số câu hỏi:</dt>
+                <dd class="col-sm-9">@Model.SoCauHoi</dd>
+
+                <dt class="col-sm-3">Trạng thái:</dt>
+                <dd class="col-sm-9">
+                    @if (Model.HoatDong == true)
+                    {
+                        <span class="badge bg-success">Đang hoạt động</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Ngưng</span>
+                    }
+                </dd>
+
+                <dt class="col-sm-3">Ngày tạo:</dt>
+                <dd class="col-sm-9">@Model.TaoLuc?.ToString("dd/MM/yyyy HH:mm")</dd>
+            </dl>
+        </div>
+    </div>
+
+    <!-- ======================= PHẦN 2: DANH SÁCH CÂU HỎI ======================= -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="fa fa-list"></i> Danh sách câu hỏi</h5>
+        </div>
+
+        <div class="card-body">
+
+            @{
+                var cauHoiList = Model.ChiTietBoDeTns
+                .OrderBy(ct => ct.ThuTu)
+                .Select(ct => ct.IdCauHoiNavigation)
+                .ToList();
+            }
+
+            <!-- NAVIGATION Q1 Q2 Q3 -->
+            <div class="question-nav mb-3">
+                @for (int i = 0; i < cauHoiList.Count; i++)
+                {
+                    <button class="question-btn @(i == 0 ? "active" : "")"
+                            onclick="showQuestion(@i)">
+                        Q@(i + 1)
+                    </button>
+                }
+            </div>
+
+            <!-- NAVIGATION BUTTONS -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <button id="btnPrev" class="btn btn-outline-primary" onclick="prevQuestion()">
+                    <i class="fa fa-arrow-left"></i> Câu trước
+                </button>
+
+                <button id="btnNext" class="btn btn-outline-primary" onclick="nextQuestion()">
+                    Câu tiếp <i class="fa fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <!-- HIỂN THỊ CÂU HỎI -->
+            @for (int i = 0; i < cauHoiList.Count; i++)
+            {
+                var q = cauHoiList[i];
+
+                <div class="question-box mb-4" id="qbox-@i" style="display:@(i == 0 ? "block" : "none")">
+
+                    <h5 class="text-primary fw-bold">Câu @(i + 1):</h5>
+                    <p>@q.NoiDung</p>
+
+                    @if (!string.IsNullOrEmpty(q.HinhAnh))
+                    {
+                        <div class="mb-3">
+                            <img src="@q.HinhAnh.Replace("wwwroot/", "/")"
+                                 alt="Hình câu hỏi"
+                                 class="img-fluid rounded"
+                                 style="max-width:350px;" />
+                        </div>
+                    }
+
+                    <h6 class="fw-bold">Đáp án:</h6>
+
+                    @foreach (var da in q.DapAns.OrderBy(d => d.ThuTu))
+                    {
+                        <div class="answer">
+                            <strong>Đáp án @((char)('A' + da.ThuTu - 1)):</strong> @da.NoiDung
+
+                            @if (da.DapAnDung == true)
+                            {
+                                <span class="badge bg-success ms-2">✔ Đáp án đúng</span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="fa fa-arrow-left"></i> Quay lại danh sách
+        </a>
+        <a asp-action="Edit" asp-route-id="@Model.IdBoDe" class="btn btn-warning">
+            <i class="fa fa-edit"></i> Chỉnh sửa
+        </a>
+    </div>
+</div>
+
+<script>
+    let currentIndex = 0;
+    const totalQuestions = @cauHoiList.Count;
+
+    function updateButtons() {
+        const btnPrev = document.getElementById("btnPrev");
+        const btnNext = document.getElementById("btnNext");
+
+        // Xử lý nút "Câu trước"
+        if (currentIndex === 0) {
+            btnPrev.classList.add("disabled");
+            btnPrev.setAttribute("disabled", true);
+        } else {
+            btnPrev.classList.remove("disabled");
+            btnPrev.removeAttribute("disabled");
+        }
+
+        // Xử lý nút "Câu tiếp"
+        if (currentIndex === totalQuestions - 1) {
+            btnNext.classList.add("disabled");
+            btnNext.setAttribute("disabled", true);
+        } else {
+            btnNext.classList.remove("disabled");
+            btnNext.removeAttribute("disabled");
+        }
+    }
+
+    function showQuestion(index) {
+        if (index < 0 || index >= totalQuestions) return;
+
+        // Ẩn tất cả câu hỏi
+        document.querySelectorAll(".question-box").forEach(x => x.style.display = "none");
+
+        // Hiện câu được chọn
+        document.getElementById("qbox-" + index).style.display = "block";
+
+        // Highlight nút Qx
+        document.querySelectorAll(".question-btn").forEach(x => x.classList.remove("active"));
+        document.querySelectorAll(".question-btn")[index].classList.add("active");
+
+        // Cập nhật trạng thái nút
+        currentIndex = index;
+        updateButtons();
+    }
+
+    function nextQuestion() {
+        if (currentIndex + 1 < totalQuestions) {
+            showQuestion(currentIndex + 1);
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIndex - 1 >= 0) {
+            showQuestion(currentIndex - 1);
+        }
+    }
+
+    // Gọi khi trang load để khóa nút "Câu trước"
+    document.addEventListener("DOMContentLoaded", function () {
+        updateButtons();
+    });
+</script>

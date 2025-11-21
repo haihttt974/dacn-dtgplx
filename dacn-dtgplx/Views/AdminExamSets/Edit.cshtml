@@ -1,0 +1,432 @@
+﻿@model dacn_dtgplx.ViewModels.ExamSetEditViewModel
+
+@{
+    ViewData["Title"] = "Chỉnh sửa bộ đề";
+
+    // Lấy danh sách chương từ AllQuestions
+    var chuongs = Model.AllQuestions
+        .Where(c => c.Chuong != null)
+        .GroupBy(c => c.ChuongId)
+        .Select(g => g.First().Chuong!)
+        .OrderBy(ch => ch.ThuTu ?? ch.ChuongId)
+        .ToList();
+}
+
+<div class="container mt-3">
+    <h4 class="mb-3 text-primary"><i class="fa fa-edit"></i> Chỉnh sửa bộ đề</h4>
+
+    <form asp-action="Edit" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="IdBoDe" />
+
+        <div class="row">
+
+            <!-- ================= KHỐI 1: THÔNG TIN BỘ ĐỀ ================= -->
+            <div class="col-md-4">
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-info text-white">
+                        <strong>Thông tin bộ đề</strong>
+                    </div>
+                    <div class="card-body">
+
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="TenBoDe" class="form-label"></label>
+                            <input asp-for="TenBoDe" class="form-control" />
+                            <span asp-validation-for="TenBoDe" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="IdHang" class="form-label">Hạng GPLX</label>
+                            <select asp-for="IdHang" class="form-select">
+                                <option value="">-- Chọn hạng --</option>
+                                @foreach (var h in Model.Hangs)
+                                {
+                                    <option value="@h.IdHang">@h.MaHang - @h.TenDayDu</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ThoiGian" class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="ThoiGian" class="form-control" />
+                                <span class="input-group-text">phút</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="SoCauHoi" class="form-label"></label>
+                            <input asp-for="SoCauHoi" class="form-control" />
+                            @* <small class="text-muted">Số câu tối đa cho bộ đề.</small> *@
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input asp-for="HoatDong" class="form-check-input" />
+                            <label asp-for="HoatDong" class="form-check-label">Đang hoạt động</label>
+                        </div>
+
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fa fa-save"></i> Lưu thay đổi
+                            </button>
+                            <a asp-action="Index" class="btn btn-secondary w-100 mt-2">
+                                <i class="fa fa-arrow-left"></i> Quay lại danh sách
+                            </a>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= KHỐI 2: DANH SÁCH CÂU HỎI ================= -->
+            <div class="col-md-8">
+
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-success text-white d-flex justify-content-between">
+                        <span><strong>Câu hỏi trong bộ đề</strong></span>
+                        <span class="badge bg-light text-dark">
+                            <span id="currentCount">@Model.SelectedQuestionIds.Count</span> /
+                            <span id="maxCount">@Model.MaxQuestions</span> câu
+                        </span>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered align-middle mb-0" id="questionsTable">
+                                <thead class="table-light">
+                                    <tr class="text-center">
+                                        <th style="width: 50px;">#</th>
+                                        <th>Nội dung câu hỏi</th>
+                                        <th style="width: 150px;">Chương</th>
+                                        <th style="width: 150px;">Thao tác</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    @{
+                                        int index = 0;
+                                        foreach (var qId in Model.SelectedQuestionIds)
+                                        {
+                                            var q = Model.AllQuestions.FirstOrDefault(c => c.IdCauHoi == qId);
+                                            if (q == null) continue;
+
+                                            var chapterName = q.Chuong?.TenChuong ?? ("Chương " + q.ChuongId);
+                                        }
+                                    }
+
+                                    @foreach (var qId in Model.SelectedQuestionIds)
+                                    {
+                                        var q = Model.AllQuestions.FirstOrDefault(x => x.IdCauHoi == qId);
+                                        if (q == null) continue;
+
+                                        var chName = q.Chuong?.TenChuong ?? ("Chương " + q.ChuongId);
+                                        <tr class="question-row" data-index="@index">
+                                            <td class="text-center stt-cell">@(@index + 1)</td>
+                                            <td class="q-content">@q.NoiDung</td>
+                                            <td class="q-chapter text-center">@chName</td>
+                                            <td class="text-center">
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-primary me-1"
+                                                        onclick="openReplaceModal(@index)">
+                                                    <i class="fa fa-exchange-alt"></i> Thay câu
+                                                </button>
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-danger"
+                                                        onclick="removeQuestion(@index)">
+                                                    <i class="fa fa-trash"></i> Xóa
+                                                </button>
+                                            </td>
+
+                                            <input type="hidden"
+                                                   name="SelectedQuestionIds[@index]"
+                                                   value="@q.IdCauHoi"
+                                                   class="hidden-question-id" />
+
+                                        </tr>
+
+                                        index++;
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ================= KHỐI 3: THÊM CÂU HỎI ================= -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-secondary text-white">
+                        <strong>Thêm câu hỏi vào bộ đề</strong>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="row g-3 align-items-end">
+
+                            <!-- Chọn chương -->
+                            <div class="col-md-4">
+                                <label class="form-label">Chọn chương</label>
+                                <select id="addChapterSelect" class="form-select"
+                                        onchange="filterQuestionsByChapter('addChapterSelect','addQuestionSelect')">
+                                    <option value="">-- Tất cả chương --</option>
+                                    @foreach (var ch in chuongs)
+                                    {
+                                        <option value="@ch.ChuongId">@ch.TenChuong</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- Chọn câu hỏi -->
+                            <div class="col-md-6">
+                                <label class="form-label">Chọn câu hỏi</label>
+                                <select id="addQuestionSelect" class="form-select">
+                                    <option value="">-- Chọn câu hỏi --</option>
+
+                                    @foreach (var q in Model.AllQuestions)
+                                    {
+                                        var chName = q.Chuong?.TenChuong ?? ("Chương " + q.ChuongId);
+                                        <option value="@q.IdCauHoi"
+                                                data-chapter-id="@q.ChuongId"
+                                                data-content="@Html.Raw(System.Net.WebUtility.HtmlEncode(q.NoiDung ?? ""))"
+                                                data-chapter="@chName">
+                                            [@chName] @q.NoiDung
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- Nút Thêm -->
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-success w-100" onclick="addQuestion()">
+                                    <i class="fa fa-plus"></i> Thêm
+                                </button>
+                            </div>
+
+                        </div>
+
+                        <small class="text-muted d-block mt-2">
+                            Không được vượt quá số câu hỏi tối đa đã cấu hình.
+                        </small>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </form>
+</div>
+
+
+<!-- ================= MODAL THAY CÂU ================= -->
+<div class="modal fade" id="replaceQuestionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Thay câu hỏi</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <input type="hidden" id="modalRowIndex" />
+
+                <div class="row g-3">
+
+                    <div class="col-md-4">
+                        <label class="form-label">Chọn chương</label>
+                        <select id="modalChapterSelect" class="form-select"
+                                onchange="filterQuestionsByChapter('modalChapterSelect','modalQuestionSelect')">
+                            <option value="">-- Tất cả chương --</option>
+                            @foreach (var ch in chuongs)
+                            {
+                                <option value="@ch.ChuongId">@ch.TenChuong</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-md-8">
+                        <label class="form-label">Chọn câu hỏi mới</label>
+                        <select id="modalQuestionSelect" class="form-select">
+                            <option value="">-- Chọn câu hỏi --</option>
+
+                            @foreach (var q in Model.AllQuestions)
+                            {
+                                var chName = q.Chuong?.TenChuong ?? ("Chương " + q.ChuongId);
+                                <option value="@q.IdCauHoi"
+                                        data-chapter-id="@q.ChuongId"
+                                        data-content="@Html.Raw(System.Net.WebUtility.HtmlEncode(q.NoiDung ?? ""))"
+                                        data-chapter="@chName">
+                                    [@chName] @q.NoiDung
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="mt-2 text-danger" id="modalErrorMsg" style="display:none;"></div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" onclick="confirmReplaceQuestion()">Xác nhận</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+@section Scripts{
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        /* ==== JS vẫn giữ nguyên, không cần sửa thêm vì đã đồng bộ với AllQuestions ==== */
+
+        let maxQuestions = @(Model.MaxQuestions ?? 0);
+        let currentIndexForReplace = null;
+
+        function updateCountDisplay() {
+            const rows = document.querySelectorAll("#questionsTable tbody tr.question-row");
+            document.getElementById("currentCount").innerText = rows.length;
+        }
+
+        function reindexRows() {
+            const rows = document.querySelectorAll("#questionsTable tbody tr.question-row");
+            rows.forEach((row, idx) => {
+                row.dataset.index = idx;
+                row.querySelector(".stt-cell").innerText = idx + 1;
+
+                const hidden = row.querySelector(".hidden-question-id");
+                hidden.name = `SelectedQuestionIds[${idx}]`;
+
+                row.querySelector(".btn-outline-primary")
+                    .setAttribute("onclick", `openReplaceModal(${idx})`);
+                row.querySelector(".btn-outline-danger")
+                    .setAttribute("onclick", `removeQuestion(${idx})`);
+            });
+            updateCountDisplay();
+        }
+
+        function filterQuestionsByChapter(chapIdSelect, quesSelect) {
+            const chapId = document.getElementById(chapIdSelect).value;
+            const qSelect = document.getElementById(quesSelect);
+
+            Array.from(qSelect.options).forEach(opt => {
+                if (opt.value === "") { opt.style.display = ""; return; }
+                opt.style.display = (!chapId || opt.dataset.chapterId === chapId) ? "" : "none";
+            });
+
+            qSelect.value = "";
+        }
+
+        function isQuestionAlreadySelected(qId, exceptIndex) {
+            const hidden = document.querySelectorAll(".hidden-question-id");
+            for (let i = 0; i < hidden.length; i++) {
+                if (i === exceptIndex) continue;
+                if (hidden[i].value === qId) return true;
+            }
+            return false;
+        }
+
+        function addQuestion() {
+            const qSelect = document.getElementById("addQuestionSelect");
+            const selectedId = qSelect.value;
+
+            if (!selectedId) return alert("Vui lòng chọn câu hỏi.");
+
+            const rows = document.querySelectorAll("#questionsTable tbody tr.question-row").length;
+            if (maxQuestions > 0 && rows >= maxQuestions)
+                return alert("Không được vượt quá số câu hỏi tối đa.");
+
+            if (isQuestionAlreadySelected(selectedId, -1))
+                return alert("Câu hỏi này đã có trong bộ đề.");
+
+            const opt = qSelect.options[qSelect.selectedIndex];
+            const content = opt.dataset.content;
+            const chapter = opt.dataset.chapter;
+
+            const tbody = document.querySelector("#questionsTable tbody");
+            const newIndex = rows;
+
+            const tr = document.createElement("tr");
+            tr.classList.add("question-row");
+            tr.dataset.index = newIndex;
+            tr.innerHTML = `
+                <td class="text-center stt-cell">${newIndex + 1}</td>
+                <td class="q-content">${content}</td>
+                <td class="q-chapter text-center">${chapter}</td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-outline-primary me-1"
+                            onclick="openReplaceModal(${newIndex})">
+                        <i class="fa fa-exchange-alt"></i> Thay câu
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger"
+                            onclick="removeQuestion(${newIndex})">
+                        <i class="fa fa-trash"></i> Xóa
+                    </button>
+                </td>
+                <input type="hidden" name="SelectedQuestionIds[${newIndex}]"
+                       value="${selectedId}" class="hidden-question-id" />
+            `;
+
+            tbody.appendChild(tr);
+            updateCountDisplay();
+        }
+
+        function removeQuestion(index) {
+            const row = document.querySelector(`#questionsTable tbody tr[data-index='${index}']`);
+            if (!row) return;
+            if (!confirm("Bạn có chắc muốn xóa câu hỏi này?")) return;
+
+            row.remove();
+            reindexRows();
+        }
+
+        function openReplaceModal(index) {
+            currentIndexForReplace = index;
+            document.getElementById("modalRowIndex").value = index;
+            document.getElementById("modalErrorMsg").style.display = "none";
+
+            document.getElementById("modalChapterSelect").value = "";
+            filterQuestionsByChapter("modalChapterSelect", "modalQuestionSelect");
+
+            new bootstrap.Modal(document.getElementById("replaceQuestionModal")).show();
+        }
+
+        function confirmReplaceQuestion() {
+            const qSelect = document.getElementById("modalQuestionSelect");
+            const selectedId = qSelect.value;
+
+            if (!selectedId) {
+                let err = document.getElementById("modalErrorMsg");
+                err.innerText = "Vui lòng chọn câu hỏi mới.";
+                err.style.display = "block";
+                return;
+            }
+
+            if (isQuestionAlreadySelected(selectedId, currentIndexForReplace)) {
+                let err = document.getElementById("modalErrorMsg");
+                err.innerText = "Câu hỏi này đã có trong bộ đề.";
+                err.style.display = "block";
+                return;
+            }
+
+            const opt = qSelect.options[qSelect.selectedIndex];
+            const content = opt.dataset.content;
+            const chapter = opt.dataset.chapter;
+
+            const row = document.querySelector(`#questionsTable tbody tr[data-index='${currentIndexForReplace}']`);
+            row.querySelector(".q-content").innerText = content;
+            row.querySelector(".q-chapter").innerText = chapter;
+            row.querySelector(".hidden-question-id").value = selectedId;
+
+            bootstrap.Modal.getInstance(document.getElementById("replaceQuestionModal")).hide();
+        }
+    </script>
+}

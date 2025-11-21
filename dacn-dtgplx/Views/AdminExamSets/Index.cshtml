@@ -1,0 +1,138 @@
+﻿@model IEnumerable<dacn_dtgplx.Models.BoDeThiThu>
+
+@{
+    ViewData["Title"] = "Danh sách Bộ đề thi thử";
+    var hangs = ViewBag.Hangs as List<dacn_dtgplx.Models.Hang>;
+}
+
+<div class="container-fluid mt-3">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="text-primary">
+            <i class="fa fa-clipboard"></i> Danh sách bộ đề thi thử
+        </h4>
+        <a asp-action="Create" class="btn btn-success">
+            <i class="fa fa-plus"></i> Tạo bộ đề mới
+        </a>
+    </div>
+
+    <!-- Bộ lọc theo Hạng -->
+    <form method="get" asp-action="Index" class="row g-3 mb-4">
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Lọc theo hạng</label>
+            <select name="idHang" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Tất cả các hạng --</option>
+                @foreach (var hang in hangs)
+                {
+                    <option value="@hang.IdHang"
+                            selected="@(Context.Request.Query["idHang"] == hang.IdHang.ToString() ? "selected" : null)">
+                        @hang.MaHang - @hang.TenDayDu
+                    </option>
+                }
+            </select>
+        </div>
+    </form>
+
+    <!-- Bảng danh sách -->
+    <table class="table table-bordered table-hover align-middle">
+        <thead class="table-light">
+            <tr class="text-center">
+                <th style="width: 40px;">#</th>
+                <th>Tên bộ đề</th>
+                <th>Hạng</th>
+                <th>Số câu</th>
+                <th>Thời gian</th>
+                <th>Hoạt động</th>
+                <th>Ngày tạo</th>
+                <th style="width: 120px;">Thao tác</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @if (Model.Any())
+            {
+                int stt = 1;
+
+                foreach (var item in Model)
+                {
+                    var maxQuestions = item.IdHangNavigation?.SoCauHoi ?? 0;
+                    var currentQuestions = item.SoCauHoi ?? 0;
+
+                    bool isEnough = currentQuestions == maxQuestions;
+                    bool isEmpty = currentQuestions == 0;
+
+                    <tr>
+                        <td class="text-center fw-bold">@stt</td>
+
+                        <td>@item.TenBoDe</td>
+
+                        <td class="text-center">@item.IdHangNavigation?.MaHang</td>
+
+                        <!-- Cột Số Câu -->
+                        <td class="text-center">
+                            <div>
+                                <span class="fw-bold @(isEnough ? "text-success" : "text-primary")" style="font-size:16px;">
+                                    @currentQuestions
+                                </span>
+                                /
+                                <span class="fw-bold">@maxQuestions</span>
+                            </div>
+
+                            <div>
+                                @if (isEnough)
+                                {
+                                    <span class="badge bg-success">Đủ câu</span>
+                                }
+                                else if (isEmpty)
+                                {
+                                    <span class="badge bg-secondary">Chưa có câu</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Thiếu: @(maxQuestions - currentQuestions)</span>
+                                }
+                            </div>
+                        </td>
+
+                        <td class="text-center">@item.ThoiGian phút</td>
+
+                        <td class="text-center">
+                            @if (item.HoatDong == true)
+                            {
+                                <span class="badge bg-success">Đang dùng</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Ngưng</span>
+                            }
+                        </td>
+
+                        <td>@item.TaoLuc?.ToString("dd/MM/yyyy HH:mm")</td>
+
+                        <td class="text-center">
+                            <a asp-action="Details" asp-route-id="@item.IdBoDe"
+                               class="btn btn-sm btn-info text-white me-1">
+                                <i class="fa fa-eye"></i>
+                            </a>
+
+                            <a asp-action="Edit" asp-route-id="@item.IdBoDe"
+                               class="btn btn-sm btn-warning text-white">
+                                <i class="fa fa-edit"></i>
+                            </a>
+                        </td>
+                    </tr>
+
+                    stt++;
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="8" class="text-center text-muted">
+                        <em>Không có bộ đề nào.</em>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,108 @@
+﻿@model dacn_dtgplx.ViewModels.ExamSetEditViewModel
+
+@{
+    ViewData["Title"] = "Tạo bộ đề mới";
+
+    var hangs = Model.Hangs ?? new List<dacn_dtgplx.Models.Hang>();
+}
+
+<div class="container mt-4">
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0"><i class="fa fa-plus-circle"></i> Tạo bộ đề thi thử mới</h4>
+        </div>
+
+        <div class="card-body">
+
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <!-- Chọn hạng -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Chọn hạng GPLX</label>
+                    <select asp-for="IdHang" class="form-select" id="hangSelect" onchange="updatePreviewInfo()">
+                        <option value="">-- Chọn hạng --</option>
+                        @foreach (var h in hangs)
+                        {
+                            <option value="@h.IdHang"
+                                    data-ma="@h.MaHang"
+                                    data-thoigian="@h.ThoiGianTn"
+                                    data-socau="@h.SoCauHoi">
+                                @h.MaHang - @h.TenDayDu
+                            </option>
+                        }
+                    </select>
+                    <span asp-validation-for="IdHang" class="text-danger"></span>
+                </div>
+
+                <!-- Preview thông tin bộ đề -->
+                <div id="previewBox" class="border rounded p-3 bg-light mb-3" style="display:none;">
+                    <h6 class="fw-bold text-primary mb-3"><i class="fa fa-info-circle"></i> Thông tin bộ đề sẽ tạo:</h6>
+
+                    <p class="mb-1">
+                        <strong>Tên bộ đề:</strong>
+                        <span id="previewName" class="text-success"></span>
+                    </p>
+
+                    <p class="mb-1">
+                        <strong>Số câu hỏi:</strong>
+                        <span id="previewCau" class="text-primary"></span>
+                    </p>
+
+                    <p class="mb-1">
+                        <strong>Thời gian làm bài:</strong>
+                        <span id="previewTime" class="text-primary"></span> phút
+                    </p>
+
+                    <small class="text-muted">
+                        * Bộ đề sẽ được random câu hỏi theo đúng <b>tỉ lệ chương chính thức</b>, không cần chọn thủ công.
+                    </small>
+                </div>
+
+                <div class="text-end">
+                    <button type="submit" class="btn btn-success px-4">
+                        <i class="fa fa-save"></i> Tạo bộ đề
+                    </button>
+                    <a asp-action="Index" class="btn btn-secondary px-4 ms-2">
+                        <i class="fa fa-arrow-left"></i> Trở về
+                    </a>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        function updatePreviewInfo() {
+            let select = document.getElementById("hangSelect");
+            let option = select.options[select.selectedIndex];
+
+            if (!select.value) {
+                document.getElementById("previewBox").style.display = "none";
+                return;
+            }
+
+            let maHang = option.dataset.ma;
+            let thoiGian = option.dataset.thoigian;
+            let soCau = option.dataset.socau;
+
+            // chuyển giây -> phút
+            let thoiGianPhut = Math.round(thoiGian / 60);
+
+            // hiển thị preview
+            document.getElementById("previewName").innerText = "Đề chuẩn hạng " + maHang + " (tự động đánh số)";
+            document.getElementById("previewCau").innerText = soCau + " câu";
+            document.getElementById("previewTime").innerText = thoiGianPhut;
+
+            document.getElementById("previewBox").style.display = "block";
+        }
+    </script>
+}
