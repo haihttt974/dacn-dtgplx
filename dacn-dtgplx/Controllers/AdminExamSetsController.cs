@@ -186,7 +186,7 @@ namespace dacn_dtgplx.Controllers
 
             _context.BoDeThiThus.Add(boDe);
             await _context.SaveChangesAsync();
-
+            TempData["Success"] = "Thêm mới bộ đề thành công thành công!";
             return RedirectToAction(nameof(Index));
         }
 
@@ -285,6 +285,7 @@ namespace dacn_dtgplx.Controllers
             }
 
             await _context.SaveChangesAsync();
+            TempData["Success"] = "Cập nhật bộ đề thành công!";
             return RedirectToAction(nameof(Index));
         }
 
