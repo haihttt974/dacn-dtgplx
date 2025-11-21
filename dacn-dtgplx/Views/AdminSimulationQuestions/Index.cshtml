@@ -1,0 +1,400 @@
+﻿@model IEnumerable<dacn_dtgplx.Models.TinhHuongMoPhong>
+
+@{
+    ViewData["Title"] = "Tình huống mô phỏng";
+    var chuongs = ViewBag.Chuongs as List<dacn_dtgplx.Models.ChuongMoPhong>;
+    int? selectedChuong = ViewBag.SelectedChuong;
+    int? selectedKho = ViewBag.SelectedKho;
+
+    string FixUrl(string? url)
+        => string.IsNullOrWhiteSpace(url) ? ""
+           : "/" + url.Replace("wwwroot/", "").TrimStart('/');
+}
+
+<div class="container-fluid mt-3">
+
+    <!-- TIÊU ĐỀ -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="text-primary mb-0">
+            <i class="fa fa-film"></i> Tình huống mô phỏng
+        </h4>
+
+        <a asp-action="Create" class="btn btn-success">
+            <i class="fa fa-plus"></i> Thêm tình huống
+        </a>
+    </div>
+
+    <!-- BỘ LỌC -->
+    <form method="get" class="row g-3 mb-3">
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Lọc theo chương</label>
+            <select name="idChuongMp" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Tất cả chương --</option>
+                @foreach (var ch in chuongs)
+                {
+                    <option value="@ch.IdChuongMp" selected="@(selectedChuong == ch.IdChuongMp)">
+                        Chương @ch.ThuTu - @ch.TenChuong
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label fw-bold">Độ khó</label>
+            <select name="isKho" class="form-select" onchange="this.form.submit()">
+                <option value="" selected="@(selectedKho == null)">-- Tất cả --</option>
+                <option value="0" selected="@(selectedKho == 0)">Bình thường</option>
+                <option value="1" selected="@(selectedKho == 1)">Khó</option>
+            </select>
+        </div>
+    </form>
+
+    <!-- DANH SÁCH -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-info text-white">
+            <strong>Danh sách tình huống</strong>
+        </div>
+
+        <div class="card-body p-0">
+            <table class="table table-bordered table-hover mb-0 align-middle">
+                <thead class="table-light text-center">
+                    <tr>
+                        <th style="width:50px;">#</th>
+                        <th>Tiêu đề</th>
+                        <th style="width:120px;">Ảnh mẹo</th>
+                        <th style="width:60px;">TT</th>
+                        <th style="width:230px;">Vùng tính điểm</th>
+                        <th style="width:110px;">Độ khó</th>
+                        <th style="width:140px;">Ngày tạo</th>
+                        <th style="width:140px;">Thao tác</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-3">
+                                <em>Không có tình huống nào.</em>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        int stt = 1;
+                        foreach (var th in Model)
+                        {
+                            double start = th.TgBatDau ?? 0;
+                            double end = th.TgKetThuc ?? 0;
+                            double duration = Math.Round(end - start, 3);
+                            double segment = duration > 0 ? Math.Round(duration / 5, 3) : 0;
+
+                            var videoUrl = FixUrl(th.VideoUrl);
+                            var tipUrl = FixUrl(th.UrlAnhMeo);
+
+                            <tr>
+                                <!-- STT -->
+                                <td class="text-center fw-bold">@stt</td>
+
+                                <!-- TIÊU ĐỀ + NÚT PLAY -->
+                                <td>
+                                    <div class="fw-bold">@th.TieuDe</div>
+
+                                    <button type="button"
+                                            class="btn btn-outline-primary btn-sm mt-2"
+                                            onclick="openSimulationVideo('@videoUrl', @start, @end, '@th.TieuDe')">
+                                        <i class="fa fa-play"></i> Xem video
+                                    </button>
+                                </td>
+
+                                <!-- ẢNH MẸO -->
+                                <td class="text-center">
+                                    @if (!string.IsNullOrEmpty(tipUrl))
+                                    {
+                                        <img src="@tipUrl"
+                                             style="max-width:80px; cursor:pointer;"
+                                             class="img-thumbnail"
+                                             onclick="openTipImage('@tipUrl')" />
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Không có</span>
+                                    }
+                                </td>
+
+                                <!-- THỨ TỰ -->
+                                <td class="text-center">@th.ThuTu</td>
+
+                                <!-- VÙNG TÍNH ĐIỂM -->
+                                <td>
+                                    @if (start > 0 && end > 0)
+                                    {
+                                        // Đổi từ giây thật -> dạng hiển thị (chia 60)
+                                        var startDisplay = start / 60.0;      // ví dụ 625.62  -> 10.427
+                                        var endDisplay = end / 60.0;        // ví dụ 788.40  -> 13.140
+                                        var durationDisplay = duration / 60.0;   // tổng thời gian
+                                        var segmentDisplay = segment / 60.0;    // mỗi đoạn
+
+                                        <div class="fw-bold text-primary">
+                                            @startDisplay.ToString("0.###") → @endDisplay.ToString("0.###") giây
+                                        </div>
+                                        <small class="text-muted">
+                                            Tổng: @durationDisplay.ToString("0.###") s — 5 đoạn × @segmentDisplay.ToString("0.###") s
+                                        </small>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Chưa cấu hình</span>
+                                    }
+                                </td>
+
+                                <!-- ĐỘ KHÓ -->
+                                <td class="text-center">
+                                    @if (th.Kho == true)
+                                    {
+                                        <span class="badge bg-danger">Khó</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">Bình thường</span>
+                                    }
+                                </td>
+
+                                <!-- NGÀY TẠO -->
+                                <td class="text-center">
+                                    @(th.NgayTao?.ToString("dd/MM/yyyy HH:mm") ?? "-")
+                                </td>
+
+                                <!-- THAO TÁC -->
+                                <td class="text-center">
+                                    <a asp-action="Details" asp-route-id="@th.IdThMp"
+                                       class="btn btn-sm btn-info text-white me-1">
+                                        <i class="fa fa-eye"></i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@th.IdThMp"
+                                       class="btn btn-sm btn-warning">
+                                        <i class="fa fa-edit"></i>
+                                    </a>
+                                </td>
+                            </tr>
+
+                            stt++;
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- VIDEO MODAL -->
+<div class="modal fade" id="simulationModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="videoTitle"></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <!-- VIDEO -->
+                <div id="videoWrapper" class="position-relative">
+                    <video id="simVideo"
+                           class="w-100 rounded"
+                           style="max-height:65vh; object-fit:contain;"
+                           controls></video>
+                </div>
+
+                <!-- THANH 1: THỜI GIAN ĐANG CHẠY -->
+                <div class="mt-2" id="runTimeBar"></div>
+
+                <!-- THANH 2 + FLAG (HIỆN SAU KHI NHẤN SPACE) -->
+                <div class="mt-2 position-relative" id="scoreBarWrapper" style="display:none;">
+                    <div id="scoreBarBase"></div>
+                    <div id="scoreFlagOverlay"></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TIP MODAL -->
+<div class="modal fade" id="tipModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-secondary text-white">
+                <h5 class="modal-title">Ảnh mẹo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="tipImage" class="img-fluid rounded shadow" />
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+
+    <script>
+        let video = null;
+        let startSec = 0, endSec = 0;
+        let liveInterval = null;
+        let flagSet = false;
+
+        // ========= ẢNH MẸO =========
+        function openTipImage(url) {
+            if (!url) return;
+            document.getElementById("tipImage").src = url;
+            new bootstrap.Modal(document.getElementById("tipModal")).show();
+        }
+
+        // ========= MỞ VIDEO =========
+        function openSimulationVideo(videoUrl, start, end, title) {
+            if (!videoUrl) {
+                alert("Video chưa được cấu hình.");
+                return;
+            }
+
+            video = document.getElementById("simVideo");
+            startSec = Number(start) || 0;
+            endSec = Number(end) || 0;
+            flagSet = false;
+
+            document.getElementById("videoTitle").innerText = title;
+
+            video.src = videoUrl;
+            video.currentTime = 0;
+            video.play();
+
+            // Reset UI
+            document.getElementById("runTimeBar").innerHTML = "";
+            document.getElementById("scoreBarWrapper").style.display = "none";
+            document.getElementById("scoreBarBase").innerHTML = "";
+            document.getElementById("scoreFlagOverlay").innerHTML = "";
+
+            startLiveTimeBar();
+
+            const modalEl = document.getElementById("simulationModal");
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+
+            // Clear interval khi đóng modal
+            modalEl.addEventListener("hidden.bs.modal", () => {
+                if (liveInterval) clearInterval(liveInterval);
+                if (video) video.pause();
+            }, { once: true });
+        }
+
+        // ========= THANH 1: THỜI GIAN ĐANG CHẠY =========
+        function startLiveTimeBar() {
+            const container = document.getElementById("runTimeBar");
+            container.innerHTML = `
+                <div style="position:relative; background:#ddd; height:22px; border-radius:4px; overflow:hidden;">
+                    <div id="runTimeFill" style="height:100%; width:0%; background:#2ecc71;"></div>
+                    <div id="runTimeLabel"
+                         style="position:absolute; top:0; left:50%; transform:translateX(-50%);
+                                font-weight:bold; color:#fff; text-shadow:1px 1px 2px #000;">
+                    </div>
+                </div>
+            `;
+
+            if (liveInterval) clearInterval(liveInterval);
+
+            liveInterval = setInterval(() => {
+                if (!video || isNaN(video.duration) || video.duration <= 0) return;
+
+                const cur = video.currentTime;
+                const dur = video.duration;
+                const percent = (cur / dur) * 100;
+
+                const fill = document.getElementById("runTimeFill");
+                const label = document.getElementById("runTimeLabel");
+                if (!fill || !label) return;
+
+                fill.style.width = percent + "%";
+                label.innerText = `Thời gian: ${cur.toFixed(2)} / ${dur.toFixed(2)}`;
+            }, 100);
+        }
+
+        // ========= LẮNG NGHE PHÍM SPACE =========
+        document.addEventListener("keydown", function (e) {
+            if (e.code === "Space" && video) {
+                // chỉ bắt SPACE khi modal đang mở
+                const modalShown = document.getElementById("simulationModal")
+                    .classList.contains("show");
+                if (!modalShown) return;
+
+                e.preventDefault();
+                placeFlag();
+            }
+        });
+
+        // ========= GẮN CỜ + VẼ 5 ĐOẠN =========
+        function placeFlag() {
+            if (!video || flagSet) return;
+            if (isNaN(video.duration) || video.duration <= 0) return;
+
+            flagSet = true;
+
+            const flagTime = video.currentTime;
+            const dur = video.duration;
+
+            // Hiện khu vực 5 đoạn
+            document.getElementById("scoreBarWrapper").style.display = "block";
+            drawScoreSegments(dur);
+
+            // Gắn cờ
+            const flagOverlay = document.getElementById("scoreFlagOverlay");
+            const flagPosPercent = (flagTime / dur) * 100;
+
+            flagOverlay.innerHTML = `
+                <div style="
+                        position:absolute;
+                        left:${flagPosPercent}%;
+                        top:-28px;
+                        transform:translateX(-50%);
+                        text-align:center;">
+                    <img src="/images/flag.png" style="height:26px;">
+                    <div style="color:red; font-size:14px; font-weight:bold;">
+                        ${flagTime.toFixed(3)}s
+                    </div>
+                </div>
+            `;
+        }
+
+        // ========= VẼ 5 ĐOẠN ĐIỂM =========
+        function drawScoreSegments(videoDuration) {
+            const bar = document.getElementById("scoreBarBase");
+            if (!bar) return;
+
+            const totalWindow = endSec - startSec;
+            if (totalWindow <= 0 || videoDuration <= 0) {
+                bar.innerHTML = "<div class='text-muted'>Chưa cấu hình vùng tính điểm.</div>";
+                return;
+            }
+
+            const leftOffset = (startSec / videoDuration) * 100;
+            const widthPercent = (totalWindow / videoDuration) * 100;
+
+            const colors = ["#4CAF50", "#8BC34A", "#FFC107", "#FF9800", "#F44336"];
+
+            let html = `
+                <div style="position:relative; background:#eee; height:18px; border-radius:3px;">
+                    <div style="position:absolute; left:${leftOffset}%; width:${widthPercent}%;
+                                height:100%; display:flex;">
+            `;
+
+            colors.forEach(c => {
+                html += `<div style="flex:1; background:${c};"></div>`;
+            });
+
+            html += `</div></div>`;
+
+            bar.innerHTML = html;
+        }
+    </script>
+
+}
