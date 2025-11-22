@@ -83,9 +83,11 @@ public partial class DtGplxContext : DbContext
 
     public virtual DbSet<XeTapLai> XeTapLais { get; set; }
 
-//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-//        => optionsBuilder.UseSqlServer("Server=haiit;Database=DT_GPLX;Trusted_Connection=True;TrustServerCertificate=True;");
+    public DbSet<PhieuThueXe> PhieuThueXes { get; set; }
+
+    //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+    //        => optionsBuilder.UseSqlServer("Server=haiit;Database=DT_GPLX;Trusted_Connection=True;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -566,6 +568,7 @@ public partial class DtGplxContext : DbContext
             entity.ToTable("hoaDonThanhToan");
 
             entity.HasIndex(e => e.IdDangKy, "IX_HoaDonThanhToan_DangKy");
+            entity.HasIndex(e => e.PhieuTxId, "IX_HoaDonThanhToan_PhieuTx");
 
             entity.Property(e => e.IdThanhToan).HasColumnName("idThanhToan");
             entity.Property(e => e.IdDangKy).HasColumnName("idDangKy");
@@ -579,10 +582,17 @@ public partial class DtGplxContext : DbContext
                 .HasColumnName("soTien");
             entity.Property(e => e.TrangThai).HasColumnName("trangThai");
 
-            entity.HasOne(d => d.IdDangKyNavigation).WithMany(p => p.HoaDonThanhToans)
+            entity.HasOne(d => d.IdDangKyNavigation)
+                .WithMany(p => p.HoaDonThanhToans)
                 .HasForeignKey(d => d.IdDangKy)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName("FK_HoaDonThanhToan_DangKyHoc");
+
+            entity.HasOne(d => d.PhieuTx)
+                .WithMany(p => p.HoaDonThanhToans)
+                .HasForeignKey(d => d.PhieuTxId)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_HoaDonThanhToan_PhieuThueXe");
         });
 
         modelBuilder.Entity<KetQuaHocTap>(entity =>
@@ -849,6 +859,9 @@ public partial class DtGplxContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("chuyenMon");
             entity.Property(e => e.NgayBatDauLam).HasColumnName("ngayBatDauLam");
+            entity.Property(e => e.LichDay)
+                .HasMaxLength(255)
+                .HasColumnName("lichDay");
             entity.Property(e => e.UserId).HasColumnName("userId");
 
             entity.HasOne(d => d.User).WithMany(p => p.TtGiaoViens)

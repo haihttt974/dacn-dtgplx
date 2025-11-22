@@ -17,7 +17,11 @@ public partial class HoaDonThanhToan
 
     public string? NoiDung { get; set; }
 
-    public int IdDangKy { get; set; }
+    public int? IdDangKy { get; set; }
 
-    public virtual DangKyHoc IdDangKyNavigation { get; set; } = null!;
+    public int? PhieuTxId { get; set; }
+
+    public virtual DangKyHoc? IdDangKyNavigation { get; set; }
+
+    public virtual PhieuThueXe? PhieuTx { get; set; }
 }
