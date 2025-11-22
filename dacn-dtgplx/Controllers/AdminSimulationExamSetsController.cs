@@ -1,10 +1,11 @@
 ﻿using dacn_dtgplx.Models;
+using dacn_dtgplx.Models.Requests;
 using dacn_dtgplx.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace dacn_dtgplx.Controllers
@@ -305,7 +306,9 @@ namespace dacn_dtgplx.Controllers
             }
 
             exam.SoTinhHuong = SelectedIds.Count;
-
+            if (exam.SoTinhHuong < 10) exam.IsActive = false;
+            else exam.IsActive = true;
+            
             await _context.SaveChangesAsync();
 
             TempData["Success"] = $"Lưu bộ đề '{exam.TenBoDe}' thành công!";
@@ -363,21 +366,39 @@ namespace dacn_dtgplx.Controllers
             });
         }
 
-        public async Task<IActionResult> ToggleStatus(int id)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleStatusRow([FromBody] ToggleStatusRequest req)
         {
-            var exam = await _context.BoDeMoPhongs.FindAsync(id);
+            int id = req.id;
+
+            var exam = await _context.BoDeMoPhongs
+                .Include(x => x.ChiTietBoDeMoPhongs)
+                .FirstOrDefaultAsync(x => x.IdBoDeMoPhong == id);
 
             if (exam == null)
-                return NotFound();
+                return Json(new { ok = false, message = "Không tìm thấy bộ đề!" });
+
+            if (exam.IsActive != true && exam.ChiTietBoDeMoPhongs.Count < 10)
+            {
+                return Json(new
+                {
+                    ok = false,
+                    message = $"Bộ đề '{exam.TenBoDe}' chưa đủ 10 tình huống!"
+                });
+            }
 
             exam.IsActive = !exam.IsActive;
-
             await _context.SaveChangesAsync();
 
-            TempData["Success"] =
-                (bool)exam.IsActive ? $"Đã mở bộ đề '{exam.TenBoDe}'!" : $"Đã đóng bộ đề '{exam.TenBoDe}'!";
+            string html = await this.RenderViewAsync("_ExamSetRow", exam, true);
 
-            return RedirectToAction("Index");
+            return Json(new
+            {
+                ok = true,
+                html,
+                toast = (bool)exam.IsActive ? "Đã mở bộ đề!" : "Đã đóng bộ đề!"
+            });
         }
 
     }

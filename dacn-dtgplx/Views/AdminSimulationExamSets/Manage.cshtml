@@ -1,5 +1,13 @@
 ﻿@using dacn_dtgplx.ViewModels
 @model SimulationExamSetManageViewModel
+<style>
+    #fullExamVideo {
+        width: 100%;
+        max-height: 75vh; /* co video theo chiều cao màn hình */
+        object-fit: contain; /* hiển thị đúng tỉ lệ, không bị méo */
+        background: black; /* cho đẹp khi letterbox */
+    }
+</style>
 
 <div class="container-fluid mt-3">
 
@@ -20,16 +28,42 @@
 
         <!-- DANH SÁCH TÌNH HUỐNG -->
         <div class="card shadow-sm">
-            <div class="card-header bg-info text-white d-flex justify-content-between">
-                <strong>Danh sách tình huống</strong>
+            <div class="card-header bg-info text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>Danh sách tình huống</strong>
 
-                @if (Model.SelectedDetails.Count < 10)
-                {
-                    <button type="button" class="btn btn-success btn-sm"
-                            onclick="openRandomModal(0)">
-                        <i class="fa fa-plus"></i> Thêm tình huống
-                    </button>
-                }
+                        <span class="badge bg-light text-info ms-2">
+                            @Model.SelectedDetails.Count / 10 tình huống
+                        </span>
+
+                        @if (Model.SelectedDetails.Count < 10)
+                        {
+                            <span class="badge bg-warning text-dark ms-1">
+                                Còn thiếu @(10 - Model.SelectedDetails.Count)
+                            </span>
+                        }
+                    </div>
+
+                    <div>
+                        @if (Model.SelectedDetails.Count < 10)
+                        {
+                            <button type="button"
+                                    class="btn btn-light btn-sm text-info fw-bold"
+                                    onclick="openRandomModal(0)">
+                                <i class="fa fa-plus-circle me-1"></i> Thêm tình huống
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button"
+                                    class="btn btn-outline-light btn-sm"
+                                    disabled>
+                                <i class="fa fa-check-circle me-1"></i> Đã đủ 10 tình huống
+                            </button>
+                        }
+                    </div>
+                </div>
             </div>
 
             <div class="card-body p-0">
@@ -124,6 +158,28 @@
 
                                 stt++;
                             }
+                            <!-- DÒNG XEM BÀI THI -->
+                            @if (Model.SelectedDetails.Count == 10)
+                            {
+                                <tr class="table-primary exam-row">
+                                    <td class="text-center fw-bold" colspan="6">
+                                        <button type="button"
+                                                class="btn btn-success fw-bold"
+                                                onclick="openFullExam()">
+                                            <i class="fa fa-play-circle me-1"></i> Xem bài thi (10 tình huống)
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                <tr class="table-warning exam-row">
+                                    <td class="text-center fw-bold text-danger" colspan="6">
+                                        Bộ đề hiện có @Model.SelectedDetails.Count tình huống.
+                                        Cần thêm @(10 - Model.SelectedDetails.Count) tình huống nữa để ghép bài thi tổng hợp.
+                                    </td>
+                                </tr>
+                            }
                         }
                     </tbody>
 
@@ -206,6 +262,25 @@
     </div>
 </div>
 
+<!-- MODAL FULL EXAM -->
+<div class="modal fade" id="fullExamModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="fullExamTitle">
+                    Bài thi mô phỏng (10 tình huống)
+                </h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <video id="fullExamVideo" class="exam-video" controls></video>
+            </div>
+
+        </div>
+    </div>
+</div>
 
 @section Scripts {
     <script>
@@ -342,5 +417,64 @@
             new bootstrap.Modal(document.getElementById("videoModal")).show();
         }
 
+        function openFullExam() {
+
+            // Lấy danh sách video theo thứ tự
+            let rows = Array.from(document.querySelectorAll("tr[data-id]"));
+
+            let videos = [];
+            let titles = [];
+
+            rows.forEach((tr, idx) => {
+                let btn = tr.querySelector(".th-video button");
+                if (!btn) return;
+
+                let onclick = btn.getAttribute("onclick");
+                if (!onclick) return;
+
+                let videoUrl = onclick.split("'")[1];
+                videos.push(videoUrl);
+
+                let title = tr.querySelector(".th-title").textContent.trim();
+                titles.push(title);
+            });
+
+            if (videos.length === 0) {
+                alert("Không có video để phát!");
+                return;
+            }
+
+            window.fullExamPlaylist = videos;
+            window.fullExamTitles = titles;
+            window.fullExamIndex = 0;
+
+            const videoElement = document.getElementById("fullExamVideo");
+            const titleElement = document.getElementById("fullExamTitle");
+
+            // SET TIÊU ĐỀ BAN ĐẦU
+            titleElement.textContent = `Bài thi mô phỏng – Tình huống 1: ${titles[0]}`;
+
+            videoElement.src = videos[0];
+            videoElement.load();
+            videoElement.play();
+
+            new bootstrap.Modal(document.getElementById("fullExamModal")).show();
+
+            // KHI VIDEO KẾT THÚC → CHUYỂN SANG VIDEO SAU
+            videoElement.onended = () => {
+                window.fullExamIndex++;
+
+                if (window.fullExamIndex < videos.length) {
+
+                    videoElement.src = videos[window.fullExamIndex];
+                    videoElement.load();
+                    videoElement.play();
+
+                    // CẬP NHẬT TIÊU ĐỀ
+                    titleElement.textContent =
+                        `Bài thi mô phỏng – Tình huống ${window.fullExamIndex + 1}: ${titles[window.fullExamIndex]}`;
+                }
+            };
+        }
     </script>
 }

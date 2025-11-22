@@ -1,0 +1,74 @@
+﻿@model dacn_dtgplx.Models.BoDeMoPhong
+
+<tr id="row-@Model.IdBoDeMoPhong">
+
+    <td class="text-center fw-bold">@Model.IdBoDeMoPhong</td>
+
+    <td class="col-ten-bode">
+        <div class="fw-bold">@Model.TenBoDe</div>
+        <small class="text-muted">ID: @Model.IdBoDeMoPhong</small>
+    </td>
+
+    <td class="text-center">
+        @{
+            var required = 10;              // quy định 10 tình huống
+            var count = Model.SoTinhHuong;               // số TH thực tế trong bộ đề
+            var missing = required - count; // số thiếu (nếu có)
+        }
+
+        <div class="fw-bold">
+            <span class="text-primary">@count</span> / @required
+        </div>
+
+        @if (count >= required)
+        {
+            <span class="badge bg-success">Đủ tình huống</span>
+        }
+        else
+        {
+            <span class="badge bg-warning text-dark">
+                Thiếu: @missing
+            </span>
+        }
+    </td>
+
+    <td class="text-center">
+        @(Model.TaoLuc?.ToString("dd/MM/yyyy HH:mm"))
+    </td>
+
+    <td class="text-center">
+        @if (Model.IsActive == true)
+        {
+            <span class="badge bg-success">Đang dùng</span>
+        }
+        else
+        {
+            <span class="badge bg-secondary">Ngưng</span>
+        }
+    </td>
+
+    <td class="text-center">
+
+        <a asp-action="Manage"
+           asp-route-id="@Model.IdBoDeMoPhong"
+           class="btn btn-sm btn-primary me-1">
+            <i class="fa fa-list"></i> Quản lý
+        </a>
+
+        @if (Model.IsActive == true)
+        {
+            <button class="btn btn-sm btn-warning"
+                    onclick="toggleStatus(@Model.IdBoDeMoPhong)">
+                <i class="fa fa-lock"></i> Đóng
+            </button>
+        }
+        else
+        {
+            <button class="btn btn-sm btn-success"
+                    onclick="toggleStatus(@Model.IdBoDeMoPhong)">
+                <i class="fa fa-lock-open"></i> Mở
+            </button>
+        }
+    </td>
+
+</tr>

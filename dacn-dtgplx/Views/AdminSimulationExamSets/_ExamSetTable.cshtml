@@ -26,7 +26,7 @@
             foreach (var set in Model)
             {
                 var soTh = set.SoTinhHuong ?? set.ChiTietBoDeMoPhongs?.Count ?? 0;
-                <tr>
+                <tr id="row-@set.IdBoDeMoPhong">
                     <!-- STT -->
                     <td class="text-center fw-bold">@stt</td>
 
@@ -40,9 +40,26 @@
 
                     <!-- SỐ TÌNH HUỐNG -->
                     <td class="text-center">
-                        <span class="badge bg-primary">
-                            @soTh tình huống
-                        </span>
+                        @{
+                            var required = 10;              // quy định 10 tình huống
+                            var count = soTh;               // số TH thực tế trong bộ đề
+                            var missing = required - count; // số thiếu (nếu có)
+                        }
+
+                        <div class="fw-bold">
+                            <span class="text-primary">@count</span> / @required
+                        </div>
+
+                        @if (count >= required)
+                        {
+                            <span class="badge bg-success">Đủ tình huống</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning text-dark">
+                                Thiếu: @missing
+                            </span>
+                        }
                     </td>
 
                     <!-- NGÀY TẠO -->
@@ -67,24 +84,22 @@
                         <a asp-action="Manage"
                            asp-route-id="@set.IdBoDeMoPhong"
                            class="btn btn-sm btn-primary me-1">
-                            <i class="fa fa-list"></i> Quản lý tình huống
+                            <i class="fa fa-list"></i> Quản lý
                         </a>
 
                         @if (set.IsActive == true)
                         {
-                            <a asp-action="ToggleStatus"
-                               asp-route-id="@set.IdBoDeMoPhong"
-                               class="btn btn-sm btn-warning">
-                                <i class="fa fa-lock"></i> Đóng bộ đề
-                            </a>
+                            <button class="btn btn-sm btn-warning"
+                                    onclick="toggleStatus(@set.IdBoDeMoPhong)">
+                                <i class="fa fa-lock"></i> Đóng
+                            </button>
                         }
                         else
                         {
-                            <a asp-action="ToggleStatus"
-                               asp-route-id="@set.IdBoDeMoPhong"
-                               class="btn btn-sm btn-success">
-                                <i class="fa fa-lock-open"></i> Mở bộ đề
-                            </a>
+                            <button class="btn btn-sm btn-success"
+                                    onclick="toggleStatus(@set.IdBoDeMoPhong)">
+                                <i class="fa fa-lock-open"></i> Mở
+                            </button>
                         }
                     </td>
                 </tr>

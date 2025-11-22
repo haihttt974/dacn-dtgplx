@@ -13,7 +13,9 @@
 </style>
 
 <div class="container-fluid mt-3">
-
+    <form id="tokenForm">
+        @Html.AntiForgeryToken()
+    </form>
     <!-- TIÊU ĐỀ + NÚT TẠO MỚI -->
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="text-primary mb-0">
@@ -104,24 +106,44 @@
 </div>
 @section Scripts {
     <script>
-        async function applyFilter() {
+        function toggleStatus(id) {
+
+            let token = document.querySelector('#tokenForm input[name="__RequestVerificationToken"]').value;
+
+            fetch('/AdminSimulationExamSets/ToggleStatusRow', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                        },
+                body: JSON.stringify({ id: id })
+            })
+                .then(res => res.json())
+                .then(data => {
+
+                    if (!data.ok) {
+                        alert(data.message);
+                        return;
+                    }
+
+                    document.getElementById("row-" + id).outerHTML = data.html;
+
+                    console.log(data.toast);
+                })
+                .catch(err => console.error(err));
+        }
+
+        function applyFilter() {
             const status = document.getElementById("statusFilter").value;
             const hard = document.getElementById("hardFilter").value;
 
-            const params = new URLSearchParams();
-            if (status) params.append("status", status);
-            if (hard) params.append("hard", hard);
-
-            const url = "/AdminSimulationExamSets/Filter" + (params.toString() ? "?" + params.toString() : "");
-
-            try {
-                const res = await fetch(url, { method: "GET" });
-                const html = await res.text();
-                document.getElementById("examSetTableWrapper").innerHTML = html;
-            } catch (e) {
-                console.error(e);
-                alert("Có lỗi khi tải dữ liệu lọc");
-            }
+            fetch(`/AdminSimulationExamSets/Filter?status=${status}&hard=${hard}`)
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById("examSetTableWrapper").innerHTML = html;
+                })
+                .catch(err => console.error(err));
         }
+
     </script>
 }
