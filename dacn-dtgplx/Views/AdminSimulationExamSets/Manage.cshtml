@@ -1,0 +1,346 @@
+﻿@using dacn_dtgplx.ViewModels
+@model SimulationExamSetManageViewModel
+
+<div class="container-fluid mt-3">
+
+    <!-- TIÊU ĐỀ -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="text-primary mb-0">
+            <i class="fa fa-list"></i> Quản lý tình huống — @Model.TenBoDe
+        </h4>
+
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="fa fa-arrow-left"></i> Quay lại
+        </a>
+    </div>
+
+    <form method="post" asp-action="Manage">
+
+        <input type="hidden" name="IdBoDe" value="@Model.IdBoDe" />
+
+        <!-- DANH SÁCH TÌNH HUỐNG -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white d-flex justify-content-between">
+                <strong>Danh sách tình huống</strong>
+
+                @if (Model.SelectedDetails.Count < 10)
+                {
+                    <button type="button" class="btn btn-success btn-sm"
+                            onclick="openRandomModal(0)">
+                        <i class="fa fa-plus"></i> Thêm tình huống
+                    </button>
+                }
+            </div>
+
+            <div class="card-body p-0">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light text-center">
+                        <tr>
+                            <th style="width:50px;">#</th>
+                            <th>Tiêu đề</th>
+                            <th style="width:140px;">Video</th>
+                            <th style="width:120px;">Ảnh mẹo</th>
+                            <th style="width:100px;">Độ khó</th>
+                            <th style="width:100px;">Đổi câu</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="situTable">
+                        @{
+                            int stt = 1;
+
+                            foreach (var th in Model.SelectedDetails)
+                            {
+                                string tipUrl = "";
+                                if (!string.IsNullOrEmpty(th.UrlAnhMeo))
+                                    tipUrl = "/" + th.UrlAnhMeo.Replace("wwwroot/", "").TrimStart('/');
+
+                                string videoUrl = "";
+                                if (!string.IsNullOrEmpty(th.VideoUrl))
+                                    videoUrl = "/" + th.VideoUrl.Replace("wwwroot/", "").TrimStart('/');
+
+                                <tr data-id="@th.IdThMp">
+
+                                    <td class="text-center fw-bold">@stt</td>
+
+                                    <td>
+                                        <input type="hidden" name="SelectedIds" value="@th.IdThMp" />
+                                        <strong class="th-title">@th.TieuDe</strong>
+                                    </td>
+
+                                    <!-- VIDEO -->
+                                    <td class="text-center th-video">
+                                        @if (!string.IsNullOrEmpty(videoUrl))
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-sm btn-primary"
+                                                    onclick="viewVideo('@videoUrl')">
+                                                <i class="fa fa-play"></i> Xem
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Không có</span>
+                                        }
+                                    </td>
+
+                                    <!-- ẢNH MẸO -->
+                                    <td class="text-center th-tip">
+                                        @if (!string.IsNullOrEmpty(tipUrl))
+                                        {
+                                            <img src="@tipUrl"
+                                                 onclick="viewImg('@tipUrl')"
+                                                 class="img-thumbnail"
+                                                 style="max-width:80px;cursor:pointer;" />
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Không có</span>
+                                        }
+                                    </td>
+
+                                    <!-- ĐỘ KHÓ -->
+                                    <td class="text-center th-level">
+                                        @if (th.Kho)
+                                        {
+                                            <span class="badge bg-danger">Khó</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">Bình thường</span>
+                                        }
+                                    </td>
+
+                                    <!-- ĐỔI CÂU -->
+                                    <td class="text-center">
+                                        <button type="button"
+                                                class="btn btn-warning btn-sm"
+                                                onclick="openRandomModal(@th.IdThMp)">
+                                            <i class="fa fa-random"></i> Đổi
+                                        </button>
+                                    </td>
+
+                                </tr>
+
+                                stt++;
+                            }
+                        }
+                    </tbody>
+
+                </table>
+            </div>
+
+            <div class="card-footer text-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa fa-save"></i> Lưu bộ đề
+                </button>
+            </div>
+
+        </div>
+
+    </form>
+</div>
+
+
+<!-- MODAL RANDOM -->
+<div class="modal fade" id="randomModal" tabindex="-1">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Chọn tiêu chí random</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <input type="hidden" id="replaceId" />
+
+                <label class="fw-bold">Chọn chương:</label>
+                <select class="form-select mb-3" id="chapterSelect">
+                    <option value="">-- Bất kỳ --</option>
+                    @foreach (var ch in Model.AllChapters)
+                    {
+                        <option value="@ch.IdChuongMp">Chương @ch.ThuTu - @ch.TenChuong</option>
+                    }
+                </select>
+
+                <label class="fw-bold">Độ khó:</label>
+                <select class="form-select" id="levelSelect">
+                    <option value="">-- Bất kỳ --</option>
+                    <option value="1">Khó</option>
+                    <option value="0">Bình thường</option>
+                </select>
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" onclick="randomSituation()" class="btn btn-success">
+                    <i class="fa fa-search"></i> Random
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- MODAL ẢNH -->
+<div class="modal fade" id="imgModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body p-0 text-center">
+                <img id="imgModalView" class="img-fluid rounded" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL VIDEO -->
+<div class="modal fade" id="videoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body">
+                <video id="modalVideo" class="w-100" controls></video>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script>
+
+        // mở modal random
+        function openRandomModal(id) {
+            document.getElementById("replaceId").value = id;
+            new bootstrap.Modal(document.getElementById("randomModal")).show();
+        }
+
+        // random tình huống (không lưu database)
+        async function randomSituation() {
+
+            let oldId = document.getElementById("replaceId").value;
+            let chapter = document.getElementById("chapterSelect").value || 0;
+            let level = document.getElementById("levelSelect").value || -1;
+
+            let currentIds = Array.from(
+                document.querySelectorAll("input[name='SelectedIds']")
+            ).map(x => x.value).join(",");
+
+            let url = `/AdminSimulationExamSets/Random?boDe=@Model.IdBoDe&oldId=${oldId}&chapter=${chapter}&level=${level}&currentIds=${currentIds}`;
+
+            let res = await fetch(url);
+            let th = await res.json();
+
+            if (!th.ok) {
+                alert(th.message);
+                return;
+            }
+
+            if (oldId == 0)
+                addNewSituation(th);
+            else
+                replaceSituation(oldId, th);
+
+            bootstrap.Modal.getInstance(document.getElementById("randomModal")).hide();
+        }
+
+        // thêm tình huống mới
+        function addNewSituation(th) {
+
+            const tbody = document.getElementById("situTable");
+
+            if (tbody.children.length >= 10) {
+                alert("Bộ đề tối đa 10 tình huống!");
+                return;
+            }
+
+            const stt = tbody.children.length + 1;
+
+            const tr = document.createElement("tr");
+            tr.setAttribute("data-id", th.id);
+
+            tr.innerHTML = `
+                <td class="text-center fw-bold">${stt}</td>
+
+                <td>
+                    <input type="hidden" name="SelectedIds" value="${th.id}" />
+                    <strong class="th-title">${th.tieuDe}</strong>
+                </td>
+
+                <td class="text-center th-video">
+                    ${th.video
+                        ? `<button class="btn btn-sm btn-primary" onclick="viewVideo('${th.video}')">
+                            <i class='fa fa-play'></i> Xem
+                           </button>`
+                        : `<span class='text-muted'>Không có</span>`}
+                </td>
+
+                <td class="text-center th-tip">
+                    ${th.anhMeo
+                         ? `<img src="${th.anhMeo}" class="img-thumbnail" style="max-width:80px;cursor:pointer;" onclick="viewImg('${th.anhMeo}')" />`
+                         : `<span class='text-muted'>Không có</span>`}
+                </td>
+
+                <td class="text-center th-level">
+                    ${th.kho
+                        ? `<span class='badge bg-danger'>Khó</span>`
+                        : `<span class='badge bg-success'>Bình thường</span>`}
+                </td>
+
+                <td class="text-center">
+                    <button class="btn btn-warning btn-sm" onclick="openRandomModal(${th.id})">
+                        <i class="fa fa-random"></i> Đổi
+                    </button>
+                </td>
+            `;
+
+            tbody.appendChild(tr);
+        }
+
+        // thay thế tình huống cũ
+        function replaceSituation(oldId, th) {
+
+            const tr = document.querySelector(`tr[data-id="${oldId}"]`);
+            if (!tr) return;
+
+            tr.setAttribute("data-id", th.id);
+
+            tr.querySelector("input[name='SelectedIds']").value = th.id;
+            tr.querySelector(".th-title").textContent = th.tieuDe;
+
+            tr.querySelector(".th-video").innerHTML =
+                th.video
+                    ? `<button class="btn btn-sm btn-primary" onclick="viewVideo('${th.video}')">
+                            <i class='fa fa-play'></i> Xem
+                       </button>`
+                    : `<span class='text-muted'>Không có</span>`;
+
+            tr.querySelector(".th-tip").innerHTML =
+                th.anhMeo
+                    ? `<img src="${th.anhMeo}" class="img-thumbnail" style="max-width:80px;cursor:pointer;" onclick="viewImg('${th.anhMeo}')" />`
+                    : `<span class='text-muted'>Không có</span>`;
+
+            tr.querySelector(".th-level").innerHTML =
+                th.kho
+                    ? `<span class='badge bg-danger'>Khó</span>`
+                    : `<span class='badge bg-success'>Bình thường</span>`;
+
+            const btn = tr.querySelector("button.btn-warning");
+            btn.setAttribute("onclick", `openRandomModal(${th.id})`);
+        }
+
+        // MODAL ẢNH
+        function viewImg(url) {
+            document.getElementById("imgModalView").src = url;
+            new bootstrap.Modal(document.getElementById("imgModal")).show();
+        }
+
+        // MODAL VIDEO
+        function viewVideo(url) {
+            document.getElementById("modalVideo").src = url;
+            new bootstrap.Modal(document.getElementById("videoModal")).show();
+        }
+
+    </script>
+}

@@ -1,0 +1,96 @@
+﻿@model IEnumerable<dacn_dtgplx.Models.BoDeMoPhong>
+
+<table id="examSetTable" class="table table-bordered table-hover mb-0 align-middle">
+    <thead class="table-light text-center">
+        <tr>
+            <th style="width:50px;">#</th>
+            <th class="col-ten-bode">Tên bộ đề</th>
+            <th style="width:130px;">Số tình huống</th>
+            <th style="width:160px;">Ngày tạo</th>
+            <th style="width:120px;">Trạng thái</th>
+            <th style="width:200px;">Thao tác</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model == null || !Model.Any())
+        {
+            <tr>
+                <td colspan="6" class="text-center text-muted py-3">
+                    <em>Chưa có bộ đề mô phỏng nào.</em>
+                </td>
+            </tr>
+        }
+        else
+        {
+            var stt = 1;
+            foreach (var set in Model)
+            {
+                var soTh = set.SoTinhHuong ?? set.ChiTietBoDeMoPhongs?.Count ?? 0;
+                <tr>
+                    <!-- STT -->
+                    <td class="text-center fw-bold">@stt</td>
+
+                    <!-- TÊN BỘ ĐỀ -->
+                    <td class="col-ten-bode">
+                        <div class="fw-bold">@set.TenBoDe</div>
+                        <small class="text-muted">
+                            ID: @set.IdBoDeMoPhong
+                        </small>
+                    </td>
+
+                    <!-- SỐ TÌNH HUỐNG -->
+                    <td class="text-center">
+                        <span class="badge bg-primary">
+                            @soTh tình huống
+                        </span>
+                    </td>
+
+                    <!-- NGÀY TẠO -->
+                    <td class="text-center">
+                        @(set.TaoLuc?.ToString("dd/MM/yyyy HH:mm") ?? "-")
+                    </td>
+
+                    <!-- TRẠNG THÁI -->
+                    <td class="text-center">
+                        @if (set.IsActive == true)
+                        {
+                            <span class="badge bg-success">Đang dùng</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Ngưng</span>
+                        }
+                    </td>
+
+                    <!-- THAO TÁC -->
+                    <td class="text-center">
+                        <a asp-action="Manage"
+                           asp-route-id="@set.IdBoDeMoPhong"
+                           class="btn btn-sm btn-primary me-1">
+                            <i class="fa fa-list"></i> Quản lý tình huống
+                        </a>
+
+                        @if (set.IsActive == true)
+                        {
+                            <a asp-action="ToggleStatus"
+                               asp-route-id="@set.IdBoDeMoPhong"
+                               class="btn btn-sm btn-warning">
+                                <i class="fa fa-lock"></i> Đóng bộ đề
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-action="ToggleStatus"
+                               asp-route-id="@set.IdBoDeMoPhong"
+                               class="btn btn-sm btn-success">
+                                <i class="fa fa-lock-open"></i> Mở bộ đề
+                            </a>
+                        }
+                    </td>
+                </tr>
+
+                stt++;
+            }
+        }
+    </tbody>
+</table>
