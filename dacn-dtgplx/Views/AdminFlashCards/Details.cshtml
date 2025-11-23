@@ -1,0 +1,112 @@
+﻿@model dacn_dtgplx.ViewModels.FlashCardDetailVM
+
+@{
+    ViewData["Title"] = "Chi tiết Flashcard biển báo";
+}
+
+<div class="container-fluid mt-3">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="text-primary mb-0">
+            <i class="fa fa-clone"></i> Flashcard biển báo: @Model.TenBienBao
+        </h4>
+
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="fa fa-arrow-left me-1"></i> Quay lại danh sách
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body d-flex">
+
+            @{
+                string imgUrl = Model.HinhAnh ?? "";
+                if (!string.IsNullOrEmpty(imgUrl))
+                {
+                    imgUrl = imgUrl.Replace("wwwroot", "", StringComparison.OrdinalIgnoreCase);
+                    if (!imgUrl.StartsWith("/"))
+                        imgUrl = "/" + imgUrl.TrimStart('/');
+                }
+            }
+
+            <div class="me-3">
+                @if (!string.IsNullOrEmpty(imgUrl))
+                {
+                    <img src="@imgUrl"
+                         class="img-thumbnail"
+                         style="max-width:120px; max-height:120px; object-fit:contain;" />
+                }
+            </div>
+
+            <div>
+                <h5 class="mb-1">@Model.TenBienBao</h5>
+                <p class="mb-0 text-muted">
+                    @Model.Ynghia
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <strong>Danh sách Flashcard (đánh giá) – @Model.Items.Count mục</strong>
+        </div>
+
+        <div class="card-body p-0">
+            @if (Model.Items.Count == 0)
+            {
+                <p class="text-center text-muted my-3">Biển báo này chưa có Flashcard nào.</p>
+            }
+            else
+            {
+                <table class="table table-bordered table-hover mb-0 align-middle">
+                    <thead class="table-light text-center">
+                        <tr>
+                            <th style="width:60px;">#</th>
+                            <th>Người dùng</th>
+                            <th>Đánh giá</th>
+                            <th style="width:120px;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int stt = 1;
+                            foreach (var f in Model.Items)
+                            {
+                                <tr>
+                                    <td class="text-center">@stt</td>
+                                    <td>
+                                        <strong>@f.UserName</strong> (ID: @f.UserId)
+                                    </td>
+                                    <td>@(string.IsNullOrEmpty(f.DanhGia) ? "—" : f.DanhGia)</td>
+                                    <td class="text-center">
+                                        <form asp-action="Delete"
+                                              asp-route-id="@f.IdFlashcard"
+                                              asp-route-signId="@Model.IdBienBao"
+                                              method="post"
+                                              onsubmit="return confirm('Xóa đánh giá này?');">
+                                            <button type="submit" class="btn btn-sm btn-danger">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                stt++;
+                            }
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
+</div>

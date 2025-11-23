@@ -1,0 +1,108 @@
+﻿@model IEnumerable<dacn_dtgplx.ViewModels.FlashCardSignSummaryVM>
+
+@{
+    ViewData["Title"] = "Quản lý Flashcard";
+}
+
+<div class="container-fluid mt-3">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="text-primary mb-0">
+            <i class="fa fa-clone"></i> Quản lý Flashcard theo biển báo
+        </h4>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover table-bordered mb-0 align-middle">
+                <thead class="table-light text-center">
+                    <tr>
+                        <th style="width:60px;">#</th>
+                        <th style="width:120px;">Hình ảnh</th>
+                        <th>Biển báo</th>
+                        <th>Ý nghĩa</th>
+                        <th style="width:130px;">Số đánh giá</th>
+                        <th style="width:120px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int stt = 1;
+                        foreach (var item in Model)
+                        {
+                            // Chuẩn hóa đường dẫn ảnh (loại bỏ wwwroot nếu có)
+                            string imgUrl = item.HinhAnh ?? "";
+                            if (!string.IsNullOrEmpty(imgUrl))
+                            {
+                                imgUrl = imgUrl.Replace("wwwroot", "", StringComparison.OrdinalIgnoreCase);
+                                if (!imgUrl.StartsWith("/"))
+                                    imgUrl = "/" + imgUrl.TrimStart('/');
+                            }
+
+                            <tr>
+                                <td class="text-center">@stt</td>
+
+                                <td class="text-center">
+                                    @if (!string.IsNullOrEmpty(imgUrl))
+                                    {
+                                        <img src="@imgUrl"
+                                             class="img-thumbnail"
+                                             style="max-width:80px; max-height:80px; object-fit:contain;" />
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Không có ảnh</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    <strong>@item.TenBienBao</strong>
+                                </td>
+
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.Ynghia))
+                                    {
+                                        @item.Ynghia
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Chưa cập nhật</span>
+                                    }
+                                </td>
+
+                                <td class="text-center fw-bold">
+                                    @item.SoDanhGia
+                                </td>
+
+                                <td class="text-center">
+                                    @if (item.SoDanhGia > 0)
+                                    {
+                                        <a asp-action="Details" asp-route-id="@item.IdBienBao"
+                                           class="btn btn-sm btn-primary">
+                                            <i class="fa fa-eye"></i> Xem
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Chưa có</span>
+                                    }
+                                </td>
+                            </tr>
+
+                            stt++;
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
