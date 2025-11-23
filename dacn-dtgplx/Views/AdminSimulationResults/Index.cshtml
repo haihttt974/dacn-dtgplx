@@ -1,0 +1,127 @@
+﻿@model List<dacn_dtgplx.Models.BaiLamMoPhong>
+@{
+    var chart = ViewBag.ChartData as dacn_dtgplx.ViewModels.SimulationResultStatsVM;
+}
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+            <i class="fa fa-chart-bar"></i> Thống kê bài làm mô phỏng
+        </h5>
+    </div>
+
+    <div class="card-body">
+
+        @if (chart == null || chart.Labels.Count == 0)
+        {
+            <p class="text-center text-muted mb-0">
+                Chưa có dữ liệu thống kê bài làm.
+            </p>
+        }
+        else
+        {
+            <canvas id="resultChart" style="max-height: 350px;"></canvas>
+        }
+
+    </div>
+</div>
+
+<div class="container-fluid mt-3">
+
+    <h4 class="text-primary">
+        <i class="fa fa-list"></i> Danh sách bài làm mô phỏng
+    </h4>
+
+    <div class="card shadow-sm mt-3">
+        <div class="card-body p-0">
+
+            <table class="table table-bordered table-hover align-middle mb-0">
+                <thead class="table-light text-center">
+                    <tr>
+                        <th>#</th>
+                        <th>Người dùng</th>
+                        <th>Bộ đề</th>
+                        <th>Tổng điểm</th>
+                        <th>Kết quả</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @{
+                        int stt = 1;
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="text-center">@stt</td>
+
+                                <td>
+                                    <strong>@item.User.TenDayDu </strong><br />
+                                    <span class="text-muted">@item.User.Email</span>
+                                </td>
+
+                                <td>
+                                    @item.IdBoDeMoPhongNavigation.TenBoDe
+                                </td>
+
+                                <td class="text-center fw-bold">
+                                    @item.TongDiem
+                                </td>
+
+                                <td class="text-center">
+                                    @if (item.KetQua == true)
+                                    {
+                                        <span class="badge bg-success">Đậu</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">Rớt</span>
+                                    }
+                                </td>
+                            </tr>
+
+                            stt++;
+                        }
+                    }
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+</div>
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        const labels = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(chart?.Labels ?? new List<string>()));
+        const data = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(chart?.Counts ?? new List<int>()));
+
+        if (labels.length > 0) {
+            new Chart(document.getElementById('resultChart'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Số bài làm',
+                        data: data,
+                        borderWidth: 1,
+                        backgroundColor: 'rgba(30,144,255, 0.6)',
+                        borderColor: 'rgba(30,144,255, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { precision: 0 }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+}
