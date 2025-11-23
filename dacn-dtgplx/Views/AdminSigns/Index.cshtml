@@ -1,0 +1,115 @@
+﻿@model IEnumerable<dacn_dtgplx.Models.BienBao>
+
+@{
+    ViewData["Title"] = "Quản lý biển báo";
+}
+
+<div class="container-fluid mt-3">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="text-primary mb-0">
+            <i class="fa fa-road"></i> Quản lý biển báo
+        </h4>
+
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="fa fa-plus-circle me-1"></i> Thêm biển báo
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover table-bordered mb-0 align-middle">
+                <thead class="table-light text-center">
+                    <tr>
+                        <th style="width:60px;">#</th>
+                        <th style="width:120px;">Hình ảnh</th>
+                        <th>Tên biển báo</th>
+                        <th>Ý nghĩa</th>
+                        <th style="width:140px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int stt = 1;
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="text-center">@stt</td>
+
+                                <td class="text-center">
+                                    @{
+                                        string imgUrl = item.HinhAnh ?? "";
+
+                                        if (!string.IsNullOrEmpty(imgUrl))
+                                        {
+                                            // Bỏ 'wwwroot' nếu có
+                                            imgUrl = imgUrl.Replace("wwwroot", "", StringComparison.OrdinalIgnoreCase);
+
+                                            // Đảm bảo có dấu / ở đầu
+                                            if (!imgUrl.StartsWith("/"))
+                                            {
+                                                imgUrl = "/" + imgUrl.TrimStart('/');
+                                            }
+                                        }
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(imgUrl))
+                                    {
+                                        <img src="@imgUrl"
+                                             class="img-thumbnail"
+                                             style="max-width:80px; max-height:80px; object-fit:contain;" />
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Không có ảnh</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    <strong>@item.TenBienBao</strong>
+                                </td>
+
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.Ynghia))
+                                    {
+                                        @item.Ynghia
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Chưa cập nhật</span>
+                                    }
+                                </td>
+
+                                <td class="text-center">
+                                    <a asp-action="Edit" asp-route-id="@item.IdBienBao"
+                                       class="btn btn-sm btn-warning me-1">
+                                        <i class="fa fa-edit"></i>
+                                    </a>
+
+                                    <form asp-action="Delete" asp-route-id="@item.IdBienBao"
+                                          method="post" class="d-inline"
+                                          onsubmit="return confirm('Bạn có chắc muốn xóa biển báo này không?');">
+                                        <button type="submit" class="btn btn-sm btn-danger">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+
+                            stt++;
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>

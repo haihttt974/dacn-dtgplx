@@ -83,6 +83,19 @@
             font-weight: 600;
         }
 
+        .nav-treeview .nav-link .nav-icon {
+            width: 20px; /* đảm bảo icon thẳng hàng */
+            text-align: center;
+        }
+
+        .sidebar .nav-item .right {
+            margin-left: 12px !important;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+        }
+
     </style>
 </head>
 
@@ -150,7 +163,7 @@
 
                 <!-- Sidebar Menu -->
                 <nav class="mt-2">
-                    <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
+                    <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview">
 
                         <!-- Dashboard -->
                         <li class="nav-item">
@@ -182,7 +195,7 @@
                             </a>
                         </li>
 
-                        <!-- Thi thử -->
+                        <!-- Thi thử lý thuyết -->
                         <li class="nav-item has-treeview">
                             <a href="#" class="nav-link">
                                 <i class="nav-icon fa fa-clipboard-question"></i>
@@ -192,9 +205,24 @@
                                 </p>
                             </a>
                             <ul class="nav nav-treeview ms-3">
-                                <li class="nav-item"><a asp-controller="AdminTheoryQuestions" asp-action="Index" class="nav-link"><i class="fa fa-circle nav-icon"></i> Câu hỏi & Đáp án</a></li>
-                                <li class="nav-item"><a asp-controller="AdminExamSets" asp-action="Index" class="nav-link"><i class="fa fa-circle nav-icon"></i> Bộ đề trắc nghiệm</a></li>
-                                <li class="nav-item"><a asp-controller="AdminResults" asp-action="Index" class="nav-link"><i class="fa fa-circle nav-icon"></i> Bài làm trắc nghiệm</a></li>
+                                <li class="nav-item">
+                                    <a asp-controller="AdminTheoryQuestions" asp-action="Index" class="nav-link">
+                                        <i class="fa fa-question-circle nav-icon"></i>
+                                        Câu hỏi & Đáp án
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a asp-controller="AdminExamSets" asp-action="Index" class="nav-link">
+                                        <i class="fa fa-layer-group nav-icon"></i>
+                                        Bộ đề trắc nghiệm
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a asp-controller="AdminResults" asp-action="Index" class="nav-link">
+                                        <i class="fa fa-clipboard-check nav-icon"></i>
+                                        Bài làm trắc nghiệm
+                                    </a>
+                                </li>
                             </ul>
                         </li>
 
@@ -210,28 +238,58 @@
                             <ul class="nav nav-treeview ms-3">
                                 <li class="nav-item">
                                     <a asp-controller="AdminSimulationQuestions" asp-action="Index" class="nav-link">
-                                        <i class="fa fa-circle nav-icon"></i> Câu hỏi mô phỏng
+                                        <i class="fa fa-question-circle nav-icon"></i> Câu hỏi mô phỏng
                                     </a>
                                 </li>
+
                                 <li class="nav-item">
                                     <a asp-controller="AdminSimulationExamSets" asp-action="Index" class="nav-link">
-                                        <i class="fa fa-circle nav-icon"></i> Bộ đề mô phỏng
+                                        <i class="fa fa-layer-group nav-icon"></i> Bộ đề mô phỏng
                                     </a>
                                 </li>
+
                                 <li class="nav-item">
                                     <a asp-controller="AdminSimulationResults" asp-action="Index" class="nav-link">
-                                        <i class="fa fa-circle nav-icon"></i> Bài làm mô phỏng
+                                        <i class="fa fa-clipboard-check nav-icon"></i> Bài làm mô phỏng
                                     </a>
                                 </li>
                             </ul>
                         </li>
 
                         <!-- Biển báo & Flashcard -->
-                        <li class="nav-item">
-                            <a asp-controller="AdminSigns" asp-action="Index" class="nav-link">
+                        <li class="nav-item has-treeview">
+                            <a href="#" class="nav-link">
                                 <i class="nav-icon fa fa-traffic-light"></i>
-                                <p>Biển báo & Flashcard</p>
+                                <p>
+                                    Biển báo & Flashcard
+                                    <i class="fas fa-angle-left right ms-3"></i>
+                                </p>
                             </a>
+
+                            <ul class="nav nav-treeview ms-3">
+
+                                <li class="nav-item">
+                                    <a asp-controller="AdminSigns" asp-action="Index" class="nav-link">
+                                        <i class="nav-icon fa fa-road"></i>
+                                        <p class="ms-2">Quản lý biển báo</p>
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a asp-controller="AdminFlashCards" asp-action="Index" class="nav-link">
+                                        <i class="nav-icon fa fa-clone"></i>
+                                        <p class="ms-2">Quản lý Flashcard</p>
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a asp-controller="AdminFlashCardStats" asp-action="Index" class="nav-link">
+                                        <i class="nav-icon fa fa-chart-bar"></i>
+                                        <p class="ms-2">Thống kê Flashcard</p>
+                                    </a>
+                                </li>
+
+                            </ul>
                         </li>
                         
                         <!-- Quản lý xe -->

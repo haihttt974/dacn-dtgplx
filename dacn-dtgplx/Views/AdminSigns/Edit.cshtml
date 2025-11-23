@@ -1,0 +1,85 @@
+﻿@model dacn_dtgplx.Models.BienBao
+
+@{
+    ViewData["Title"] = "Sửa biển báo";
+}
+@{
+    string imgUrl = Model.HinhAnh ?? "";
+
+    if (!string.IsNullOrEmpty(imgUrl))
+    {
+        imgUrl = imgUrl.Replace("wwwroot", "", StringComparison.OrdinalIgnoreCase);
+
+        if (!imgUrl.StartsWith("/"))
+        {
+            imgUrl = "/" + imgUrl.TrimStart('/');
+        }
+    }
+}
+<div class="container-fluid mt-3">
+    <div class="row">
+        <div class="col-lg-8 col-xl-7 mx-auto">
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fa fa-edit me-1"></i> Sửa biển báo
+                    </h5>
+                </div>
+
+                <div class="card-body">
+                    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="IdBienBao" />
+
+                        <div class="mb-3">
+                            <label asp-for="TenBienBao" class="form-label fw-semibold">Tên biển báo</label>
+                            <input asp-for="TenBienBao" class="form-control" />
+                            <span asp-validation-for="TenBienBao" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Ynghia" class="form-label fw-semibold">Ý nghĩa</label>
+                            <textarea asp-for="Ynghia" rows="4" class="form-control"></textarea>
+                            <span asp-validation-for="Ynghia" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Ảnh hiện tại</label><br />
+                            @if (!string.IsNullOrEmpty(imgUrl))
+                            {
+                                <img src="@imgUrl"
+                                     class="img-thumbnail mb-2"
+                                     style="max-width:120px; max-height:120px; object-fit:contain;" />
+                            }
+                            else
+                            {
+                                <p class="text-muted mb-2">Chưa có ảnh.</p>
+                            }
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Đổi ảnh (nếu muốn)</label>
+                            <input type="file" name="imageFile" class="form-control" accept="image/*" />
+                        </div>
+
+                        <div class="text-end">
+                            <a asp-action="Index" class="btn btn-secondary me-2">
+                                <i class="fa fa-arrow-left me-1"></i> Quay lại
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-save me-1"></i> Lưu thay đổi
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
