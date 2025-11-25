@@ -1,0 +1,163 @@
+﻿@model dacn_dtgplx.ViewModels.VehicleScheduleVM
+
+@{
+    ViewData["Title"] = "Lịch xe " + Model.LoaiXe;
+    var activeMode = (Model.Mode ?? "week").ToLower();
+}
+
+<div class="container-fluid mt-3">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="text-primary mb-0">
+            <i class="fa fa-car"></i> Lịch sử dụng xe: @Model.LoaiXe
+        </h4>
+
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="fa fa-arrow-left me-1"></i> Quay lại
+        </a>
+    </div>
+
+    <!-- Chọn chế độ xem -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body d-flex align-items-center gap-4 flex-wrap">
+            <div class="form-check form-check-inline">
+                <input class="form-check-input mode-radio"
+                       type="radio" name="mode"
+                       id="modeWeek" value="week"
+                       @(activeMode == "week" ? "checked" : "") />
+                <label class="form-check-label" for="modeWeek">Xem lịch theo tuần</label>
+            </div>
+
+            <div class="form-check form-check-inline">
+                <input class="form-check-input mode-radio"
+                       type="radio" name="mode"
+                       id="modeMonth" value="month"
+                       @(activeMode == "month" ? "checked" : "") />
+                <label class="form-check-label" for="modeMonth">Xem lịch theo tháng</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- PHẦN LỊCH AJAX -->
+    <div id="scheduleContainer">
+        @if (activeMode == "week")
+        {
+            @await Html.PartialAsync("_WeekView", Model)
+        }
+        else
+        {
+            @await Html.PartialAsync("_MonthView", Model)
+        }
+    </div>
+
+</div>
+
+
+@section Scripts {
+    <script>
+        $(function () {
+
+            // ĐÚNG – tách URL AJAX
+            const loadWeekUrl = '@Url.Action("LoadWeek", "AdminVehicles")';
+            const loadMonthUrl = '@Url.Action("LoadMonth", "AdminVehicles")';
+            const xeId = '@Model.XeId';
+
+            // ============================
+            // HÀM LOAD TUẦN
+            // ============================
+            function loadWeek(options) {
+                const params = Object.assign({ id: xeId }, options || {});
+                $.ajax({
+                    url: loadWeekUrl,
+                    method: "GET",
+                    data: params,
+                    success: function (html) {
+                        $("#scheduleContainer").html(html);
+                        wireUpEvents();
+                    }
+                });
+            }
+
+            // ============================
+            // HÀM LOAD THÁNG
+            // ============================
+            function loadMonth(options) {
+                const params = Object.assign({ id: xeId }, options || {});
+                $.ajax({
+                    url: loadMonthUrl,
+                    method: "GET",
+                    data: params,
+                    success: function (html) {
+                        $("#scheduleContainer").html(html);
+                        wireUpEvents();
+                    }
+                });
+            }
+
+            // ============================
+            // GẮN SỰ KIỆN SAU KHI LOAD AJAX
+            // ============================
+            function wireUpEvents() {
+
+                const $container = $("#scheduleContainer");
+
+                // --- TUẦN HIỆN TẠI ---
+                $container.off("click", ".btn-prev-week")
+                    .on("click", ".btn-prev-week", function (e) {
+                        e.preventDefault();
+                        const w = $(this).data("weekstart");
+                        if (!w) return;
+                        const d = new Date(w);
+                        d.setDate(d.getDate() - 7);
+                        loadWeek({ date: d.toISOString() });
+                    });
+
+                $container.off("click", ".btn-next-week")
+                    .on("click", ".btn-next-week", function (e) {
+                        e.preventDefault();
+                        const w = $(this).data("weekstart");
+                        if (!w) return;
+                        const d = new Date(w);
+                        d.setDate(d.getDate() + 7);
+                        loadWeek({ date: d.toISOString() });
+                    });
+
+                $container.off("click", ".btn-current-week")
+                    .on("click", ".btn-current-week", function (e) {
+                        e.preventDefault();
+                        loadWeek({ date: new Date().toISOString() });
+                    });
+                $container.off("click", ".btn-current-week")
+                    .on("click", ".btn-current-week:not([disabled])", function (e) {
+                        e.preventDefault();
+                        loadWeek({ date: new Date().toISOString() });
+                    });
+
+                // --- CHỌN THÁNG ---
+                $container.off("submit", "#monthFilterForm")
+                    .on("submit", "#monthFilterForm", function (e) {
+                        e.preventDefault();
+                        const m = $("#monthSelect").val();
+                        const y = $("#yearSelect").val();
+                        loadMonth({ month: m, year: y });
+                    });
+            }
+
+            // ============================
+            // CHUYỂN CHẾ ĐỘ TUẦN / THÁNG
+            // ============================
+            $(".mode-radio").on("change", function () {
+                if (this.value === "week")
+                    loadWeek({ date: new Date().toISOString() });
+                else
+                    loadMonth({
+                        month: @Model.SelectedMonth,
+                        year: @Model.SelectedYear
+                    });
+            });
+
+            // Gắn sự kiện ban đầu
+            wireUpEvents();
+        });
+    </script>
+}
