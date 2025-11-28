@@ -12,6 +12,7 @@ public partial class PhanHoi
     public DateTime ThoiGianPh { get; set; }
 
     public int UserId { get; set; }
+    public decimal SoSao { get; set; }
 
     public virtual User User { get; set; } = null!;
 }

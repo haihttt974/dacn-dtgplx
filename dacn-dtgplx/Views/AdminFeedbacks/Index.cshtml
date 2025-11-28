@@ -1,0 +1,178 @@
+﻿@using dacn_dtgplx.ViewModels
+@model List<AdminFeedbackItem>
+
+<div class="card shadow-lg p-4 border-0">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold text-primary m-0">
+            <i class="fa fa-comments"></i> Phản hồi từ người dùng
+        </h3>
+
+        <input id="searchBox"
+               class="form-control shadow-sm"
+               style="width: 260px;"
+               placeholder="Tìm kiếm nhanh... (Gõ để lọc)">
+    </div>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="text-center text-muted py-5">
+            <i class="fa fa-inbox fa-3x mb-3"></i>
+            <h5 class="fw-bold">Chưa có phản hồi nào.</h5>
+        </div>
+    }
+    else
+    {
+        <table class="table table-hover table-bordered shadow-sm bg-white">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th style="width: 60px;">#</th>
+                    <th>Người gửi</th>
+                    <th>Sao</th>
+                    <th>Nội dung</th>
+                    <th>Thời gian</th>
+                    <th style="width: 120px;">Chi tiết</th>
+                </tr>
+            </thead>
+
+            <tbody id="fbTable">
+                @foreach (var item in Model.Select((f, i) => new { f, i }))
+                {
+                    <tr class="align-middle text-center">
+                        <td>@(item.i + 1)</td>
+
+                        <!-- Người gửi -->
+                        <td class="text-start">
+                            <strong>@item.f.FullName</strong><br />
+                            <small class="text-muted">@item.f.Email</small>
+                        </td>
+
+                        <!-- ⭐ Google-style Rating -->
+                        <td>
+                            @{
+                                decimal rating = item.f.SoSao;
+                                int full = (int)Math.Floor(rating);
+                                bool half = rating - full >= 0.5m;
+                            }
+
+                            <!-- Full stars -->
+                            @for (int s = 1; s <= full; s++)
+                            {
+                                <i class="fa fa-star text-warning"></i>
+                            }
+
+                            <!-- Half star -->
+                            @if (half)
+                            {
+                                <i class="fa fa-star-half-alt text-warning"></i>   <!-- FA5 -->
+                                @* <i class="fa-solid fa-star-half-stroke text-warning"></i>  FA6 *@
+                            }
+
+                            <!-- Empty stars -->
+                            @for (int s = full + (half ? 1 : 0) + 1; s <= 5; s++)
+                            {
+                                <i class="fa fa-star-o text-muted"></i>
+                            }
+
+                            <!-- Số sao -->
+                            <div class="text-primary fw-bold mt-1">
+                                @rating.ToString("0.0")
+                            </div>
+                        </td>
+
+                        <!-- Nội dung -->
+                        <td class="text-start text-truncate" style="max-width: 260px;">
+                            @item.f.NoiDung
+                        </td>
+
+                        <!-- Thời gian -->
+                        <td>
+                            @(item.f.ThoiGianPh.ToLocalTime().ToString("dd/MM/yyyy HH:mm"))
+                        </td>
+
+                        <!-- Xem -->
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#fb_@item.f.PhanHoiId">
+                                <i class="fa fa-eye"></i> Xem
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- Modal chi tiết -->
+                    <div class="modal fade" id="fb_@item.f.PhanHoiId">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content p-4">
+
+                                <h4 class="fw-bold text-primary mb-3">
+                                    <i class="fa fa-comment"></i> Chi tiết phản hồi
+                                </h4>
+
+                                <p><strong>Người gửi:</strong> @item.f.FullName</p>
+
+                                <!-- Rating trong modal -->
+                                <p>
+                                    <strong>Số sao:</strong>
+                                    <span class="fw-bold text-primary">@item.f.SoSao.ToString("0.0")</span>
+                                    <br />
+
+                                    @{
+                                        decimal r2 = item.f.SoSao;
+                                        int full2 = (int)Math.Floor(r2);
+                                        bool half2 = r2 - full2 >= 0.5m;
+                                    }
+
+                                    @for (int s = 1; s <= full2; s++)
+                                    {
+                                        <i class="fa fa-star text-warning fs-5"></i>
+                                    }
+
+                                    @if (half2)
+                                    {
+                                        <i class="fa fa-star-half-o text-warning fs-5"></i>
+                                    }
+
+                                    @for (int s = full2 + (half2 ? 1 : 0) + 1; s <= 5; s++)
+                                    {
+                                        <i class="fa fa-star-o text-muted fs-5"></i>
+                                    }
+                                </p>
+
+                                <div class="border rounded p-3 bg-light">
+                                    <strong>Nội dung:</strong>
+                                    <p class="mt-2">@item.f.NoiDung</p>
+                                </div>
+
+                                <div class="text-end mt-3">
+                                    <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+
+<style>
+    .table-hover tbody tr:hover {
+        background: #eef5ff !important;
+    }
+</style>
+
+<script>
+    // 🔍 Tìm kiếm realtime (gõ là lọc)
+    document.getElementById("searchBox").addEventListener("keyup", function () {
+        const keyword = this.value.toLowerCase();
+
+        document.querySelectorAll("#fbTable tr").forEach(row => {
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(keyword) ? "" : "none";
+        });
+    });
+</script>

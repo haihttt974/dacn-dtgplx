@@ -747,6 +747,10 @@ public partial class DtGplxContext : DbContext
                 .HasDefaultValueSql("(sysutcdatetime())")
                 .HasColumnName("thoiGianPh");
             entity.Property(e => e.UserId).HasColumnName("userId");
+            entity.Property(e => e.SoSao)
+                .HasColumnName("soSao")
+                .HasColumnType("decimal(2,1)")
+                .HasDefaultValue(0);
 
             entity.HasOne(d => d.User).WithMany(p => p.PhanHois)
                 .HasForeignKey(d => d.UserId)
