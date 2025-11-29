@@ -40,9 +40,15 @@ namespace dacn_dtgplx.Controllers
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Username == username || u.Email == username);
 
-            if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.Password))
+            if (user == null)
             {
-                TempData["Error"] = "Sai tên đăng nhập hoặc mật khẩu!";
+                TempData["Error"] = "Sai tên đăng nhập hoặc Email!";
+                return RedirectToAction("Login");
+            }
+
+            if (!BCrypt.Net.BCrypt.Verify(password, user.Password))
+            {
+                TempData["Error"] = "Sai mật khẩu!";
                 return RedirectToAction("Login");
             }
 
@@ -51,24 +57,44 @@ namespace dacn_dtgplx.Controllers
                 TempData["Warning"] = "Tài khoản của bạn đang bị khóa!";
                 return RedirectToAction("Login");
             }
-
             // Cập nhật lần đăng nhập
             user.LanDangNhapGanNhat = DateTime.UtcNow;
             await _context.SaveChangesAsync();
             await _autoUpdate.UpdateKhoaHocStatusAsync();
+            string avatarPath = user.Avatar ?? "";
 
+            if (!string.IsNullOrWhiteSpace(avatarPath))
+            {
+                // đổi \ thành /
+                avatarPath = avatarPath.Replace("\\", "/");
+
+                // nếu bắt đầu bằng "wwwroot/" thì bỏ phần đó đi
+                if (avatarPath.StartsWith("wwwroot/", StringComparison.OrdinalIgnoreCase))
+                {
+                    avatarPath = "/" + avatarPath.Substring("wwwroot/".Length);
+                }
+                // nếu không có dấu / đầu thì thêm vào
+                else if (!avatarPath.StartsWith("/"))
+                {
+                    avatarPath = "/" + avatarPath;
+                }
+            }
             // JWT Token
             var token = GenerateJwtToken(user);
             HttpContext.Session.SetString("JWTToken", token);
             HttpContext.Session.SetString("Username", user.Username);
             HttpContext.Session.SetInt32("UserId", user.UserId);
             HttpContext.Session.SetInt32("RoleId", user.RoleId ?? 0);
+
+            // ⭐ NEW: Lưu Avatar & FullName
+            HttpContext.Session.SetString("Avatar", avatarPath);
+            HttpContext.Session.SetString("FullName", user.TenDayDu ?? user.Username);
             //HttpContext.Session.SetString("UserId", user.UserId.ToString());
             //HttpContext.Session.SetString("Username", user.Username);
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-                new Claim("UserId", user.UserId.ToString()),
+                new Claim(ClaimTypes.Role, (user.RoleId ?? 0).ToString()),
                 new Claim(ClaimTypes.Name, user.Username),
                 new Claim(ClaimTypes.Role, user.RoleId.ToString())
             };

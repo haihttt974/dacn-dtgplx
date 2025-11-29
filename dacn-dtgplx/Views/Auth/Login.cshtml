@@ -3,8 +3,152 @@
     Layout = "_Layout";
 }
 
-<div class="row justify-content-center mt-5">
-    <div class="col-md-6 col-lg-4">
+<style>
+    .login-container {
+        min-height: calc(100vh - 200px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .login-card {
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        border: none;
+        overflow: hidden;
+    }
+
+        .login-card .card-body {
+            padding: 2.5rem;
+        }
+
+    .login-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+        .login-header h4 {
+            font-weight: 600;
+            color: var(--primary-color, #1a73e8);
+            margin-bottom: 0.5rem;
+        }
+
+        .login-header p {
+            color: #5f6368;
+            font-size: 0.9rem;
+        }
+
+    .form-floating > .form-control {
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        transition: all 0.2s ease;
+    }
+
+        .form-floating > .form-control:focus {
+            border-color: var(--primary-color, #1a73e8);
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+        }
+
+    .btn-login {
+        padding: 12px;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+        .btn-login:not(:disabled):hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
+        }
+
+        .btn-login:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+    /* Loading Spinner */
+    .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+        border-width: 0.15em;
+    }
+
+    .btn-text {
+        transition: opacity 0.2s ease;
+    }
+
+    .btn-login.loading .btn-text {
+        opacity: 0;
+    }
+
+    .btn-spinner {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .btn-login.loading .btn-spinner {
+        opacity: 1;
+    }
+
+    /* Toggle Password Button */
+    .toggle-password {
+        border: none;
+        background: transparent;
+        color: #5f6368;
+        cursor: pointer;
+        transition: color 0.2s ease;
+    }
+
+        .toggle-password:hover {
+            color: var(--primary-color, #1a73e8);
+        }
+
+    /* Links */
+    .login-links {
+        margin-top: 1.5rem;
+        text-align: center;
+    }
+
+        .login-links a {
+            color: var(--primary-color, #1a73e8);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s ease;
+        }
+
+            .login-links a:hover {
+                color: #1557b0;
+                text-decoration: underline;
+            }
+
+    .divider {
+        margin: 1rem 0;
+        color: #5f6368;
+        font-size: 0.85rem;
+    }
+
+    /* Alert Styles */
+    .alert {
+        border-radius: 8px;
+        border: none;
+        margin-bottom: 1.5rem;
+    }
+
+    @@media (max-width: 576px) {
+        .login-card .card-body {
+            padding: 1.5rem;
+        }
+    }
+</style>
+
+<div class="login-container">
+    <div class="col-md-6 col-lg-4 px-3">
 
         @if (TempData["Error"] != null)
         {
@@ -22,42 +166,98 @@
             </div>
         }
 
-        <div class="card shadow-lg border-0 rounded-4">
-            <div class="card-body p-4">
+        @if (TempData["Warning"] != null)
+        {
+            <div class="alert alert-warning alert-dismissible fade show shadow-sm">
+                <i class="fa fa-exclamation-triangle me-2"></i>@TempData["Warning"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
 
-                <h4 class="text-center mb-4 text-primary fw-bold">
-                    <i class="fa fa-right-to-bracket me-2"></i>Đăng nhập
-                </h4>
+        <div class="card login-card">
+            <div class="card-body">
+                <div class="login-header">
+                    <h4>
+                        <i class="fa fa-right-to-bracket me-2"></i>Đăng nhập
+                    </h4>
+                    <p class="text-muted mb-0">Chào mừng bạn quay trở lại!</p>
+                </div>
 
-                <form asp-controller="Auth" asp-action="Login" method="post">
+                <form id="loginForm" asp-controller="Auth" asp-action="Login" method="post">
 
                     <!-- Username / Email -->
                     <div class="form-floating mb-3">
-                        <input name="username" class="form-control" placeholder="Username hoặc Email" required />
-                        <label for="username">Tên đăng nhập hoặc Email</label>
+                        <input id="username"
+                               name="username"
+                               type="text"
+                               class="form-control"
+                               placeholder="Username hoặc Email"
+                               required
+                               autocomplete="username" />
+                        <label for="username">
+                            <i class="fa fa-user me-2"></i>Tên đăng nhập hoặc Email
+                        </label>
                     </div>
 
                     <!-- Password -->
                     <div class="form-floating mb-3 position-relative">
-                        <input id="password" name="password" type="password" class="form-control" placeholder="Mật khẩu" required />
-                        <label for="password">Mật khẩu</label>
-
-                        <button type="button" class="btn btn-sm btn-light position-absolute top-50 end-0 translate-middle-y me-2"
-                                onclick="togglePassword()" style="border:none;">
+                        <input id="password"
+                               name="password"
+                               type="password"
+                               class="form-control"
+                               placeholder="Mật khẩu"
+                               required
+                               autocomplete="current-password" />
+                        <label for="password">
+                            <i class="fa fa-lock me-2"></i>Mật khẩu
+                        </label>
+                        <button type="button"
+                                class="toggle-password position-absolute top-50 end-0 translate-middle-y me-3"
+                                onclick="togglePassword()"
+                                aria-label="Hiển thị mật khẩu">
                             <i id="iconPwd" class="fa fa-eye"></i>
                         </button>
                     </div>
 
-                    <!-- Button -->
-                    <button class="btn btn-primary w-100 py-2 fw-semibold">
-                        <i class="fa fa-unlock-keyhole me-2"></i>Đăng nhập
+                    <!-- Remember Me & Forgot Password -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="rememberMe">
+                            <label class="form-check-label" for="rememberMe" style="font-size: 0.9rem;">
+                                Ghi nhớ đăng nhập
+                            </label>
+                        </div>
+                        <a asp-action="ForgotPassword" class="text-decoration-none" style="font-size: 0.9rem;">
+                            Quên mật khẩu?
+                        </a>
+                    </div>
+
+                    <!-- Login Button -->
+                    <button id="btnLogin" type="submit" class="btn btn-primary btn-login w-100">
+                        <span class="btn-text">
+                            <i class="fa fa-unlock-keyhole me-2"></i>Đăng nhập
+                        </span>
+                        <span class="btn-spinner">
+                            <span class="spinner-border spinner-border-sm" role="status">
+                                <span class="visually-hidden">Đang xử lý...</span>
+                            </span>
+                            <span class="ms-2">Đang xử lý...</span>
+                        </span>
                     </button>
+
                 </form>
 
-                <div class="text-center mt-3">
-                    <a asp-action="ForgotPassword" class="text-decoration-none">Quên mật khẩu?</a><br />
-                    <a asp-action="Register" class="text-decoration-none">Chưa có tài khoản? Đăng ký</a>
+                <!-- Register Link -->
+                <div class="login-links">
+                    <div class="divider">
+                        <span>hoặc</span>
+                    </div>
+                    <p class="mb-0">
+                        Chưa có tài khoản?
+                        <a asp-action="Register" class="fw-semibold">Đăng ký ngay</a>
+                    </p>
                 </div>
+
             </div>
         </div>
     </div>
@@ -65,9 +265,10 @@
 
 @section Scripts {
     <script>
+        // Toggle Password Visibility
         function togglePassword() {
-            let input = document.getElementById("password");
-            let icon = document.getElementById("iconPwd");
+            const input = document.getElementById("password");
+            const icon = document.getElementById("iconPwd");
 
             if (input.type === "password") {
                 input.type = "text";
@@ -79,5 +280,60 @@
                 icon.classList.add("fa-eye");
             }
         }
+
+        // Form Submit with Loading State
+        document.getElementById("loginForm").addEventListener("submit", function(e) {
+            const btn = document.getElementById("btnLogin");
+            const form = this;
+
+            // Prevent double submit
+            if (btn.classList.contains("loading")) {
+                e.preventDefault();
+                return false;
+            }
+
+            // Validate form
+            if (!form.checkValidity()) {
+                e.preventDefault();
+                form.classList.add('was-validated');
+                return false;
+            }
+
+            // Add loading state
+            btn.classList.add("loading");
+            btn.disabled = true;
+
+            // Disable all form inputs
+            btn.disabled = true;  // chỉ khóa nút
+
+            // Optional: Set timeout to remove loading state if request takes too long
+            setTimeout(function() {
+                if (btn.classList.contains("loading")) {
+                    btn.classList.remove("loading");
+                    btn.disabled = false;
+                    inputs.forEach(input => {
+                        input.disabled = false;
+                    });
+
+                    // Show error notification if still loading after 15 seconds
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error("Đăng nhập mất quá nhiều thời gian. Vui lòng thử lại.");
+                    }
+                }
+            }, 15000); // 15 seconds timeout
+        });
+
+        // Auto dismiss alerts after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    const closeBtn = alert.querySelector('.btn-close');
+                    if (closeBtn) {
+                        closeBtn.click();
+                    }
+                }, 5000);
+            });
+        });
     </script>
 }

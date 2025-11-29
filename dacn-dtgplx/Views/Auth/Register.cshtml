@@ -3,8 +3,121 @@
     Layout = "_Layout";
 }
 
-<div class="row justify-content-center mt-4">
-    <div class="col-md-8 col-lg-5">
+<style>
+    :root {
+        --register-main: #198754; /* xanh lá chủ đạo */
+        --register-main-dark: #157347; /* màu hover */
+    }
+
+    .register-container {
+        min-height: calc(100vh - 200px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .register-card {
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border: none;
+        overflow: hidden;
+        background: #fff;
+    }
+
+        .register-card .card-body {
+            padding: 2.3rem;
+        }
+
+    .register-header {
+        text-align: center;
+        margin-bottom: 1.8rem;
+    }
+
+        .register-header h4 {
+            color: var(--register-main);
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+
+        .register-header p {
+            font-size: .9rem;
+            color: #5f6368;
+        }
+
+    .form-floating > .form-control {
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        transition: all .2s ease;
+    }
+
+        .form-floating > .form-control:focus {
+            border-color: var(--register-main);
+            box-shadow: 0 0 0 3px rgba(25,135,84,.18);
+        }
+
+    .btn-register {
+        padding: 12px;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 8px;
+        background-color: var(--register-main);
+        border: none;
+        transition: all .2s ease;
+    }
+
+        .btn-register:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(25,135,84,.35);
+            background-color: var(--register-main-dark);
+        }
+
+        .btn-register:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+    .toggle-password {
+        border: none;
+        background: transparent;
+        color: #6c757d;
+        cursor: pointer;
+        transition: .2s;
+    }
+
+        .toggle-password:hover {
+            color: var(--register-main);
+        }
+
+    .register-links {
+        text-align: center;
+        margin-top: 1.2rem;
+    }
+
+        .register-links a {
+            color: var(--register-main);
+            font-weight: 500;
+        }
+
+            .register-links a:hover {
+                text-decoration: underline;
+                color: var(--register-main-dark);
+            }
+
+    .pwd-strength, .pwd-match {
+        font-size: 0.88rem;
+        font-weight: 600;
+    }
+
+    @@media (max-width: 576px) {
+        .register-card .card-body {
+            padding: 1.5rem;
+        }
+    }
+</style>
+
+
+<div class="register-container">
+    <div class="col-md-6 col-lg-5 px-3">
 
         <!-- Alerts -->
         @if (TempData["Error"] != null)
@@ -23,68 +136,70 @@
             </div>
         }
 
-        <div class="card shadow-lg border-0 rounded-4">
-            <div class="card-body p-4">
+        <div class="card register-card">
+            <div class="card-body">
 
-                <h4 class="text-center mb-4 text-success fw-bold">
-                    <i class="fa fa-user-plus me-2"></i>Tạo tài khoản mới
-                </h4>
+                <div class="register-header">
+                    <h4><i class="fa fa-user-plus me-2"></i>Tạo tài khoản mới</h4>
+                    <p>Điền thông tin để bắt đầu hành trình học lái xe.</p>
+                </div>
 
                 <form asp-controller="Auth" asp-action="Register" method="post">
                     @Html.AntiForgeryToken()
 
                     <!-- Username -->
                     <div class="form-floating mb-3">
-                        <input name="username" class="form-control" placeholder="Tên đăng nhập" required />
-                        <label for="username">Tên đăng nhập</label>
+                        <input class="form-control" name="username" required placeholder="Tên đăng nhập" />
+                        <label>Tên đăng nhập</label>
                     </div>
 
                     <!-- Email -->
                     <div class="form-floating mb-3">
-                        <input name="email" type="email" class="form-control" placeholder="Email" required />
-                        <label for="email">Email</label>
+                        <input type="email" class="form-control" name="email" required placeholder="Email" />
+                        <label>Email</label>
                     </div>
 
-                    <!-- FullName -->
+                    <!-- Fullname -->
                     <div class="form-floating mb-3">
-                        <input name="tenDayDu" class="form-control" placeholder="Họ và tên" required />
-                        <label for="tenDayDu">Họ và tên</label>
+                        <input class="form-control" name="tenDayDu" required placeholder="Họ và tên" />
+                        <label>Họ và tên</label>
                     </div>
 
                     <!-- Password -->
                     <div class="form-floating mb-3 position-relative">
-                        <input id="password" name="password" type="password" class="form-control" placeholder="Mật khẩu mạnh" required />
-                        <label for="password">Mật khẩu</label>
+                        <input id="password" type="password" class="form-control" name="password" required placeholder="Mật khẩu" />
+                        <label>Mật khẩu</label>
 
-                        <button type="button" class="btn btn-sm btn-light position-absolute top-50 end-0 translate-middle-y me-2"
-                                onclick="togglePassword('password','iconPwd1')" style="border:none;">
+                        <button type="button"
+                                class="toggle-password position-absolute top-50 end-0 translate-middle-y me-3"
+                                onclick="togglePassword('password','iconPwd1')">
                             <i id="iconPwd1" class="fa fa-eye"></i>
                         </button>
                     </div>
 
-                    <!-- Password Strength -->
-                    <div id="pwdStrength" class="small mb-2 fw-semibold"></div>
+                    <div id="pwdStrength" class="pwd-strength mb-2"></div>
 
                     <!-- Confirm Password -->
                     <div class="form-floating mb-3 position-relative">
-                        <input id="confirmPassword" type="password" class="form-control" placeholder="Nhập lại mật khẩu" required />
-                        <label for="confirmPassword">Nhập lại mật khẩu</label>
+                        <input id="confirmPassword" type="password" class="form-control" required placeholder="Nhập lại mật khẩu" />
+                        <label>Nhập lại mật khẩu</label>
 
-                        <button type="button" class="btn btn-sm btn-light position-absolute top-50 end-0 translate-middle-y me-2"
-                                onclick="togglePassword('confirmPassword','iconPwd2')" style="border:none;">
+                        <button type="button"
+                                class="toggle-password position-absolute top-50 end-0 translate-middle-y me-3"
+                                onclick="togglePassword('confirmPassword','iconPwd2')">
                             <i id="iconPwd2" class="fa fa-eye"></i>
                         </button>
                     </div>
 
-                    <div id="pwdMatch" class="small mb-3 fw-bold"></div>
+                    <div id="pwdMatch" class="pwd-match mb-3"></div>
 
-                    <!-- Submit -->
-                    <button id="btnSubmit" class="btn btn-success w-100 py-2 fw-semibold" disabled>
+                    <button id="btnSubmit" type="submit" class="btn-register w-100" disabled>
                         <i class="fa fa-user-check me-2"></i>Tạo tài khoản
                     </button>
 
-                    <div class="text-center mt-3">
-                        <a asp-action="Login" class="text-decoration-none">Đã có tài khoản? Đăng nhập</a>
+                    <div class="register-links mt-3">
+                        <span>Đã có tài khoản?</span>
+                        <a asp-action="Login">Đăng nhập</a>
                     </div>
                 </form>
 
@@ -93,61 +208,53 @@
     </div>
 </div>
 
+
 @section Scripts {
     <script>
         function togglePassword(inputId, iconId) {
-            let field = document.getElementById(inputId);
-            let icon = document.getElementById(iconId);
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
 
-            if (field.type === "password") {
-                field.type = "text";
+            if (input.type === "password") {
+                input.type = "text";
                 icon.classList.replace("fa-eye", "fa-eye-slash");
             } else {
-                field.type = "password";
+                input.type = "password";
                 icon.classList.replace("fa-eye-slash", "fa-eye");
             }
         }
 
-        // Password Strength
-        const pwdInput = document.getElementById("password");
-        const confirmInput = document.getElementById("confirmPassword");
-        const strengthText = document.getElementById("pwdStrength");
-        const matchText = document.getElementById("pwdMatch");
-        const submitBtn = document.getElementById("btnSubmit");
+        const pwd = document.getElementById("password");
+        const confirmPwd = document.getElementById("confirmPassword");
+        const strength = document.getElementById("pwdStrength");
+        const match = document.getElementById("pwdMatch");
+        const submit = document.getElementById("btnSubmit");
 
-        pwdInput.addEventListener("input", validateForm);
-        confirmInput.addEventListener("input", validateForm);
+        pwd.addEventListener("input", validate);
+        confirmPwd.addEventListener("input", validate);
 
-        function validateForm() {
-            let pwd = pwdInput.value;
-            let confirm = confirmInput.value;
+        function validate() {
+            const p = pwd.value;
+            const c = confirmPwd.value;
 
-            // Strength checking
-            let strength = "Yếu";
-            let color = "red";
+            // Strength
+            let text = "Yếu", color = "red";
+            if (p.length >= 8) { text = "Trung bình"; color = "orange"; }
+            if (p.match(/[A-Z]/) && p.match(/[0-9]/) && p.match(/[^a-zA-Z0-9]/)) { text = "Mạnh"; color = "green"; }
 
-            if (pwd.length >= 8) {
-                strength = "Trung bình"; color = "orange";
-            }
-            if (pwd.match(/[A-Z]/) && pwd.match(/[0-9]/) && pwd.match(/[^a-zA-Z0-9]/)) {
-                strength = "Mạnh"; color = "green";
-            }
+            strength.innerHTML = `Độ mạnh mật khẩu: <span style="color:${color}">${text}</span>`;
 
-            strengthText.innerHTML = "Độ mạnh mật khẩu: <span style='color:" + color + "'>" + strength + "</span>";
-
-            // Confirm match
-            if (confirm.length > 0) {
-                if (confirm === pwd) {
-                    matchText.style.color = "green";
-                    matchText.innerHTML = "✔ Mật khẩu khớp!";
+            // Match
+            if (c.length > 0) {
+                if (c === p) {
+                    match.innerHTML = "<span style='color:green'>✔ Mật khẩu khớp</span>";
                 } else {
-                    matchText.style.color = "red";
-                    matchText.innerHTML = "✘ Mật khẩu không khớp!";
+                    match.innerHTML = "<span style='color:red'>✘ Mật khẩu không khớp</span>";
                 }
-            } else matchText.innerHTML = "";
+            } else match.innerHTML = "";
 
-            // Enable submit button only if valid
-            submitBtn.disabled = !(pwd.length >= 6 && confirm === pwd);
+            // Enable submit
+            submit.disabled = !(p.length >= 6 && p === c);
         }
     </script>
 }
