@@ -623,40 +623,43 @@
                         <div class="d-flex justify-content-center justify-content-md-end align-items-center gap-3">
 
                             <!-- Khối online -->
-                            <div class="text-center">
-                                <div class="d-inline-flex align-items-center gap-2">
-                                    <i class="fa fa-circle text-success"></i>
-                                    <span id="onlineNumber">0 người đang online</span>
+                            @if (Context.Session.GetString("Username") != null)
+                            {
+                                <div class="text-center">
+                                    <div class="d-inline-flex align-items-center gap-2">
+                                        <i class="fa fa-circle text-success"></i>
+                                        <span id="onlineNumber">0 người đang online</span>
 
-                                    <!-- Online users dropdown -->
-                                    <button class="btn btn-light btn-sm border" data-bs-toggle="dropdown">
-                                        <i class="fa fa-users"></i>
-                                    </button>
+                                        <!-- Online users dropdown -->
+                                        <button class="btn btn-light btn-sm border" data-bs-toggle="dropdown">
+                                            <i class="fa fa-users"></i>
+                                        </button>
 
-                                    <ul class="dropdown-menu shadow" style="width: 260px;">
-                                        <li class="px-3 py-2 d-flex justify-content-between align-items-center">
-                                            <strong>Người dùng đang online</strong>
-                                            <button class="btn btn-sm btn-outline-primary" onclick="loadOnlineUsers()">
-                                                <i class="fa fa-rotate"></i>
-                                            </button>
-                                        </li>
+                                        <ul class="dropdown-menu shadow" style="width: 260px;">
+                                            <li class="px-3 py-2 d-flex justify-content-between align-items-center">
+                                                <strong>Người dùng đang online</strong>
+                                                <button class="btn btn-sm btn-outline-primary" onclick="loadOnlineUsers()">
+                                                    <i class="fa fa-rotate"></i>
+                                                </button>
+                                            </li>
 
-                                        <li><hr class="dropdown-divider"></li>
+                                            <li><hr class="dropdown-divider"></li>
 
-                                        <div id="onlineUsersList" style="max-height: 250px; overflow-y: auto;">
-                                            <p class="text-center text-muted small py-3">Đang tải...</p>
-                                        </div>
+                                            <div id="onlineUsersList" style="max-height: 250px; overflow-y: auto;">
+                                                <p class="text-center text-muted small py-3">Đang tải...</p>
+                                            </div>
 
-                                        <li><hr class="dropdown-divider"></li>
+                                            <li><hr class="dropdown-divider"></li>
 
-                                        <li class="text-center text-muted small py-2">
-                                            Tự động cập nhật mỗi 30 giây
-                                        </li>
-                                    </ul>
+                                            <li class="text-center text-muted small py-2">
+                                                Tự động cập nhật mỗi 30 giây
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    @* <div id="lastUpdateTime" class="text-muted small">Đang tải...</div> *@
                                 </div>
-
-                                @* <div id="lastUpdateTime" class="text-muted small">Đang tải...</div> *@
-                            </div>
+                            }
 
                             <!-- Text Team Hải Lộc (nằm sát bên phải khối online) -->
                             <p class="mb-0 text-muted">
@@ -792,6 +795,69 @@
                         loadNotifications();
                         toastr.success("Đã xóa thông báo.");
                     }
+                });
+        }
+
+        // ========================= ONLINE CHECK =========================
+
+        // 1) Ping user mỗi 5 giây để báo đang online
+        function pingOnline() {
+            fetch('/online/ping');
+        }
+
+        setInterval(pingOnline, 5000);
+        pingOnline();
+
+
+        // 2) Lấy số người online
+        function loadOnlineCount() {
+            fetch('/online/count')
+                .then(res => res.json())
+                .then(result => {
+                    document.getElementById("onlineNumber").innerText =
+                        result.count + " người đang online";
+                });
+        }
+        setInterval(loadOnlineCount, 5000);
+        loadOnlineCount();
+
+
+        // 3) Lấy danh sách người online (dropdown)
+        function loadOnlineUsers() {
+            fetch('/online/users')
+                .then(res => res.json())
+                .then(result => {
+                    const box = document.getElementById("onlineUsersList");
+
+                    if (!result.success || result.data.length === 0) {
+                        box.innerHTML = `
+                            <p class="text-center text-muted small py-3">
+                                Không có ai đang online
+                            </p>`;
+                        return;
+                    }
+
+                    let html = "";
+                    result.data.forEach(u => {
+                        html += `
+                            <div class="d-flex align-items-center px-3 py-2 border-bottom">
+                                <img src="${u.avatar}"
+                                     class="rounded-circle me-2"
+                                     style="width: 32px; height: 32px; object-fit: cover;">
+
+                                <div>
+                                    <strong>${u.fullName}</strong>
+                                    <p class="small text-muted mb-0">${u.email}</p>
+                                </div>
+
+                                <span class="small text-success ms-auto">
+                                    ● Online
+                                </span>
+                            </div>
+                        `;
+                    });
+
+                    box.innerHTML = html;
                 });
         }
     </script>

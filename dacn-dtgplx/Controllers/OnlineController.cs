@@ -15,23 +15,17 @@ namespace dacn_dtgplx.Controllers
             _context = context;
         }
 
-        /// <summary>
-        /// Client gọi 5s/lần để báo vẫn đang online
-        /// </summary>
+        // ============================================================
+        // 1) PING – client gọi 5s/lần
+        // ============================================================
         [HttpGet("ping")]
         public async Task<IActionResult> Ping()
         {
-            // Lấy userId từ Session (nhớ set khi login)
             var userId = HttpContext.Session.GetInt32("UserId");
             if (userId == null)
-            {
-                // Chưa đăng nhập thì thôi, không làm gì
                 return Ok(new { ok = false, reason = "guest" });
-            }
 
             var now = DateTime.UtcNow;
-
-            // Tìm connection của user này (1 user 1 record là đủ)
             var conn = await _context.WebsocketConnections
                 .FirstOrDefaultAsync(x => x.UserId == userId.Value);
 
@@ -58,10 +52,12 @@ namespace dacn_dtgplx.Controllers
             return Ok(new { ok = true });
         }
 
+        // ============================================================
+        // 2) ĐẾM SỐ ONLINE – Admin đang dùng
+        // ============================================================
         [HttpGet("count")]
         public async Task<IActionResult> GetOnlineCount()
         {
-            // Quy ước: online = IsOnline = 1 và hoạt động trong 1 phút gần nhất
             var threshold = DateTime.UtcNow.AddMinutes(-1);
 
             int count = await _context.WebsocketConnections
@@ -69,6 +65,52 @@ namespace dacn_dtgplx.Controllers
                 .CountAsync();
 
             return Json(new { count });
+        }
+
+        // ============================================================
+        // 3) LẤY DANH SÁCH USER ĐANG ONLINE – (Dùng cho Layout)
+        // ============================================================
+        [HttpGet("users")]
+        public async Task<IActionResult> GetOnlineUsers()
+        {
+            var threshold = DateTime.UtcNow.AddMinutes(-1);
+
+            var data = await _context.WebsocketConnections
+                .Where(x => x.IsOnline && x.LastActivity >= threshold)
+                .Include(x => x.User)
+                .OrderByDescending(x => x.LastActivity)
+                .Select(x => new
+                {
+                    userId = x.UserId,
+                    fullName = x.User.TenDayDu ?? x.User.Username,
+                    email = x.User.Email,
+                    avatar = string.IsNullOrWhiteSpace(x.User.Avatar)
+                            ? "/images/avatar/default.png"
+                            : "/" + x.User.Avatar.Replace("wwwroot/", "").TrimStart('/'),
+                    lastActive = x.LastActivity.Value.ToLocalTime().ToString("HH:mm:ss dd/MM/yyyy")
+                })
+                .ToListAsync();
+
+            return Json(new { success = true, data });
+        }
+
+        // ============================================================
+        // 4) TỰ ĐỘNG DỌN USER OFFLINE (nếu cần)
+        // ============================================================
+        [HttpPost("cleanup")]
+        public async Task<IActionResult> Cleanup()
+        {
+            var threshold = DateTime.UtcNow.AddMinutes(-1);
+
+            var old = await _context.WebsocketConnections
+                .Where(x => x.LastActivity < threshold)
+                .ToListAsync();
+
+            foreach (var conn in old)
+                conn.IsOnline = false;
+
+            await _context.SaveChangesAsync();
+            return Ok(new { cleaned = old.Count });
         }
     }
 }
