@@ -85,8 +85,19 @@ namespace dacn_dtgplx.Controllers
             HttpContext.Session.SetString("Username", user.Username);
             HttpContext.Session.SetInt32("UserId", user.UserId);
             HttpContext.Session.SetInt32("RoleId", user.RoleId ?? 0);
+            // Lưu tên role để hiển thị ở header
+            string roleName;
+            if (user.LaGiaoVien)
+            {
+                roleName = "Giáo viên";
+            }
+            else
+            {
+                roleName = "Học viên";
+            }
 
-            // ⭐ NEW: Lưu Avatar & FullName
+            HttpContext.Session.SetString("Role", roleName);
+
             HttpContext.Session.SetString("Avatar", avatarPath);
             HttpContext.Session.SetString("FullName", user.TenDayDu ?? user.Username);
             //HttpContext.Session.SetString("UserId", user.UserId.ToString());
@@ -106,6 +117,8 @@ namespace dacn_dtgplx.Controllers
             await MarkUserOnline(user.UserId);
 
             TempData["Success"] = $"Đăng nhập thành công, chào {user.TenDayDu ?? user.Username}!";
+            await TaoThongBaoDangNhap(user);
+
 
             // Điều hướng Role
             if (user.RoleId == 1)
@@ -116,6 +129,35 @@ namespace dacn_dtgplx.Controllers
 
             HttpContext.Session.SetString("Layout", "_Layout");
             return RedirectToAction("Index", "Home");
+        }
+        private async Task TaoThongBaoDangNhap(User user)
+        {
+            // dùng cùng 1 thời điểm local (giờ VN) cho tất cả
+            var now = DateTime.Now;
+
+            // 1) Lưu vào bảng ThongBao
+            var tb = new ThongBao
+            {
+                TieuDe = "Cảnh báo bảo mật: Đăng nhập thành công",
+                NoiDung = $"Tài khoản {user.Email} vừa đăng nhập vào hệ thống lúc {now:dd/MM/yyyy HH:mm}",
+                SendRole = user.RoleId?.ToString(),
+                TaoLuc = now
+            };
+
+            _context.ThongBaos.Add(tb);
+            await _context.SaveChangesAsync();
+
+            // 2) Gửi thông báo cho user này
+            var ct = new CtThongBao
+            {
+                UserId = user.UserId,
+                ThongBaoId = tb.ThongBaoId,
+                DaXem = false,
+                ThoiGianGui = now
+            };
+
+            _context.CtThongBaos.Add(ct);
+            await _context.SaveChangesAsync();
         }
 
         // ================================================================
