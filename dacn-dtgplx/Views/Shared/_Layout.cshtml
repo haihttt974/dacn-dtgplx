@@ -104,14 +104,15 @@
             margin-top: 8px;
         }
 
-        .navbar .dropdown-menu {
+        /* .navbar .dropdown-menu {
             position: absolute !important;
             transform: translate3d(0, 0, 0) !important;
-            inset: auto auto auto 0 !important; /* luôn xuất hiện dưới nút */
+            inset: auto auto auto 0 !important; 
             width: auto !important;
             max-width: 300px;
-            z-index: 9999; /* nổi lên trên header */
-        }
+            z-index: 9999; 
+        } 
+        */
 
         /* Giữ dropdown nằm đúng vị trí ngay dưới nút */
         .navbar .dropdown {
@@ -123,6 +124,8 @@
             min-width: 200px;
             padding: 6px 0;
             margin-top: -15px !important;
+            transform: translateX(-10px) !important;
+            border-radius: 12px !important;
         }
 
             /* Thu gọn padding từng item bên trong */
@@ -466,46 +469,46 @@
                     </button>
                 </form>
 
-                <!-- Notification Bell -->
-                @if (Context.Session.GetString("Username") != null)
-                {
-                    <div class="nav-item dropdown me-3">
-                        <a class="nav-link position-relative" href="#" data-bs-toggle="dropdown" onclick="loadNotifications()">
-                            <i class="fa-solid fa-bell fa-lg"></i>
-                            <span id="notificationBadge"
-                                  class="position-absolute badge rounded-pill bg-danger d-flex align-items-center justify-content-center"
-                                  style="top: 2px; right: 4px; min-width: 20px; height: 20px; font-size: 0.75rem;">
-                            </span>
-                        </a>
+                    <!-- Notification Bell -->
+                    @if (Context.Session.GetString("Username") != null)
+                    {
+                        <div class="nav-item dropdown me-3">
+                            <a class="nav-link position-relative" href="#" data-bs-toggle="dropdown" onclick="loadNotifications()">
+                                <i class="fa-solid fa-bell fa-lg"></i>
+                                <span id="notificationBadge"
+                                      class="position-absolute badge rounded-pill bg-danger d-flex align-items-center justify-content-center"
+                                      style="top: 2px; right: 4px; min-width: 20px; height: 20px; font-size: 0.75rem;">
+                                </span>
+                            </a>
 
-                        <ul class="dropdown-menu dropdown-menu-end shadow" style="width: 350px;">
-                            <li class="px-3 py-2 d-flex justify-content-between align-items-center">
-                                <strong>Thông báo</strong>
+                        <ul class="dropdown-menu dropdown-menu-end shadow" style="width: 420px; overflow-y: auto;">
+                                <li class="px-3 py-2 d-flex justify-content-between align-items-center">
+                                    <strong>Thông báo</strong>
 
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-outline-success" onclick="markAllAsRead()">
-                                        <i class="fa fa-check-double"></i>
-                                    </button>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-success" onclick="markAllAsRead()">
+                                            <i class="fa fa-check-double"></i>
+                                        </button>
 
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="refreshNotifications()">
-                                        <i class="fa fa-rotate"></i>
-                                    </button>
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="refreshNotifications()">
+                                            <i class="fa fa-rotate"></i>
+                                        </button>
+                                    </div>
+                                </li>
+                                <li><hr class="dropdown-divider" /></li>
+                                <div id="notificationList" style="max-height: 300px; overflow-y: auto;">
+                                    <p class="text-center text-muted small py-3">Đang tải...</p>
                                 </div>
-                            </li>
-                            <li><hr class="dropdown-divider" /></li>
-                            <div id="notificationList" style="max-height: 300px; overflow-y: auto;">
-                                <p class="text-center text-muted small py-3">Đang tải...</p>
-                            </div>
-                            <li>
-                                <a class="dropdown-item text-center text-primary"
-                                   asp-controller="Notification"
-                                   asp-action="Index">
-                                    <i class="fa fa-list-ul me-1"></i> Xem tất cả thông báo
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                }
+                                <li>
+                                    <a class="dropdown-item text-center text-primary"
+                                       asp-controller="Notification"
+                                       asp-action="Index">
+                                        <i class="fa fa-list-ul me-1"></i> Xem tất cả thông báo
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    }
                 <!-- AUTH -->
                 <div class="user-section">
                     @if (Context.Session.GetString("Username") != null)
@@ -557,6 +560,19 @@
                                 <li>
                                     <a class="dropdown-item" asp-controller="Account" asp-action="Settings">
                                         <i class="fa-solid fa-gear me-2"></i>Cài đặt
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider" /></li>
+                                <li class="position-relative">
+                                    <a class="dropdown-item d-flex align-items-center"
+                                       asp-controller="Conversation" asp-action="Index">
+                                        <i class="fa-regular fa-comments me-2"></i> Tin nhắn
+
+                                        <!-- Badge số tin nhắn chưa đọc -->
+                                        <span id="messageUnreadBadge"
+                                              class="badge bg-danger rounded-pill ms-auto d-none"
+                                              style="font-size: 0.75rem; padding: 4px 8px;">
+                                        </span>
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider" /></li>
@@ -891,6 +907,23 @@
                     box.innerHTML = html;
                 });
         }
+
+        function loadUnreadMessages() {
+            fetch('/Conversation/CountUnread')
+                .then(res => res.json())
+                .then(count => {
+                    const badge = document.getElementById('messageBadge');
+                    if (!badge) return;
+
+                    if (count > 0) {
+                        badge.classList.remove('d-none');
+                        badge.innerText = count;
+                    } else {
+                        badge.classList.add('d-none');
+                    }
+                });
+        }
+
     </script>
 
 </body>
