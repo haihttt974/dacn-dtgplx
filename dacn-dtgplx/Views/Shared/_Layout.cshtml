@@ -419,50 +419,43 @@
             </button>
 
             <div class="collapse navbar-collapse" id="navbarMain">
-
                 <!-- Left menu -->
                 <ul class="navbar-nav me-auto">
-
+                    <!-- Trang chủ -->
                     <li class="nav-item">
                         <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")"
                            asp-controller="Home" asp-action="Index">
                             <i class="fa-solid fa-house"></i>Trang chủ
                         </a>
                     </li>
-                    <div class="dropdown">
+                    <!-- Giới thiệu trung tâm -->
+                    <li class="dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center gap-1"
                            href="#" data-bs-toggle="dropdown">
-
                             <i class="fa-solid fa-building"></i>
                             <span>Trung tâm</span>
                         </a>
-
                         <ul class="dropdown-menu shadow border-0 rounded-4 dropdown-menu-center">
-
                             <li>
                                 <a class="dropdown-item d-flex align-items-center"
                                    asp-controller="Home" asp-action="About">
                                     <i class="fa-solid fa-building me-2"></i> Giới thiệu
                                 </a>
                             </li>
-
                             <li>
                                 <a class="dropdown-item d-flex align-items-center"
                                    asp-controller="Home" asp-action="Contact">
                                     <i class="fa-solid fa-phone me-2"></i> Liên hệ
                                 </a>
                             </li>
-
                             <li>
                                 <a class="dropdown-item d-flex align-items-center"
                                    asp-controller="Home" asp-action="FAQ">
                                     <i class="fa-solid fa-circle-question me-2"></i> FAQ
                                 </a>
                             </li>
-
                         </ul>
-                    </div>
-
+                    </li>
                 </ul>
 
                 <!-- SEARCH -->
