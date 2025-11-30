@@ -104,6 +104,33 @@
             margin-top: 8px;
         }
 
+        .navbar .dropdown-menu {
+            position: absolute !important;
+            transform: translate3d(0, 0, 0) !important;
+            inset: auto auto auto 0 !important; /* luôn xuất hiện dưới nút */
+            width: auto !important;
+            max-width: 300px;
+            z-index: 9999; /* nổi lên trên header */
+        }
+
+        /* Giữ dropdown nằm đúng vị trí ngay dưới nút */
+        .navbar .dropdown {
+            position: relative !important;
+        }
+
+        /* Dropdown "Trung tâm" – gọn và sát nút hơn */
+        .navbar .dropdown-menu-center {
+            min-width: 200px;
+            padding: 6px 0;
+            margin-top: -15px !important;
+        }
+
+            /* Thu gọn padding từng item bên trong */
+            .navbar .dropdown-menu-center .dropdown-item {
+                padding: 8px 14px;
+                font-size: 0.9rem;
+            }
+
         .dropdown-item {
             padding: 10px 20px;
             font-size: 0.95rem;
@@ -369,6 +396,7 @@
         html {
             scroll-behavior: smooth;
         }
+
     </style>
     @RenderSection("Styles", required: false)
 </head>
@@ -401,29 +429,39 @@
                             <i class="fa-solid fa-house"></i>Trang chủ
                         </a>
                     </li>
+                    <div class="dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center gap-1"
+                           href="#" data-bs-toggle="dropdown">
 
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown">
-                            <i class="fa-solid fa-building"></i>Trung tâm
+                            <i class="fa-solid fa-building"></i>
+                            <span>Trung tâm</span>
                         </a>
-                        <ul class="dropdown-menu">
+
+                        <ul class="dropdown-menu shadow border-0 rounded-4 dropdown-menu-center">
+
                             <li>
-                                <a class="dropdown-item" asp-controller="Home" asp-action="About">
-                                    <i class="fa fa-building"></i>Giới thiệu
+                                <a class="dropdown-item d-flex align-items-center"
+                                   asp-controller="Home" asp-action="About">
+                                    <i class="fa-solid fa-building me-2"></i> Giới thiệu
                                 </a>
                             </li>
+
                             <li>
-                                <a class="dropdown-item" asp-controller="Home" asp-action="Contact">
-                                    <i class="fa fa-phone"></i>Liên hệ
+                                <a class="dropdown-item d-flex align-items-center"
+                                   asp-controller="Home" asp-action="Contact">
+                                    <i class="fa-solid fa-phone me-2"></i> Liên hệ
                                 </a>
                             </li>
+
                             <li>
-                                <a class="dropdown-item" asp-controller="Home" asp-action="FAQ">
-                                    <i class="fa fa-circle-question"></i>FAQ
+                                <a class="dropdown-item d-flex align-items-center"
+                                   asp-controller="Home" asp-action="FAQ">
+                                    <i class="fa-solid fa-circle-question me-2"></i> FAQ
                                 </a>
                             </li>
+
                         </ul>
-                    </li>
+                    </div>
 
                 </ul>
 
