@@ -1,4 +1,5 @@
-﻿using dacn_dtgplx.Hubs;
+﻿using dacn_dtgplx.Configs;
+using dacn_dtgplx.Hubs;
 using dacn_dtgplx.Models;
 using dacn_dtgplx.Services;
 using dacn_dtgplx.ViewModels;
@@ -29,7 +30,7 @@ builder.Services.AddScoped<IViewRenderService, ViewRenderService>();
 builder.Services.AddSession();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddScoped<AutoUpdateKhoaHocService>();
-builder.Services.AddScoped<SemanticSearchService>();
+builder.Services.AddScoped<SteganographyService>();
 
 builder.Services.AddSignalR();
 builder.Services.AddHostedService<OnlineUserMonitor>();
@@ -40,6 +41,10 @@ builder.Services.AddAuthentication("Cookies")
         options.LoginPath = "/auth/login";
         options.LogoutPath = "/auth/logout";
     });
+//
+builder.Services.Configure<SteganographyOptions>(
+    builder.Configuration.GetSection("Steganography"));
+builder.Services.AddScoped<ISteganographyService, SteganographyService>();
 
 // JWT Auth (dùng API)
 builder.Services.AddAuthentication()
@@ -77,8 +82,8 @@ builder.Services.AddSingleton(provider =>
     return items ?? new List<QuestionEmbeddingVM>();
 });
 
-// Đăng ký SemanticSearchService
-builder.Services.AddSingleton<SemanticSearchService>();
+// Đăng ký SteganographyService
+builder.Services.AddSingleton<SteganographyService>();
 
 // Swagger (nếu dùng API)
 builder.Services.AddEndpointsApiExplorer();
@@ -97,14 +102,14 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseExceptionHandler("/Home/Error");
+    //app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-app.UseStatusCodePagesWithReExecute("/Error/{0}");
+//app.UseStatusCodePagesWithReExecute("/Error/{0}");
 
 app.UseRouting();
 

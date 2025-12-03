@@ -10,9 +10,9 @@ namespace dacn_dtgplx.Controllers
     public class AdminTheoryQuestionsController : Controller
     {
         private readonly DtGplxContext _context;
-        private readonly SemanticSearchService _semantic;
+        private readonly SteganographyService _semantic;
 
-        public AdminTheoryQuestionsController(DtGplxContext context, SemanticSearchService semantic)
+        public AdminTheoryQuestionsController(DtGplxContext context, SteganographyService semantic)
         {
             _context = context;
             _semantic = semantic;

@@ -1,0 +1,275 @@
+﻿@model dacn_dtgplx.ViewModels.HoSoThiSinhCreateVM
+
+@{
+    ViewData["Title"] = "Thêm hồ sơ thí sinh";
+    var defaultIdPhoto = Url.Content("~/images/avatar/default-id-photo.png");
+}
+
+<div class="container mt-4">
+
+    <h2 class="fw-bold mb-4">
+        <i class="fa-solid fa-file-circle-plus me-2"></i>
+        Thêm Hồ Sơ Thí Sinh
+    </h2>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    <form asp-action="Create"
+          method="post"
+          enctype="multipart/form-data"
+          class="shadow rounded-4 p-4 bg-white">
+
+        @Html.AntiForgeryToken()
+
+        <div class="row">
+
+            <!-- Ảnh thẻ -->
+            <div class="col-md-4 mb-4">
+
+                <label class="form-label fw-semibold">Ảnh thẻ (4x6)</label>
+
+                <div class="border rounded-4 bg-light shadow-sm p-2 mb-2 preview-frame">
+                    <img id="previewAnhThe"
+                         src="@defaultIdPhoto"
+                         data-default="@defaultIdPhoto"
+                         class="img-fluid rounded preview-img" />
+                </div>
+
+                <input asp-for="AnhThe"
+                       type="file"
+                       accept="image/*"
+                       class="form-control"
+                       id="AnhTheInput"
+                       required />
+                <span asp-validation-for="AnhThe" class="text-danger"></span>
+
+                <p class="small text-muted mt-2">
+                    • Ảnh thẻ nền <b>trắng hoặc xanh</b><br />
+                    • Mặt nhìn thẳng, rõ nét<br />
+                    • Không đeo kính màu, không đội mũ<br />
+                    • Ảnh này sẽ được dùng để <b>giấu thông tin sức khỏe</b>.
+                </p>
+
+            </div>
+
+            <!-- Ảnh giấy khám -->
+            <div class="col-md-8 mb-4">
+
+                <label asp-for="AnhGiayKham" class="form-label fw-semibold">
+                    Ảnh giấy khám sức khỏe
+                </label>
+
+                <input asp-for="AnhGiayKham"
+                       type="file"
+                       accept="image/*"
+                       multiple
+                       class="form-control"
+                       id="GiayKhamInput"
+                       required />
+
+                <div class="small text-muted mt-2">
+                    • Có thể chọn nhiều ảnh<br />
+                    • Chọn đúng thứ tự (1 → 2 → 3 …)<br />
+                </div>
+
+                <div id="previewGiayKhamWrapper"
+                     class="mt-3 d-flex flex-wrap gap-3">
+                </div>
+
+            </div>
+
+        </div>
+
+        <hr class="my-4" />
+
+        <!-- Chọn hạng -->
+        <h4 class="fw-bold mb-3">
+            <i class="fa-solid fa-layer-group me-2"></i>
+            Loại Hồ Sơ
+        </h4>
+
+        <div class="mb-4">
+            <select asp-for="IdHang" class="form-control form-select" required>
+                <option value="">-- Chọn hạng GPLX --</option>
+                @foreach (var hang in ViewBag.Hangs)
+                {
+                    <option value="@hang.IdHang">@hang.MaHang - @hang.TenDayDu</option>
+                }
+            </select>
+            <span asp-validation-for="IdHang" class="text-danger"></span>
+        </div>
+
+        <!-- Thông tin sức khỏe -->
+        <h4 class="fw-bold mb-3">
+            <i class="fa-solid fa-heart-pulse me-2"></i>
+            Thông Tin Giấy Khám Sức Khỏe
+        </h4>
+
+        <div class="row">
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Mắt trái</label>
+                <input asp-for="SucKhoe.mat.mat_trai"
+                       type="number"
+                       class="form-control"
+                       required />
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Mắt phải</label>
+                <input asp-for="SucKhoe.mat.mat_phai"
+                       type="number"
+                       class="form-control"
+                       required />
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Huyết áp</label>
+                <input asp-for="SucKhoe.huyet_ap"
+                       placeholder="VD: 120/80"
+                       class="form-control"
+                       required />
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Chiều cao (cm)</label>
+                <input asp-for="SucKhoe.chieu_cao"
+                       type="number"
+                       class="form-control"
+                       required />
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Cân nặng (kg)</label>
+                <input asp-for="SucKhoe.can_nang"
+                       type="number"
+                       class="form-control"
+                       required />
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Thời hạn giấy khám</label>
+                <input asp-for="SucKhoe.thoi_han"
+                       type="date"
+                       class="form-control"
+                       required />
+            </div>
+
+        </div>
+
+        <div class="mt-4 text-end">
+            <button class="btn btn-primary btn-lg px-4">
+                <i class="fa-solid fa-save me-2"></i> Lưu hồ sơ
+            </button>
+        </div>
+
+    </form>
+
+</div>
+
+<!-- Modal phóng to ảnh giấy khám -->
+<div class="modal fade" id="imageZoomModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-dark border-0">
+            <div class="modal-body p-0 text-center">
+                <img id="zoomImage" class="img-fluid rounded" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .preview-frame {
+        width: 100%;
+        height: 260px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .preview-img {
+        max-height: 100%;
+        object-fit: cover;
+        transition: .25s;
+    }
+
+        .preview-img:hover {
+            transform: scale(1.05);
+        }
+</style>
+
+@section Scripts {
+    <script>
+        // Preview ảnh thẻ
+        document.getElementById("AnhTheInput")?.addEventListener("change", function (e) {
+            const file = e.target.files?.[0];
+            const img = document.getElementById("previewAnhThe");
+            const def = img.getAttribute("data-default");
+
+            if (!file || !file.type.startsWith("image/")) {
+                img.src = def;
+                return;
+            }
+
+            img.src = URL.createObjectURL(file);
+        });
+
+        // Zoom ảnh giấy khám
+        function enableZoom() {
+            document
+                .querySelectorAll("#previewGiayKhamWrapper img")
+                .forEach(img => {
+                    img.style.cursor = "zoom-in";
+                    img.onclick = () => {
+                        document.getElementById("zoomImage").src = img.src;
+                        new bootstrap.Modal(
+                            document.getElementById("imageZoomModal")
+                        ).show();
+                    };
+                });
+        }
+
+        // Preview ảnh giấy khám
+        document.getElementById("GiayKhamInput")?.addEventListener("change", function (e) {
+            const files = Array.from(e.target.files || []);
+            const wrapper = document.getElementById("previewGiayKhamWrapper");
+            wrapper.innerHTML = "";
+
+            files.forEach((file, idx) => {
+                if (!file.type.startsWith("image/")) return;
+
+                const box = document.createElement("div");
+                box.className = "border bg-light rounded-3 shadow-sm position-relative";
+                box.style.width = "140px";
+                box.style.height = "180px";
+                box.style.overflow = "hidden";
+
+                const img = document.createElement("img");
+                img.src = URL.createObjectURL(file);
+                img.className = "w-100 h-100";
+                img.style.objectFit = "cover";
+
+                const badge = document.createElement("span");
+                badge.className = "badge bg-primary position-absolute";
+                badge.style.top = "6px";
+                badge.style.left = "6px";
+                badge.textContent = "#" + (idx + 1);
+
+                box.appendChild(img);
+                box.appendChild(badge);
+                wrapper.appendChild(box);
+            });
+
+            enableZoom();
+        });
+    </script>
+}
