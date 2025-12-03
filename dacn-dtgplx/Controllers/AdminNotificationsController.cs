@@ -2,6 +2,7 @@
 using dacn_dtgplx.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 public class AdminNotificationsController : Controller
 {
@@ -14,7 +15,9 @@ public class AdminNotificationsController : Controller
 
     public async Task<IActionResult> Index()
     {
-        int currentUserId = int.Parse(User.FindFirst("UserId").Value);
+        //int currentUserId = int.Parse(User.FindFirst("UserId").Value);
+        int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
 
         var model = new GuiThongBaoViewModel
         {
