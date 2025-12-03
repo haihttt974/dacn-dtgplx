@@ -431,6 +431,32 @@
                             <i class="fa-solid fa-house"></i>Trang chủ
                         </a>
                     </li>
+                    <!-- Hồ sơ -->
+                    <li class="dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center gap-1"
+                           href="#" data-bs-toggle="dropdown">
+                            <i class="fa-solid fa-user"></i>
+                            <span>Hồ sơ</span>
+                        </a>
+                        <ul class="dropdown-menu shadow border-0 rounded-4 dropdown-menu-center">
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center"
+                                   href="@(User?.Identity?.IsAuthenticated == true
+                                                           ? Url.Action("Index", "HoSoThiSinh")
+                                                           : Url.Action("Login", "Auth"))">
+                                    <i class="fa-solid fa-id-card me-2"></i> Hồ sơ của tôi
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center"
+                                   href="@(User?.Identity?.IsAuthenticated == true
+                                                           ? Url.Action("Create", "HoSoThiSinh")
+                                                           : Url.Action("Login", "Auth"))">
+                                    <i class="fa-solid fa-user-plus me-2"></i> Thêm mới hồ sơ
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
                     <!-- Giới thiệu trung tâm -->
                     <li class="dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center gap-1"
