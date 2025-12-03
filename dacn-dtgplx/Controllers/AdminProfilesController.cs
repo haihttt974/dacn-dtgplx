@@ -1,16 +1,21 @@
 ﻿using dacn_dtgplx.Models;
+using dacn_dtgplx.Services;
+using dacn_dtgplx.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace dacn_dtgplx.Controllers.Admin
 {
     public class AdminProfilesController : Controller
     {
         private readonly DtGplxContext _context;
+        private readonly ISteganographyService _steg;
 
-        public AdminProfilesController(DtGplxContext context)
+        public AdminProfilesController(DtGplxContext context, ISteganographyService steg)
         {
             _context = context;
+            _steg = steg;
         }
 
         // =====================================================
@@ -68,15 +73,35 @@ namespace dacn_dtgplx.Controllers.Admin
         {
             var hoSo = await _context.HoSoThiSinhs
                 .Include(h => h.User)
-                .Include(h => h.DangKyHocs)
-                    .ThenInclude(d => d.KhoaHoc)
+                .Include(h => h.DangKyHocs).ThenInclude(d => d.KhoaHoc)
                 .Include(h => h.KetQuaHocTaps)
                 .FirstOrDefaultAsync(h => h.HoSoId == id);
 
-            if (hoSo == null)
-                return NotFound();
+            if (hoSo == null) return NotFound();
 
-            return View(hoSo);
+            string? json = await _steg.ExtractJsonFromImageAsync(hoSo.KhamSucKhoe);
+
+            List<string> healthImages = new();
+
+            HealthInfoVM? sucKhoe = null;
+
+            if (json != null)
+            {
+                sucKhoe = JsonSerializer.Deserialize<HealthInfoVM>(json);
+
+                if (sucKhoe?.AnhGiayKham != null)
+                    healthImages = sucKhoe.AnhGiayKham;
+            }
+
+            var vm = new AdminHoSoDetailVM
+            {
+                HoSo = hoSo,
+                RawJson = json,
+                SucKhoe = sucKhoe,
+                DanhSachAnhGiayKham = healthImages
+            };
+
+            return View(vm);
         }
 
         // =====================================================
