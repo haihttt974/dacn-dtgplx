@@ -1,0 +1,203 @@
+﻿@model List<dacn_dtgplx.Models.KhoaHoc>
+@{
+    ViewData["Title"] = "Danh sách khóa học";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+
+    // Color map cho từng hạng
+    Dictionary<string, string> hangColor = new()
+    {
+        { "A1", "bg-success text-white" },
+        { "A", "bg-primary text-white" },
+        { "B1", "bg-warning text-dark" },
+        { "B", "bg-info text-dark" },
+        { "C1", "bg-danger text-white" },
+        { "C", "bg-dark text-white" },
+        { "D1", "bg-secondary text-white" },
+        { "D", "bg-primary text-white" },
+        { "D2", "bg-success text-white" },
+        { "BE", "bg-info text-dark" },
+        { "C1E", "bg-warning text-dark" },
+        { "CE", "bg-secondary text-white" },
+        { "D1E", "bg-primary text-white" },
+        { "D2E", "bg-success text-white" },
+        { "DE", "bg-danger text-white" }
+    };
+}
+
+<section class="content">
+    <div class="container-fluid">
+
+        <!-- Tiêu đề + nút thêm -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold m-0"> </h4>
+
+            <a asp-action="Create" class="btn btn-primary shadow-sm">
+                <i class="fa fa-plus me-1"></i> Thêm khóa học
+            </a>
+        </div>
+
+        <!-- 📊 Thống kê -->
+        <div class="card mb-3 shadow-sm">
+            <div class="card-body py-2">
+                <div class="d-flex flex-wrap gap-2">
+                    @foreach (var item in ViewBag.ThongKe)
+                    {
+                        string hang = item.Key?.ToString().Trim().ToUpper() ?? "";
+                        int count = item.Value;
+                        string colorClass = hangColor.GetValueOrDefault(hang, "bg-secondary text-white");
+
+                        <span class="badge rounded-pill px-3 py-2 @colorClass filter-badge"
+                              style="cursor: pointer; transition: opacity 0.2s;"
+                              data-hang="@hang"
+                              onmouseover="this.style.opacity='0.8'"
+                              onmouseout="this.style.opacity='1'"
+                              title="Click để lọc hạng @hang">
+                            @hang: @count khóa
+                        </span>
+                    }
+
+                    <!-- Nút reset filter -->
+                    <span class="badge rounded-pill px-3 py-2 bg-light text-dark border"
+                          style="cursor: pointer;"
+                          id="resetFilter"
+                          title="Xóa bộ lọc">
+                        <i class="fa fa-times me-1"></i> Reset
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bộ lọc -->
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+
+                <form id="filterForm" class="row g-3 mb-3">
+
+                    <div class="col-md-4">
+                        <input id="searchBox" name="search" class="form-control"
+                               placeholder="Tìm theo tên..." />
+                    </div>
+
+                    <div class="col-md-3">
+                        <select id="hangSelect" name="hang" class="form-select">
+                            <option value="">-- Tất cả hạng --</option>
+                            @foreach (var h in ViewBag.Hangs)
+                            {
+                                <option value="@h.IdHang" data-mahang="@h.MaHang.Trim().ToUpper()">
+                                    @h.TenDayDu (@h.MaHang)
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <select id="statusSelect" name="status" class="form-select">
+                            <option value="">-- Trạng thái --</option>
+                            <option value="1">Đang mở</option>
+                            <option value="0">Đã đóng</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-secondary w-100">
+                            <i class="fa fa-filter me-1"></i> Lọc
+                        </button>
+                    </div>
+
+                </form>
+
+                <!-- 📄 Khu vực load AJAX và phân trang -->
+                <div id="coursesTable">
+                    @await Html.PartialAsync("_CoursesTable", Model)
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</section>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+        function loadData(page = 1) {
+            $.ajax({
+                url: '@Url.Action("Index")',
+                type: 'GET',
+                data: {
+                    search: $("#searchBox").val(),
+                    hang: $("#hangSelect").val(),
+                    status: $("#statusSelect").val(),
+                    page: page
+                },
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+                success: function (result) {
+                    $("#coursesTable").html(result);
+
+                    // ✅ Cập nhật active cho pagination
+                    $(".page-item").removeClass("active");
+                    $('.page-btn[data-page="' + page + '"]').closest(".page-item").addClass("active");
+
+                    bindPagination();
+                }
+            });
+        }
+
+        // Form filter submit
+        $("#filterForm").on("submit", function (e) {
+            e.preventDefault();
+            loadData();
+        });
+
+        // Tìm kiếm realtime
+        $("#searchBox").on("keyup", function () {
+            loadData();
+        });
+
+        function bindPagination() {
+            $(".page-btn").on("click", function () {
+                let page = $(this).data("page");
+                loadData(page);
+            });
+        }
+
+        // ✨ Click vào badge thống kê để lọc
+        $(".filter-badge").on("click", function () {
+            let maHang = $(this).data("hang").toString().trim().toUpperCase();
+
+            let matchedValue = null;
+
+            $("#hangSelect option").each(function () {
+                let optionHang = $(this).data("mahang")?.toString().trim().toUpperCase() || "";
+                if (optionHang === maHang) {
+                    matchedValue = $(this).val();
+                    return false;
+                }
+            });
+
+            if (matchedValue) {
+                $("#hangSelect").val(matchedValue);
+
+                $(".filter-badge").css("box-shadow", "none");
+                $(this).css("box-shadow", "0 0 0 3px rgba(0,123,255,0.6)");
+
+                loadData(1);
+            } else {
+                alert("Không tìm thấy hạng " + maHang + " trong dropdown!");
+            }
+        });
+
+        // Reset filter
+        $("#resetFilter").on("click", function () {
+            $("#searchBox").val("");
+            $("#hangSelect").val("");
+            $("#statusSelect").val("");
+            $(".filter-badge").css("box-shadow", "none");
+            loadData(1);
+        });
+
+        // Gọi lần đầu
+        bindPagination();
+    </script>
+}

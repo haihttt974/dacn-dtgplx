@@ -1,0 +1,163 @@
+﻿@model IEnumerable<dacn_dtgplx.Models.HoSoThiSinh>
+
+@{
+    ViewData["Title"] = "Hồ sơ học viên";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <h3 class="mb-4"><i class="fas fa-id-card"></i> Hồ sơ học viên</h3>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+
+        <!-- Search + Filter -->
+        <form method="get" class="row mb-4">
+            <div class="col-md-4">
+                <input type="text" name="search" class="form-control"
+                       placeholder="Tìm theo tên, CCCD, SĐT..." value="@Context.Request.Query["search"]" />
+            </div>
+
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">-- Tất cả trạng thái --</option>
+                    <option value="0" selected="@(Context.Request.Query["status"] == "0")">Chưa duyệt</option>
+                    <option value="1" selected="@(Context.Request.Query["status"] == "1")">Đã duyệt</option>
+                    <option value="2" selected="@(Context.Request.Query["status"] == "2")">Từ chối</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <button class="btn btn-primary"><i class="fas fa-search"></i> Lọc</button>
+            </div>
+        </form>
+
+        <!-- Table -->
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Học viên</th>
+                        <th>SĐT</th>
+                        <th>CCCD</th>
+                        <th>Khoá học</th>
+                        <th>Ngày đăng ký</th>
+                        <th>Trạng thái</th>
+                        <th style="width: 150px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        var trangThaiBadge = item.DaDuyet switch
+                        {
+                            null => "<span class='badge bg-warning'>Chưa duyệt</span>",
+                            true => "<span class='badge bg-success'>Đã duyệt</span>",
+                            false => "<span class='badge bg-danger'>Từ chối</span>"
+                        };
+
+                        <tr>
+                            <td>
+                                <strong>@item.User.TenDayDu</strong><br />
+                                <small class="text-muted">@item.User.Email</small>
+                            </td>
+                            <td>@item.User.SoDienThoai</td>
+                            <td>@item.User.Cccd</td>
+                            <td>
+                                @foreach (var dk in item.DangKyHocs)
+                                {
+                                    <span class="badge bg-info text-dark">@dk.KhoaHoc.TenKhoaHoc</span>
+                                }
+                            </td>
+                            <td>@item.NgayDk?.ToString("dd/MM/yyyy")</td>
+                            <td>@Html.Raw(trangThaiBadge)</td>
+
+                            <td>
+                                <a asp-action="Details" asp-route-id="@item.HoSoId"
+                                   class="btn btn-sm btn-info me-1">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+
+                                @if (item.DaDuyet == null)
+                                {
+                                    <button class="btn btn-sm btn-success me-1"
+                                            onclick="openApprove(@item.HoSoId)">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger"
+                                            onclick="openReject(@item.HoSoId)">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<!-- MODAL DUYỆT -->
+<div class="modal fade" id="approveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="approveForm" method="post">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">Duyệt hồ sơ</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    Bạn chắc chắn muốn <strong>DUYỆT</strong> hồ sơ này?
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Duyệt</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL TỪ CHỐI -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="rejectForm" method="post">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Từ chối hồ sơ</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <label>Lý do từ chối:</label>
+                    <textarea name="note" class="form-control" rows="3" required></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-danger">Từ chối</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openApprove(id) {
+        const form = document.getElementById("approveForm");
+        form.action = "/AdminProfiles/Approve/" + id;
+        new bootstrap.Modal(document.getElementById("approveModal")).show();
+    }
+
+    function openReject(id) {
+        const form = document.getElementById("rejectForm");
+        form.action = "/AdminProfiles/Reject/" + id;
+        new bootstrap.Modal(document.getElementById("rejectModal")).show();
+    }
+</script>

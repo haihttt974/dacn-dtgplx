@@ -1,0 +1,217 @@
+﻿@model List<dacn_dtgplx.ViewModels.NotificationViewModel>
+
+@{
+    ViewData["Title"] = "Thông báo";
+    var filterType = ViewBag.FilterType as string ?? "all";
+    var currentPage = ViewBag.CurrentPage ?? 1;
+    var totalPages = ViewBag.TotalPages ?? 1;
+    var totalCount = ViewBag.TotalCount ?? 0;
+    var unreadCount = ViewBag.UnreadCount ?? 0;
+}
+
+<div class="container py-4">
+
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center border-bottom">
+            <div>
+                <h4 class="fw-bold mb-1">
+                    <i class="fa-solid fa-bell me-2"></i>Thông báo
+                </h4>
+                <small class="text-muted">
+                    Tổng: <b>@totalCount</b> | Chưa đọc: <b class="text-danger">@unreadCount</b>
+                </small>
+            </div>
+
+            <div class="btn-group">
+                <a href="@Url.Action("Index")"
+                   class="btn @(filterType == "all" ? "btn-primary" : "btn-outline-primary")">
+                    <i class="fa-solid fa-list me-1"></i>Tất cả
+                </a>
+
+                <a href="@Url.Action("Unread")"
+                   class="btn @(filterType == "unread" ? "btn-primary" : "btn-outline-primary")">
+                    <i class="fa-solid fa-envelope me-1"></i>Chưa đọc (@unreadCount)
+                </a>
+            </div>
+        </div>
+
+        <div class="card-body">
+
+            <!-- Bulk Actions -->
+            @if (Model.Any())
+            {
+                <div class="d-flex justify-content-between align-items-center mb-3">
+
+                    <div>
+                        <form asp-action="MarkAllAsRead" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="fa fa-check-double me-1"></i>Đánh dấu tất cả đã đọc
+                            </button>
+                        </form>
+
+                        <form asp-action="DeleteAll" method="post" class="d-inline ms-2">
+                            <button type="submit" class="btn btn-danger btn-sm"
+                                    onclick="return confirm('Bạn có chắc muốn xóa toàn bộ thông báo?')">
+                                <i class="fa fa-trash me-1"></i>Xóa tất cả
+                            </button>
+                        </form>
+                    </div>
+
+                    <button class="btn btn-outline-primary btn-sm" onclick="location.reload()">
+                        <i class="fa fa-rotate me-1"></i>Làm mới
+                    </button>
+
+                </div>
+            }
+
+            <!-- Notifications list -->
+            @if (Model.Any())
+            {
+                <div class="list-group">
+
+                    @foreach (var item in Model)
+                    {
+                        bool isUnread = !item.IsRead;
+
+                        <div class="list-group-item border-0 p-3 mb-2 rounded-3 shadow-sm notification-row
+                                    @(isUnread ? "bg-light border-start border-4 border-primary" : "bg-white")">
+
+                            <div class="d-flex align-items-start">
+
+                                <!-- Icon -->
+                                <div class="notification-icon me-3 @item.ColorClass">
+                                    <i class="@item.IconClass"></i>
+                                </div>
+
+                                <div class="flex-grow-1">
+
+                                    <!-- Title -->
+                                    <div class="d-flex justify-content-between">
+                                        <h6 class="fw-bold mb-1 text-dark">
+                                            @item.Title
+                                            @if (isUnread)
+                                            {
+                                                <span class="badge bg-primary ms-2">Mới</span>
+                                            }
+                                        </h6>
+
+                                        <div class="btn-group">
+
+                                            @if (isUnread)
+                                            {
+                                                <form asp-action="MarkAsRead" method="post" class="d-inline">
+                                                    <input type="hidden" name="id" value="@item.ThongBaoId" />
+                                                    <button class="btn btn-outline-success btn-sm me-1">
+                                                        <i class="fa fa-check"></i>
+                                                    </button>
+                                                </form>
+                                            }
+
+                                            <form asp-action="Delete" method="post" class="d-inline">
+                                                <input type="hidden" name="id" value="@item.ThongBaoId" />
+                                                <button class="btn btn-outline-danger btn-sm"
+                                                        onclick="return confirm('Xóa thông báo này?')">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </form>
+
+                                        </div>
+                                    </div>
+
+                                    <!-- Message -->
+                                    <p class="text-muted mb-1" style="white-space: pre-line;">
+                                        @item.Message
+                                    </p>
+
+                                    <!-- Time -->
+                                    <small class="text-muted">
+                                        <i class="fa-regular fa-clock me-1"></i>@item.TimeAgo
+                                    </small>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+                    }
+
+                </div>
+
+                <!-- Pagination -->
+                @if (totalPages > 1)
+                {
+                    <nav class="mt-4">
+                        <ul class="pagination justify-content-center">
+
+                            @if (currentPage > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link"
+                                       href="@Url.Action(filterType == "unread" ? "Unread" : "Index", new { page = currentPage - 1 })">
+                                        <i class="fa fa-angle-left"></i>
+                                    </a>
+                                </li>
+                            }
+
+                            @for (int i = 1; i <= totalPages; i++)
+                            {
+                                <li class="page-item @(i == currentPage ? "active" : "")">
+                                    <a class="page-link"
+                                       href="@Url.Action(filterType == "unread" ? "Unread" : "Index", new { page = i })">
+                                        @i
+                                    </a>
+                                </li>
+                            }
+
+                            @if (currentPage < totalPages)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link"
+                                       href="@Url.Action(filterType == "unread" ? "Unread" : "Index", new { page = currentPage + 1 })">
+                                        <i class="fa fa-angle-right"></i>
+                                    </a>
+                                </li>
+                            }
+
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="fa-solid fa-bell-slash text-muted" style="font-size: 3.5rem;"></i>
+                    <h5 class="text-muted mt-3">Không có thông báo</h5>
+                    <p class="text-muted">
+                        Thông báo mới sẽ hiển thị tại đây.
+                    </p>
+                </div>
+            }
+
+        </div>
+    </div>
+
+</div>
+
+@section Styles {
+    <style>
+        .notification-row {
+            transition: all 0.2s ease;
+        }
+
+            .notification-row:hover {
+                background: #f9f9f9 !important;
+                transform: translateX(2px);
+            }
+
+        .notification-icon {
+            width: 45px;
+            height: 45px;
+            font-size: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+}

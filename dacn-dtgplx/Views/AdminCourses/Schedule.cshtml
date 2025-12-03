@@ -1,0 +1,106 @@
+﻿@model dacn_dtgplx.Models.KhoaHoc
+
+<h3 class="mb-3 fw-bold">
+    📅 Lịch học của @Model.TenKhoaHoc
+</h3>
+
+<div class="mb-3 d-flex gap-2">
+    <a href="@Url.Action("Details", "AdminCourses", new { id = Model.KhoaHocId })"
+       class="btn btn-secondary">
+        ← Quay lại khóa học
+    </a>
+
+    <a class="btn btn-primary"
+       href="/admin/courses/schedule/add/@Model.KhoaHocId">
+        ➕ Thêm lịch học
+    </a>
+</div>
+
+<table class="table table-hover table-bordered align-middle shadow-sm">
+    <thead class="table-dark">
+        <tr>
+            <th class="text-center" style="width:60px">#</th>
+            <th>Ngày học</th>
+            <th>Thời gian</th>
+            <th>Nội dung</th>
+            <th>Địa điểm</th>
+            <th>Xe tập lái</th>
+            <th>Lớp học</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            int stt = 1;
+            var today = DateOnly.FromDateTime(DateTime.Now);
+        }
+
+        @foreach (var lh in Model.LichHocs.OrderBy(x => x.NgayHoc))
+        {
+            string rowClass = "";
+
+            if (lh.NgayHoc < today)
+            {
+                rowClass = "lich-qua";   // Xám nhạt
+            }
+            else if (lh.NgayHoc == today)
+            {
+                rowClass = "lich-homnay"; // Xanh nhạt
+            }
+            else
+            {
+                rowClass = "lich-saptoi"; // Bình thường
+            }
+
+            <tr class="@rowClass">
+                <td class="text-center fw-bold">@stt</td>
+                <td>
+                    <span class="fw-semibold">@lh.NgayHoc.ToString("dd/MM/yyyy")</span>
+                </td>
+                <td>
+                    <span class="time-block">
+                        @lh.TgBatDau.ToString("hh\\:mm tt")
+                        -
+                        @lh.TgKetThuc.ToString("hh\\:mm tt")
+                    </span>
+                </td>
+                <td>@lh.NoiDung</td>
+                <td>@lh.DiaDiem</td>
+                <td>@lh.XeTapLai?.LoaiXe</td>
+                <td>@lh.LopHoc?.TenLop</td>
+            </tr>
+
+            stt++;
+        }
+    </tbody>
+</table>
+
+<style>
+    /* Màu hàng */
+    .lich-qua {
+        background: #f0f0f0 !important;
+        color: #777;
+        opacity: 0.7;
+    }
+
+    .lich-homnay {
+        background: #d9f7d9 !important;
+        border-left: 5px solid #2ecc71 !important;
+    }
+
+    .lich-saptoi {
+        background: #ffffff;
+    }
+
+    /* Thời gian đẹp hơn */
+    .time-block {
+        background: #eef3ff;
+        padding: 4px 8px;
+        border-radius: 6px;
+        display: inline-block;
+        font-weight: 500;
+    }
+
+    table th, table td {
+        vertical-align: middle !important;
+    }
+</style>

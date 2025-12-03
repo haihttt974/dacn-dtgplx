@@ -1,0 +1,169 @@
+﻿@model dacn_dtgplx.Models.HoSoThiSinh
+@{
+    ViewData["Title"] = "Chi tiết hồ sơ";
+}
+
+<div class="content-header mb-3">
+    <h3><i class="fas fa-user"></i> Chi tiết hồ sơ: @Model.User.TenDayDu</h3>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-4" id="profileTabs">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#info">Thông tin cá nhân</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#hoso">Thông tin hồ sơ</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#khoahoc">Khóa học</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#tientrinh">Tiến trình học tập</a>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+
+            <!-- TAB 1: THÔNG TIN CÁ NHÂN -->
+            <div class="tab-pane fade show active" id="info">
+                <div class="row">
+
+                    <div class="col-md-3 text-center">
+                        <img src="@Model.User.Avatar" class="img-thumbnail mb-3" />
+                        <h5>@Model.User.TenDayDu</h5>
+                    </div>
+
+                    <div class="col-md-9">
+                        <p><strong>Ngày sinh:</strong> @Model.User.NgaySinh?.ToString("dd/MM/yyyy")</p>
+                        <p><strong>Giới tính:</strong> @Model.User.GioiTinh</p>
+                        <p><strong>CCCD:</strong> @Model.User.Cccd</p>
+                        <p><strong>Số điện thoại:</strong> @Model.User.SoDienThoai</p>
+                        <p><strong>Email:</strong> @Model.User.Email</p>
+                        <p><strong>Địa chỉ:</strong> @Model.User.DiaChi</p>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- TAB 2: THÔNG TIN HỒ SƠ -->
+            <div class="tab-pane fade" id="hoso">
+
+                <p><strong>Loại hồ sơ:</strong> @Model.LoaiHoSo</p>
+                <p><strong>Ngày đăng ký:</strong> @Model.NgayDk?.ToString("dd/MM/yyyy")</p>
+                <p><strong>Khám sức khỏe:</strong> @Model.KhamSucKhoe</p>
+                <p><strong>Ghi chú:</strong> @(Model.GhiChu ?? "Không có")</p>
+
+                <p>
+                    <strong>Trạng thái:</strong>
+                    @if (Model.DaDuyet == null)
+                    {
+                        <span class="badge bg-warning">Chưa duyệt</span>
+                    }
+                    else if (Model.DaDuyet == true)
+                    {
+                        <span class="badge bg-success">Đã duyệt</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">Từ chối</span>
+                    }
+                </p>
+
+                @if (Model.DaDuyet == null)
+                {
+                    <button class="btn btn-success me-2" onclick="openApprove(@Model.HoSoId)">Duyệt</button>
+                    <button class="btn btn-danger" onclick="openReject(@Model.HoSoId)">Từ chối</button>
+                }
+
+            </div>
+
+            <!-- TAB 3: KHÓA HỌC -->
+            <div class="tab-pane fade" id="khoahoc">
+                @foreach (var dk in Model.DangKyHocs)
+                {
+                    <div class="border rounded p-3 mb-3">
+                        <h5 class="text-primary">@dk.KhoaHoc.TenKhoaHoc</h5>
+                        <p><strong>Ngày bắt đầu:</strong> @dk.KhoaHoc.NgayBatDau?.ToString("dd/MM/yyyy")</p>
+                        <p><strong>Ngày kết thúc:</strong> @dk.KhoaHoc.NgayKetThuc?.ToString("dd/MM/yyyy")</p>
+                    </div>
+                }
+            </div>
+
+            <!-- TAB 4: TIẾN TRÌNH -->
+            <div class="tab-pane fade" id="tientrinh">
+
+                @foreach (var kq in Model.KetQuaHocTaps)
+                {
+                    <div class="border rounded p-3 mb-3">
+                        <p><strong>Lý thuyết:</strong> @(kq.HtLyThuyet == true ? "Hoàn thành" : "Chưa")</p>
+                        <p><strong>Mô phỏng:</strong> @(kq.HtMoPhong == true ? "Hoàn thành" : "Chưa")</p>
+                        <p><strong>Sa hình:</strong> @(kq.HtSaHinh == true ? "Hoàn thành" : "Chưa")</p>
+                        <p><strong>Đường trường:</strong> @(kq.HtDuongTruong == true ? "Hoàn thành" : "Chưa")</p>
+                    </div>
+                }
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- MODAL DUYỆT -->
+<div class="modal fade" id="approveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="approveForm" method="post">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">Duyệt hồ sơ</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    Xác nhận duyệt hồ sơ này?
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Duyệt</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL TỪ CHỐI -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="rejectForm" method="post">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Từ chối hồ sơ</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label>Lý do từ chối:</label>
+                    <textarea name="note" class="form-control" required rows="3"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-danger">Từ chối</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openApprove(id) {
+        document.getElementById("approveForm").action = "/AdminProfiles/Approve/" + id;
+        new bootstrap.Modal(document.getElementById("approveModal")).show();
+    }
+
+    function openReject(id) {
+        document.getElementById("rejectForm").action = "/AdminProfiles/Reject/" + id;
+        new bootstrap.Modal(document.getElementById("rejectModal")).show();
+    }
+</script>

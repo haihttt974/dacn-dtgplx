@@ -1,0 +1,177 @@
+﻿@model List<dacn_dtgplx.Models.KhoaHoc>
+
+@{
+    Dictionary<string, string> hangColor = new()
+    {
+        { "A1", "bg-success text-white" },
+        { "A", "bg-primary text-white" },
+        { "B1", "bg-warning text-dark" },
+        { "B", "bg-info text-dark" },
+        { "C1", "bg-danger text-white" },
+        { "C", "bg-dark text-white" },
+        { "D1", "bg-secondary text-white" },
+        { "D", "bg-primary text-white" },
+        { "D2", "bg-success text-white" },
+        { "BE", "bg-info text-dark" },
+        { "C1E", "bg-warning text-dark" },
+        { "CE", "bg-secondary text-white" },
+        { "D1E", "bg-primary text-white" },
+        { "D2E", "bg-success text-white" },
+        { "DE", "bg-danger text-white" }
+    };
+
+    int currentPage = ViewBag.Page ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+}
+
+<!-- TABLE -->
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th style="width: 5%">#</th>
+                <th style="width: 30%">Tên khóa học</th>
+                <th style="width: 10%">Hạng</th>
+                <th style="width: 12%">Ngày bắt đầu</th>
+                <th style="width: 12%">Ngày kết thúc</th>
+                <th style="width: 12%">Số HV</th>
+                <th style="width: 10%">Trạng thái</th>
+                <th style="width: 9%">Hành động</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var k in Model)
+                {
+                    var hang = k.IdHangNavigation?.MaHang?.Trim().ToUpper() ?? "";
+                    var color = hangColor.GetValueOrDefault(hang, "bg-secondary text-white");
+                    int daDangKy = k.DangKyHocs?.Count ?? 0;
+                    int slConLai = (k.SlToiDa ?? 0) - daDangKy;
+
+                    <tr>
+                        <td><strong>@k.KhoaHocId</strong></td>
+
+                        <td>
+                            <div class="text-truncate" style="max-width: 300px;" title="@k.TenKhoaHoc">
+                                @k.TenKhoaHoc
+                            </div>
+                        </td>
+
+                        <td><span class="badge @color px-3 py-2">@hang</span></td>
+
+                        <td><small>@k.NgayBatDau?.ToString("dd/MM/yyyy")</small></td>
+                        <td><small>@k.NgayKetThuc?.ToString("dd/MM/yyyy")</small></td>
+
+                        <td>
+                            <span class="fw-bold text-primary">@daDangKy</span> /
+                            <span class="text-muted">@k.SlToiDa</span>
+                            <br />
+                            <small class="@(slConLai > 0 ? "text-success" : "text-danger")">
+                                Còn: @slConLai
+                            </small>
+                        </td>
+
+                        <td>
+                            @if (k.IsActive == true)
+                            {
+                                <span class="badge bg-success rounded-pill">
+                                    <i class="fa fa-check-circle me-1"></i>Đang mở
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary rounded-pill">
+                                    <i class="fa fa-times-circle me-1"></i>Đã đóng
+                                </span>
+                            }
+                        </td>
+
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a asp-action="Details" asp-route-id="@k.KhoaHocId" class="btn btn-info text-white">
+                                    <i class="fa fa-eye"></i>
+                                </a>
+                                <a asp-action="Edit" asp-route-id="@k.KhoaHocId" class="btn btn-warning text-dark">
+                                    <i class="fa fa-edit"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="8" class="text-center py-5">
+                        <i class="fa fa-inbox fa-3x text-muted mb-3 d-block"></i>
+                        <p class="text-muted mb-0">Không tìm thấy khóa học nào</p>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+
+<!-- PAGINATION -->
+@if (totalPages > 1)
+{
+    <nav class="mt-3">
+        <ul class="pagination justify-content-center">
+
+            <!-- Previous -->
+            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                <a class="page-link page-btn" data-page="@(currentPage - 1)">
+                    <i class="fa fa-chevron-left"></i>
+                </a>
+            </li>
+
+            @{
+                int range = 2;
+                int start = Math.Max(1, currentPage - range);
+                int end = Math.Min(totalPages, currentPage + range);
+            }
+
+            <!-- Page 1 + ... -->
+            @if (start > 1)
+            {
+                <li class="page-item"><a class="page-link page-btn" data-page="1">1</a></li>
+
+                @if (start > 2)
+                {
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                }
+            }
+
+            <!-- Main pages -->
+            @for (int i = start; i <= end; i++)
+            {
+                <li class="page-item @(i == currentPage ? "active" : "")">
+                    <a class="page-link page-btn" data-page="@i">@i</a>
+                </li>
+            }
+
+            <!-- ... + Last page -->
+            @if (end < totalPages)
+            {
+                @if (end < totalPages - 1)
+                {
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                }
+
+                <li class="page-item">
+                    <a class="page-link page-btn" data-page="@totalPages">@totalPages</a>
+                </li>
+            }
+
+            <!-- Next -->
+            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                <a class="page-link page-btn" data-page="@(currentPage + 1)">
+                    <i class="fa fa-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+}

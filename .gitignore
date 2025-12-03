@@ -363,3 +363,5 @@ MigrationBackup/
 FodyWeavers.xsd
 
 dacn-dtgplx/appsettings.json
+
+dacn-dtgplx/wwwroot/videos/situations/

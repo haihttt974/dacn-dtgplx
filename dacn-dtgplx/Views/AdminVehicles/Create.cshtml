@@ -1,0 +1,52 @@
+﻿@model dacn_dtgplx.Models.XeTapLai
+
+@{
+    ViewData["Title"] = "Thêm xe tập lái";
+}
+
+<div class="container-fluid mt-3">
+    <div class="row">
+        <div class="col-lg-6 col-xl-5 mx-auto">
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fa fa-plus-circle me-1"></i> Thêm xe tập lái
+                    </h5>
+                </div>
+
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3">
+                            <label asp-for="LoaiXe" class="form-label fw-semibold">Tên xe (Loại xe)</label>
+                            <input asp-for="LoaiXe" class="form-control" />
+                            <span asp-validation-for="LoaiXe" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input asp-for="TrangThaiXe" class="form-check-input" />
+                            <label asp-for="TrangThaiXe" class="form-check-label">Đang hoạt động</label>
+                        </div>
+
+                        <div class="text-end">
+                            <a asp-action="Index" class="btn btn-secondary me-2">
+                                <i class="fa fa-arrow-left me-1"></i> Quay lại
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-save me-1"></i> Lưu
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

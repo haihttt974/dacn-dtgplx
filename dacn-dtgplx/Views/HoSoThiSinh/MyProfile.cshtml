@@ -1,0 +1,122 @@
+﻿@model IEnumerable<dacn_dtgplx.Models.HoSoThiSinh>
+
+@{
+    ViewData["Title"] = "Hồ sơ của tôi";
+    bool? filterDaDuyet = ViewBag.FilterDaDuyet as bool?;
+    int? filterIdHang = ViewBag.FilterIdHang as int?;
+}
+
+<div class="container mt-4">
+    <h2 class="fw-bold mb-3">
+        <i class="fa-solid fa-folder-open me-2"></i>
+        Hồ sơ của tôi
+    </h2>
+
+    <div class="mb-3">
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="fa-solid fa-file-circle-plus me-1"></i> Thêm hồ sơ mới
+        </a>
+    </div>
+
+    <!-- Bộ lọc -->
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-md-3">
+            <label class="form-label">Trạng thái duyệt</label>
+            <select name="daDuyet" class="form-select">
+                <option value="">-- Tất cả --</option>
+
+                <option value="true" selected="@(filterDaDuyet == true)">
+                    Đã duyệt
+                </option>
+
+                <option value="false" selected="@(filterDaDuyet == false)">
+                    Chưa duyệt
+                </option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Hạng GPLX</label>
+            <select name="idHang" class="form-select">
+                <option value="">-- Tất cả --</option>
+
+                @foreach (var hang in ViewBag.Hangs)
+                {
+                    <option value="@hang.IdHang" selected="@(filterIdHang == hang.IdHang)">
+                        @hang.MaHang - @hang.TenDayDu
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div class="col-md-3 d-flex align-items-end">
+            <button class="btn btn-outline-secondary me-2">
+                <i class="fa-solid fa-filter me-1"></i> Lọc
+            </button>
+            <a asp-action="MyProfile" class="btn btn-link">Reset</a>
+        </div>
+    </form>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            Bạn chưa có hồ sơ nào. Hãy nhấn <b>Thêm hồ sơ mới</b> để đăng ký.
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-2 g-3">
+            @foreach (var item in Model)
+            {
+                var idPhotoUrl = string.IsNullOrEmpty(item.KhamSucKhoe)
+                    ? Url.Content("~/images/avatar/default-id-photo.png")
+                    : Url.Content("~/" + item.KhamSucKhoe.TrimStart('/'));
+
+                <div class="col">
+                    <div class="card shadow-sm border-0 rounded-4 h-100">
+                        <div class="card-body d-flex">
+
+                            <div class="me-3">
+                                <img src="@idPhotoUrl"
+                                     class="rounded-3 border"
+                                     style="width:90px;height:120px;object-fit:cover;" />
+                            </div>
+
+                            <div class="flex-grow-1">
+                                <h5 class="fw-bold mb-1">
+                                    @item.LoaiHoSo
+                                </h5>
+
+                                <p class="mb-1">
+                                    <b>Ngày đăng ký:</b>
+                                    @item.NgayDk?.ToString("dd/MM/yyyy")
+                                </p>
+
+                                <p class="mb-1">
+                                    <b>Trạng thái:</b>
+                                    @if (item.DaDuyet == true)
+                                    {
+                                        <span class="badge bg-success">Đã duyệt</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Chưa duyệt</span>
+                                    }
+                                </p>
+
+                                <div class="mt-2">
+                                    <a asp-action="Detail"
+                                       asp-route-id="@item.HoSoId"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fa-solid fa-circle-info me-1"></i> Chi tiết
+                                    </a>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

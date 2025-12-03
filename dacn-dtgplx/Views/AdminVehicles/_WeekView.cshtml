@@ -1,0 +1,283 @@
+﻿@model dacn_dtgplx.ViewModels.VehicleScheduleVM
+
+<style>
+    .schedule-table {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+        /* Header ngày – cao riêng, không phụ thuộc các slot */
+        .schedule-table thead th {
+            height: 70px; /* chiều cao cố định của header */
+            padding: 8px 0;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 14px;
+            font-weight: 600;
+            border-bottom: 2px solid #ddd;
+        }
+
+        /* Body (các dòng thời gian) */
+        .schedule-table tbody td {
+            height: 80px; /* chiều cao của từng ô thời gian */
+            padding: 0;
+            vertical-align: top;
+        }
+
+    .time-cell {
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 80px; /* giữ đúng chiều cao slot */
+        font-weight: 600;
+        font-size: 14px;
+        background: #fff;
+        color: #333;
+        border-right: 1px solid #e5e7eb;
+    }
+
+    .slot-cell {
+        position: relative;
+        background: #fff;
+        border-left: 1px solid #e5e5e5;
+        overflow: visible !important; /* QUAN TRỌNG - cho tooltip tràn ra ngoài */
+    }
+
+    .slot-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: visible !important; /* QUAN TRỌNG */
+    }
+
+    /* BLOCK LỊCH */
+    .event-block {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 100%;
+        padding: 6px;
+        font-size: 12px;
+        background: #ffe08a;
+        border: 1px solid #f4b400;
+        color: #000;
+        overflow: visible !important;
+        cursor: pointer;
+        z-index: 5;
+    }
+
+    .event-thuexe {
+        background: #cce7ff;
+        border-color: #0099ff;
+    }
+
+    /* TOOLTIP ĐẸP - giống mẫu */
+    .tooltip-box {
+        position: absolute;
+        bottom: -90px; /* đẩy tooltip xuống dưới block */
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1f1f1f;
+        color: #fff;
+        padding: 10px 14px;
+        border-radius: 6px;
+        font-size: 12px;
+        white-space: nowrap;
+        z-index: 999;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .18s ease-out, transform .18s ease-out;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+    }
+
+    .week-nav button:hover i {
+        color: #333 !important;
+    }
+        /* Mũi tên */
+        .tooltip-box::after {
+            content: "";
+            position: absolute;
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 6px;
+            border-style: solid;
+            border-color: transparent transparent #1f1f1f transparent;
+        }
+
+    /* Hover hiện tooltip */
+    .event-block:hover .tooltip-box {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-4px);
+        pointer-events: auto;
+    }
+
+    .slot-cell {
+        position: relative;
+        background: #fff;
+        border-left: 1px solid #e5e5e5;
+        overflow: hidden; /* TRẢ VỀ MẶC ĐỊNH */
+    }
+
+    .slot-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: visible; /* Chỉ inner mới overflow */
+    }
+
+    .week-nav button {
+        height: 36px;
+        width: 36px;
+        padding: 0;
+        border-radius: 8px;
+        border: 1px solid #d0d7e2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        transition: all 0.15s ease;
+    }
+
+        .week-nav button i {
+            font-size: 14px;
+        }
+
+    .week-nav .btn-current-week {
+        width: auto;
+        padding: 0 16px;
+        font-weight: 600;
+        font-size: 14px;
+        border-radius: 8px;
+    }
+
+    .week-nav button:hover:not(:disabled) {
+        background: #f5f7fb;
+        border-color: #a8b3c4;
+    }
+
+    .week-nav .btn-current-week:hover:not(:disabled) {
+        background: #eef5ff;
+        border-color: #7cb1ff;
+    }
+
+    .week-nav button:disabled {
+        opacity: 0.5;
+    }
+
+</style>
+
+@functions {
+    string VnDay(DateTime d) => d.DayOfWeek switch
+    {
+        DayOfWeek.Monday => "Thứ 2",
+        DayOfWeek.Tuesday => "Thứ 3",
+        DayOfWeek.Wednesday => "Thứ 4",
+        DayOfWeek.Thursday => "Thứ 5",
+        DayOfWeek.Friday => "Thứ 6",
+        DayOfWeek.Saturday => "Thứ 7",
+        DayOfWeek.Sunday => "Chủ nhật",
+        _ => ""
+    };
+}
+
+<div id="weekPanel" data-weekstart="@Model.WeekStart.ToString("yyyy-MM-dd")">
+
+    <!-- Điều hướng tuần -->
+    <div class="d-flex justify-content-between mb-2">
+        <div class="week-nav d-flex align-items-center gap-2">
+            <button class="btn btn-outline-secondary btn-sm btn-prev-week"
+                    data-weekstart="@Model.WeekStart.ToString("yyyy-MM-dd")">
+                <i class="fa fa-chevron-left"></i>
+            </button>
+
+            <button class="btn btn-outline-primary btn-sm btn-current-week"
+                    data-weekstart="@Model.WeekStart.ToString("yyyy-MM-dd")"
+                    @( Model.WeekStart <= DateTime.Today && DateTime.Today <= Model.WeekEnd ? "disabled" : "" )>
+                Tuần hiện tại
+            </button>
+
+            <button class="btn btn-outline-secondary btn-sm btn-next-week"
+                    data-weekstart="@Model.WeekStart.ToString("yyyy-MM-dd")">
+                <i class="fa fa-chevron-right"></i>
+            </button>
+        </div>
+
+        <div class="fw-semibold">
+            Tuần: @Model.WeekStart.ToString("dd/MM/yyyy") - @Model.WeekEnd.ToString("dd/MM/yyyy")
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+
+            <table class="table table-bordered schedule-table mb-0">
+                <thead>
+                    <tr>
+                        <th class="bg-light"></th>
+                        @foreach (var day in Model.WeekDays)
+                        {
+                            <th class="bg-primary text-white">
+                                @VnDay(day)<br />
+                                @day.ToString("dd/MM")
+                            </th>
+                        }
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var slot in Model.TimeSlots)
+                    {
+                        <tr>
+                            <td class="time-cell">@slot.Label</td>
+
+                            @foreach (var day in Model.WeekDays)
+                            {
+                                var d = DateOnly.FromDateTime(day);
+
+                                var ev = Model.Items.FirstOrDefault(ev =>
+                                ev.Date == d &&
+                                ev.Start >= slot.Start &&
+                                ev.End <= slot.End
+                                );
+
+                                <td class="slot-cell">
+                                    <div class="slot-inner">
+
+                                        @if (ev != null)
+                                        {
+                                            var css = ev.Type == "LichHoc"
+                                            ? "event-block"
+                                            : "event-block event-thuexe";
+
+                                            <div class="@css">
+                                                <div><strong>@ev.Title</strong></div>
+                                                <div>@ev.Start.ToString("HH\\:mm") - @ev.End.ToString("HH\\:mm")</div>
+
+                                                <!-- TOOLTIP -->
+                                                <div class="tooltip-box">
+                                                    <strong>@ev.Title</strong><br />
+                                                    Thời gian: @ev.Start.ToString("HH\\:mm") - @ev.End.ToString("HH\\:mm")<br />
+                                                    @if (!string.IsNullOrWhiteSpace(ev.Description))
+                                                    {
+                                                        <span>Chi tiết: @ev.Description</span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+
+                                    </div>
+                                </td>
+                            }
+
+                        </tr>
+                    }
+                </tbody>
+
+            </table>
+        </div>
+    </div>
+</div>

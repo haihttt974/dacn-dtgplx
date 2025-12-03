@@ -1,0 +1,92 @@
+﻿@model dacn_dtgplx.Models.KhoaHoc
+@{
+    ViewData["Title"] = "Chỉnh sửa khóa học";
+}
+
+<div class="container mt-4">
+
+    <h3 class="text-primary mb-3">
+        <i class="fa fa-edit"></i> Bảng chỉnh sửa thông tin khóa học
+    </h3>
+
+    <!-- Hiển thị thông báo -->
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">
+            <i class="fa fa-times-circle"></i> @TempData["Error"]
+        </div>
+    }
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            <i class="fa fa-check-circle"></i> @TempData["Success"]
+        </div>
+    }
+
+    <div class="card shadow-sm">
+
+        <div class="card-header bg-primary text-white">
+            <strong>@Model.TenKhoaHoc</strong>
+        </div>
+
+        <div class="card-body">
+
+            <form method="post">
+
+                <!-- Tên khóa (readonly) -->
+                <div class="mb-3">
+                    <label class="fw-bold">Tên khóa học</label>
+                    <input class="form-control" value="@Model.TenKhoaHoc" readonly />
+                </div>
+
+                <!-- Ngày bắt đầu -->
+                <div class="mb-3">
+                    <label class="fw-bold">Ngày bắt đầu</label>
+                    <input asp-for="NgayBatDau" type="date" class="form-control" />
+                </div>
+
+                <!-- Số ngày học -->
+                <div class="mb-3">
+                    <label class="fw-bold">Số ngày học</label>
+                    <input type="number" name="SoNgayHoc" class="form-control"
+                           value="@ViewBag.SoNgayHoc" min="1" />
+                </div>
+
+                <!-- Số lượng tối đa -->
+                <div class="mb-3">
+                    <label class="fw-bold">Số lượng tối đa</label>
+                    <input asp-for="SlToiDa" type="number" class="form-control" min="1" />
+                </div>
+
+                <!-- Mô tả -->
+                <div class="mb-3">
+                    <label class="fw-bold">Mô tả khóa học</label>
+                    <textarea asp-for="MoTa" class="form-control" rows="4"></textarea>
+                </div>
+
+                <!-- Trạng thái -->
+                <div class="mb-3">
+                    <label class="fw-bold">Trạng thái</label>
+                    <select asp-for="IsActive" class="form-select">
+                        <option value="true">Mở khóa học</option>
+                        <option value="false">Đóng khóa học</option>
+                    </select>
+                </div>
+
+                <div class="text-end">
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                        <i class="fa fa-arrow-left"></i> Quay lại
+                    </a>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-save"></i> Lưu thay đổi
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>

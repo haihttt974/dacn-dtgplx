@@ -1,0 +1,74 @@
+﻿@{
+    ViewData["Title"] = "Kết quả bài làm";
+    var hangs = ViewBag.Hangs as List<dacn_dtgplx.Models.Hang>;
+}
+
+<div class="container-fluid mt-3">
+
+
+    <div class="row g-3 mb-4">
+
+        <!-- Lọc theo Hạng -->
+        <div class="col-md-3">
+            <label class="form-label fw-bold">Hạng</label>
+            <select id="filterHang" class="form-select">
+                <option value="">-- Tất cả --</option>
+                @foreach (var h in hangs)
+                {
+                    <option value="@h.IdHang">@h.MaHang - @h.TenDayDu</option>
+                }
+            </select>
+        </div>
+
+        <!-- Lọc theo Bộ đề -->
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Bộ đề</label>
+            <select id="filterBoDe" class="form-select">
+                <option value="">-- Tất cả --</option>
+            </select>
+        </div>
+
+    </div>
+
+    <div id="resultsTable">
+        @await Html.PartialAsync("_ResultsTable", new List<dacn_dtgplx.Models.BaiLam>())
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function loadExamSets(hangId) {
+            $("#filterBoDe").html('<option value="">-- Tất cả --</option>');
+
+            if (hangId === "") {
+                loadResults();
+                return;
+            }
+
+            $.getJSON("/AdminResults/LoadExamSetsByHang", { idHang: hangId }, function (data) {
+                data.forEach(item => {
+                    $("#filterBoDe").append(`<option value="${item.idBoDe}">${item.tenBoDe}</option>`);
+                });
+                loadResults();
+            });
+        }
+
+        function loadResults() {
+            let idHang = $("#filterHang").val();
+            let idBoDe = $("#filterBoDe").val();
+
+            $("#resultsTable").load("/AdminResults/Filter?idHang=" + idHang + "&idBoDe=" + idBoDe);
+        }
+
+        $("#filterHang").change(function () {
+            loadExamSets($(this).val());
+        });
+
+        $("#filterBoDe").change(function () {
+            loadResults();
+        });
+
+        // load initial data
+        loadResults();
+    </script>
+}

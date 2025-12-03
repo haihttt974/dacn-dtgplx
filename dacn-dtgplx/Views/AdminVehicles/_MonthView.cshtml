@@ -1,0 +1,131 @@
+﻿@model dacn_dtgplx.ViewModels.VehicleScheduleVM
+
+<style>
+    /* ======= LỊCH THÁNG ======= */
+    .month-table th,
+    .month-table td {
+        vertical-align: middle;
+        font-size: 13px;
+    }
+
+    .badge-type-lichhoc {
+        background: #f4b400;
+        color: #000;
+    }
+
+    .badge-type-thuexe {
+        background: #0099ff;
+        color: #fff;
+    }
+</style>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+
+        <form id="monthFilterForm" class="row gy-2 gx-3 align-items-end">
+
+            <input type="hidden" id="vehicleId" value="@Model.XeId" />
+
+            <!-- Chọn tháng -->
+            <div class="col-auto">
+                <label class="form-label fw-semibold" for="monthSelect">Tháng:</label>
+                <select class="form-select form-select-sm" id="monthSelect" name="month" style="min-width: 85px;">
+                    @for (int m = 1; m <= 12; m++)
+                    {
+                        <option value="@m" selected="@(m == Model.SelectedMonth)">
+                            @m
+                        </option>
+                    }
+                </select>
+            </div>
+
+            <!-- Chọn năm -->
+            <div class="col-auto">
+                <label class="form-label fw-semibold" for="yearSelect">Năm:</label>
+                <select class="form-select form-select-sm" id="yearSelect" name="year" style="min-width: 95px;">
+                    @for (int y = DateTime.Today.Year - 5; y <= DateTime.Today.Year + 5; y++)
+                    {
+                        <option value="@y" selected="@(y == Model.SelectedYear)">
+                            @y
+                        </option>
+                    }
+                    }
+                </select>
+            </div>
+
+            <!-- Nút xem -->
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary btn-sm px-4">
+                    Xem
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+
+<div class="card shadow-sm">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <strong>Lịch sử dụng tháng @Model.SelectedMonth/@Model.SelectedYear</strong>
+
+        <div class="small">
+            <span class="badge badge-type-lichhoc me-1">Lịch học</span>
+            <span class="badge badge-type-thuexe">Thuê xe</span>
+        </div>
+    </div>
+
+    <div class="card-body p-0">
+        @if (!Model.MonthItems.Any())
+        {
+            <p class="text-center text-muted my-3">Không có lịch sử dụng trong tháng này.</p>
+        }
+        else
+        {
+            <table class="table table-hover mb-0 align-middle month-table">
+                <thead class="table-light text-center">
+                    <tr>
+                        <th style="width:110px;">Ngày</th>
+                        <th style="width:120px;">Loại</th>
+                        <th>Tiêu đề</th>
+                        <th style="width:150px;">Thời gian</th>
+                        <th>Ghi chú</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var ev in Model.MonthItems.OrderBy(x => x.Date).ThenBy(x => x.Start))
+                    {
+                        <tr>
+                            <!-- 🟩 NGÀY -->
+                            <td class="text-center">@ev.Date.ToString("dd/MM/yyyy")</td>
+
+                            <!-- 🟦 LOẠI LỊCH -->
+                            <td class="text-center">
+                                @if (ev.Type == "LichHoc")
+                                {
+                                    <span class="badge badge-type-lichhoc">Lịch học</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-type-thuexe">Thuê xe</span>
+                                }
+                            </td>
+
+                            <!-- 🟩 TIÊU ĐỀ -->
+                            <td>@ev.Title</td>
+
+                            <!-- 🟦 THỜI GIAN -->
+                            <td class="text-center">
+                                @ev.Start.ToString("HH\\:mm") - @ev.End.ToString("HH\\:mm")
+                            </td>
+
+                            <!-- 🟩 GHI CHÚ -->
+                            <td>@ev.Description</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>

@@ -1,0 +1,172 @@
+﻿@model dacn_dtgplx.ViewModels.DetailHoSoVM
+
+@{
+    ViewData["Title"] = "Chi tiết hồ sơ";
+    var hoSo = Model.HoSo;
+    var sucKhoe = Model.SucKhoe;
+
+    var idPhotoUrl = string.IsNullOrEmpty(hoSo.KhamSucKhoe)
+        ? Url.Content("~/images/avatar/default-id-photo.png")
+        : Url.Content("~/" + hoSo.KhamSucKhoe.TrimStart('/'));
+}
+
+<div class="container mt-4">
+
+    <a asp-action="MyProfile" class="btn btn-link text-decoration-none mb-3">
+        <i class="fa-solid fa-arrow-left-long me-1"></i> Quay lại danh sách
+    </a>
+
+    <div class="row g-4">
+
+        <!-- Cột ảnh & user -->
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body text-center">
+
+                    <div class="mb-3">
+                        <img src="@idPhotoUrl"
+                             alt="Ảnh thẻ"
+                             class="img-fluid rounded-4 border"
+                             style="max-height: 260px; object-fit: cover;" />
+                    </div>
+
+                    <h5 class="fw-bold mb-1">
+                        @hoSo.User?.TenDayDu
+                    </h5>
+
+                    <p class="text-muted mb-1">
+                        @hoSo.User?.Username
+                    </p>
+
+                    <p class="small mb-0">
+                        <i class="fa-solid fa-phone me-1"></i> @hoSo.User?.SoDienThoai
+                    </p>
+                    <p class="small mb-0">
+                        <i class="fa-solid fa-envelope me-1"></i> @hoSo.User?.Email
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột thông tin hồ sơ -->
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body">
+
+                    <h4 class="fw-bold mb-3">
+                        <i class="fa-solid fa-file-lines me-2"></i>
+                        @hoSo.LoaiHoSo
+                    </h4>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="mb-1">
+                                <b>Mã hồ sơ:</b> @hoSo.HoSoId
+                            </p>
+                            <p class="mb-1">
+                                <b>Ngày đăng ký:</b>
+                                @hoSo.NgayDk?.ToString("dd/MM/yyyy")
+                            </p>
+                        </div>
+
+                        <div class="col-md-6">
+                            <p class="mb-1">
+                                <b>Trạng thái:</b>
+                                @if (hoSo.DaDuyet == true)
+                                {
+                                    <span class="badge bg-success">Đã duyệt</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Chưa duyệt</span>
+                                }
+                            </p>
+
+                            <p class="mb-1">
+                                <b>Loại hồ sơ:</b> @hoSo.LoaiHoSo
+                            </p>
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <!-- Thông tin khám sức khỏe -->
+                    <h5 class="fw-bold mb-2">
+                        <i class="fa-solid fa-notes-medical me-2"></i>
+                        Thông tin khám sức khỏe
+                    </h5>
+
+                    @if (sucKhoe != null)
+                    {
+                        <p class="text-muted">
+                            Thông tin chi tiết (mắt, huyết áp, chiều cao, cân nặng, thời hạn…)
+                            đã được <b>giấu bên trong ảnh thẻ</b> bằng kỹ thuật steganography.
+                            Dưới đây là dữ liệu đã giải mã từ ảnh:
+                        </p>
+
+                        <div class="row mt-2">
+                            <div class="col-md-6">
+                                <p><b>Thời hạn:</b> @sucKhoe.ThoiHan</p>
+                                <p><b>Huyết áp:</b> @sucKhoe.HuyetAp120</p>
+                                <p><b>Chiều cao:</b> @sucKhoe.ChieuCaoCm cm</p>
+                                <p><b>Cân nặng:</b> @sucKhoe.CanNangKg kg</p>
+                            </div>
+
+                            <div class="col-md-6">
+                                <p><b>Mắt trái (10/10):</b> @sucKhoe.Mat?.MatTrai10</p>
+                                <p><b>Mắt phải (10/10):</b> @sucKhoe.Mat?.MatPhai10</p>
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <h5 class="fw-semibold mb-2">
+                            <i class="fa-solid fa-images me-2"></i> Ảnh giấy khám
+                        </h5>
+
+                        <div class="d-flex flex-wrap gap-3 mt-2">
+                            @foreach (var img in sucKhoe.AnhGiayKham)
+                            {
+                                var url = Url.Content("~/" + img.TrimStart('/'));
+                                <div class="border rounded shadow-sm p-1 bg-light">
+                                    <img src="@url"
+                                         class="img-thumbnail"
+                                         style="height:150px;object-fit:cover;" />
+                                </div>
+                            }
+                        </div>
+
+                        <hr />
+
+                        <p class="small text-muted">
+                            <b>Đường dẫn ảnh chứa dữ liệu:</b>
+                            <code>@hoSo.KhamSucKhoe</code>
+                        </p>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning">
+                            Không thể giải mã dữ liệu sức khỏe từ ảnh thẻ. Có thể ảnh đã bị thay đổi
+                            hoặc dữ liệu không hợp lệ.
+                            <br />
+                            <b>Ảnh hiện tại:</b> <code>@hoSo.KhamSucKhoe</code>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(hoSo.GhiChu))
+                    {
+                        <hr />
+                        <div class="mb-2">
+                            <h5 class="fw-semibold">
+                                <i class="fa-solid fa-comment-dots me-2"></i> Ghi chú
+                            </h5>
+                            <p>@hoSo.GhiChu</p>
+                        </div>
+                    }
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

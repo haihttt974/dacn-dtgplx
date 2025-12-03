@@ -1,0 +1,149 @@
+﻿@model IEnumerable<dacn_dtgplx.Models.BoDeMoPhong>
+
+@{
+    ViewData["Title"] = "Bộ đề mô phỏng";
+}
+<style>
+    /* Thu hẹp cột Tên bộ đề */
+    #examSetTable th.col-ten-bode,
+    #examSetTable td.col-ten-bode {
+        width: 120px; /* chỉnh con số tùy ý, nhỏ hơn nữa thì giảm tiếp */
+        max-width: 220px;
+    }
+</style>
+
+<div class="container-fluid mt-3">
+    <form id="tokenForm">
+        @Html.AntiForgeryToken()
+    </form>
+    <!-- TIÊU ĐỀ + NÚT TẠO MỚI -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="text-primary mb-0">
+            <i class="fa fa-clone"></i> Danh sách bộ đề mô phỏng
+        </h4>
+
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createExamSetModal">
+            <i class="fa fa-plus"></i> Tạo bộ đề mới
+        </button>
+    </div>
+
+    <div class="row g-2 mb-3">
+
+        <!-- Lọc theo trạng thái -->
+        <div class="col-md-3">
+            <label class="form-label fw-bold">Trạng thái:</label>
+            <select id="statusFilter" class="form-select">
+                <option value="">-- Tất cả --</option>
+                <option value="active">Đang dùng</option>
+                <option value="inactive">Ngưng</option>
+            </select>
+        </div>
+
+        <!-- Lọc theo số câu khó -->
+        <div class="col-md-3">
+            <label class="form-label fw-bold">Số câu khó:</label>
+            <select id="hardFilter" class="form-select">
+                <option value="">-- Tất cả --</option>
+                @for (int i = 0; i <= 10; i++)
+                {
+                    <option value="@i">@i câu khó</option>
+                }
+            </select>
+        </div>
+
+        <div class="col-md-3 d-flex align-items-end">
+            <button type="button" class="btn btn-primary w-100" onclick="applyFilter()">
+                <i class="fa fa-filter"></i> Lọc
+            </button>
+        </div>
+
+    </div>
+
+    <!-- BẢNG DANH SÁCH -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-info text-white">
+            <strong>Danh sách bộ đề</strong>
+        </div>
+
+        <div class="card-body p-0" id="examSetTableWrapper">
+            @await Html.PartialAsync("_ExamSetTable", Model)
+        </div>
+
+    </div>
+</div>
+<!-- MODAL TẠO BỘ ĐỀ MỚI -->
+<div class="modal fade" id="createExamSetModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title text-primary">Tạo bộ đề mới</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form asp-action="CreateExamSet" method="post">
+                <div class="modal-body">
+
+                    <label class="fw-bold">Tên bộ đề:</label>
+                    <input type="text" name="TenBoDe" class="form-control mb-3"
+                           value="@($"Bộ đề số {Model.Count() + 1}")" />
+
+                    <label class="fw-bold">Số câu khó:</label>
+                    <input type="number" name="SoCauKho" class="form-control"
+                           min="1" max="10" required />
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-check"></i> Tạo bộ đề
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        function toggleStatus(id) {
+
+            let token = document.querySelector('#tokenForm input[name="__RequestVerificationToken"]').value;
+
+            fetch('/AdminSimulationExamSets/ToggleStatusRow', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                        },
+                body: JSON.stringify({ id: id })
+            })
+                .then(res => res.json())
+                .then(data => {
+
+                    if (!data.ok) {
+                        alert(data.message);
+                        return;
+                    }
+
+                    document.getElementById("row-" + id).outerHTML = data.html;
+
+                    console.log(data.toast);
+                })
+                .catch(err => console.error(err));
+        }
+
+        function applyFilter() {
+            const status = document.getElementById("statusFilter").value;
+            const hard = document.getElementById("hardFilter").value;
+
+            fetch(`/AdminSimulationExamSets/Filter?status=${status}&hard=${hard}`)
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById("examSetTableWrapper").innerHTML = html;
+                })
+                .catch(err => console.error(err));
+        }
+
+    </script>
+}
