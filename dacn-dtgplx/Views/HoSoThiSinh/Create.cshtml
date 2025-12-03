@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Thêm hồ sơ thí sinh";
     var defaultIdPhoto = Url.Content("~/images/avatar/default-id-photo.png");
+    var mauGiayKham = Url.Content("~/resources/mau-kham-suc-khoe-lai-xe.doc");
 }
 
 <div class="container mt-4">
@@ -52,10 +53,14 @@
                 <span asp-validation-for="AnhThe" class="text-danger"></span>
 
                 <p class="small text-muted mt-2">
-                    • Ảnh thẻ nền <b>trắng hoặc xanh</b><br />
-                    • Mặt nhìn thẳng, rõ nét<br />
-                    • Không đeo kính màu, không đội mũ<br />
-                    • Ảnh này sẽ được dùng để <b>giấu thông tin sức khỏe</b>.
+                    • Ảnh thẻ nền <b>trắng hoặc xanh dương, phông trơn</b><br />
+                    • Khuôn mặt ở <b>chính giữa khung hình</b>, không lệch sang hai bên<br />
+                    • Đầu và vai <b>thẳng, không nghiêng</b><br />
+                    • <b>Tóc không che mắt, trán và khuôn mặt</b><br />
+                    • Ảnh <b>đủ sáng, không bị tối hoặc lóa</b><br />
+                    • Ảnh <b>rõ nét, không bị mờ, nhòe</b><br />
+                    • Mắt <b>mở, nhìn thẳng ống kính</b><br />
+                    • Không đeo <b>kính màu</b>, không đội <b>mũ</b> hoặc phụ kiện che mặt<br />
                 </p>
 
             </div>
@@ -78,6 +83,19 @@
                 <div class="small text-muted mt-2">
                     • Có thể chọn nhiều ảnh<br />
                     • Chọn đúng thứ tự (1 → 2 → 3 …)<br />
+                </div>
+
+                <div class="mt-3">
+                    <a href="@mauGiayKham"
+                       download
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="fa-solid fa-download me-2"></i>
+                        Tải mẫu Giấy Khám Sức Khỏe mới nhất (2025)
+                    </a>
+
+                    <p class="small text-muted mt-1">
+                        File định dạng <b>.doc</b> – có thể mở bằng Microsoft Word hoặc Google Docs.
+                    </p>
                 </div>
 
                 <div id="previewGiayKhamWrapper"
