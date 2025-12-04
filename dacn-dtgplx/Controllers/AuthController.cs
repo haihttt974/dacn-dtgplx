@@ -2,6 +2,7 @@
 using dacn_dtgplx.Models;
 using dacn_dtgplx.Services;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -362,13 +363,11 @@ namespace dacn_dtgplx.Controllers
         public async Task<IActionResult> Logout()
         {
             var userId = HttpContext.Session.GetInt32("UserId");
-
             if (userId != null)
                 await MarkUserOffline(userId.Value);
-
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             HttpContext.Session.Clear();
             TempData["Info"] = "Đăng xuất thành công!";
-
             return RedirectToAction("Login");
         }
 
