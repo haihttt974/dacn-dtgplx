@@ -1,0 +1,22 @@
+﻿@{
+    ViewBag.Title = "Thanh toán thành công";
+    var orderId = ViewBag.OrderId;
+}
+<div class="container mt-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-body text-center py-5">
+            <h2 class="text-success mb-3">
+                ✅ Thanh toán thành công
+            </h2>
+            <p class="mb-2">
+                Mã giao dịch / đăng ký: <strong>@orderId</strong>
+            </p>
+            <p class="text-muted mb-4">
+                Hệ thống đã ghi nhận thanh toán. Bạn có thể xem lại thông tin trong mục hồ sơ hoặc lịch sử đăng ký.
+            </p>
+            <a href="/khoahoc" class="btn btn-primary">
+                Quay lại danh sách khóa học
+            </a>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,49 @@
+﻿@model dacn_dtgplx.Models.DangKyHoc
+
+@{
+    var amount = ViewBag.SoTien;
+}
+
+<div class="container mt-4">
+    <h3 class="fw-bold text-primary mb-3">
+        💳 Thanh toán khóa học
+    </h3>
+
+    <div class="card shadow-sm p-4">
+
+        <h5 class="fw-bold">Thông tin khóa học</h5>
+        <p><strong>Khóa học:</strong> @Model.KhoaHoc.TenKhoaHoc</p>
+        <p><strong>Hạng GPLX:</strong> @Model.KhoaHoc.IdHangNavigation.MaHang</p>
+        <p><strong>Học phí:</strong> @amount?.ToString("N0") VNĐ</p>
+
+        <hr />
+
+        <h5 class="fw-bold mb-3">Chọn phương thức thanh toán</h5>
+
+        <form method="post" action="/payment/vnpay">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="dangKyId" value="@Model.IdDangKy" />
+
+            <div class="payment-method p-3 border rounded mb-3">
+                <label class="d-flex align-items-center gap-3">
+                    <input type="radio" name="method" checked />
+                    <img src="https://sandbox.vnpayment.vn/paymentv2/images/logo.png"
+                         width="120" />
+                    <span class="fw-semibold">Thanh toán qua VNPAY</span>
+                </label>
+            </div>
+
+            <button class="btn btn-primary w-100 fw-bold" type="submit">
+                Tiến hành thanh toán
+            </button>
+        </form>
+
+    </div>
+</div>
+
+<style>
+    .payment-method:hover {
+        background: #f8f9ff;
+        cursor: pointer;
+    }
+</style>
