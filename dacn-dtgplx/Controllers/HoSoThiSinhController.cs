@@ -136,7 +136,7 @@ namespace dacn_dtgplx.Controllers
                     KhamSucKhoe = savedIdPhoto,
                     NgayDk = DateOnly.FromDateTime(DateTime.Now),
                     GhiChu = null,
-                    DaDuyet = false,
+                    DaDuyet = null,
                     LoaiHoSo = $"Hồ sơ {hang.MaHang} - {user.TenDayDu}"
                 };
 

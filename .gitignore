@@ -365,3 +365,5 @@ FodyWeavers.xsd
 dacn-dtgplx/appsettings.json
 
 dacn-dtgplx/wwwroot/videos/situations/
+dacn-dtgplx/wwwroot/images/healths/
+dacn-dtgplx/wwwroot/images/idPhoto/
