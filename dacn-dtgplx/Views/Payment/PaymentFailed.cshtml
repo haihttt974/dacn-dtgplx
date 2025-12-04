@@ -1,0 +1,35 @@
+﻿@{
+    ViewBag.Title = "Thanh toán thất bại";
+    var orderId = ViewBag.OrderId;
+    var message = ViewBag.Message as string;
+}
+<div class="container mt-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-body text-center py-5">
+            <h2 class="text-danger mb-3">
+                ❌ Thanh toán thất bại
+            </h2>
+
+            @if (!string.IsNullOrEmpty(orderId))
+            {
+                <p>Mã giao dịch / đăng ký: <strong>@orderId</strong></p>
+            }
+
+            @if (!string.IsNullOrEmpty(message))
+            {
+                <p class="text-muted mb-4">@message</p>
+            }
+            else
+            {
+                <p class="text-muted mb-4">Đã có lỗi xảy ra trong quá trình thanh toán.</p>
+            }
+
+            <a href="/khoahoc" class="btn btn-outline-primary me-2">
+                Quay lại danh sách khóa học
+            </a>
+            <a href="javascript:history.back()" class="btn btn-secondary">
+                Thử lại
+            </a>
+        </div>
+    </div>
+</div>
