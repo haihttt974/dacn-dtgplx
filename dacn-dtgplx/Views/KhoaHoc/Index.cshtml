@@ -4,6 +4,20 @@
 }
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+@if (ViewBag.NoHoSoWarning == true)
+{
+    <div class="alert alert-info d-flex align-items-center shadow-sm mt-2"
+         style="border-left: 6px solid #0d6efd;">
+        <i class="fa-solid fa-circle-info me-3 fa-lg"></i>
+        <div>
+            <strong>Bạn chưa có hồ sơ học viên.</strong><br />
+            Vui lòng tạo hồ sơ trước khi đăng ký khóa học để hệ thống có thể đề xuất khóa phù hợp.
+            <a href="/HoSoThiSinh/Create" class="fw-bold text-primary ms-1">
+                Tạo hồ sơ ngay →
+            </a>
+        </div>
+    </div>
+}
 
 <style>
 

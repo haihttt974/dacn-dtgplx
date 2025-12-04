@@ -30,6 +30,19 @@ namespace dacn_dtgplx.Controllers
         public async Task<IActionResult> Index()
         {
             ViewBag.Hangs = await _context.Hangs.ToListAsync();
+            // Nếu user đã đăng nhập → kiểm tra hồ sơ
+            if (User.Identity?.IsAuthenticated ?? false)
+            {
+                int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+                bool hasHoSo = await _context.HoSoThiSinhs
+                    .AnyAsync(h => h.UserId == userId);
+
+                if (!hasHoSo)
+                {
+                    ViewBag.NoHoSoWarning = true;
+                }
+            }
             return View();
         }
 
