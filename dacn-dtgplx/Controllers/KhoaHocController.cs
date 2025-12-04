@@ -79,13 +79,21 @@ namespace dacn_dtgplx.Controllers
 
             if (onlyHoSo == true && isLogged)
             {
-                var loaiHoSo = await _context.HoSoThiSinhs
-                    .Where(h => h.UserId == userId)
-                    .Select(h => h.LoaiHoSo)
-                    .ToListAsync();
+                //var loaiHoSo = await _context.HoSoThiSinhs
+                //    .Where(h => h.UserId == userId)
+                //    .Select(h => h.LoaiHoSo)
+                //    .ToListAsync();
 
+                //query = query.Where(k =>
+                //    loaiHoSo.Any(loai => loai.Contains(k.IdHangNavigation.MaHang)));
                 query = query.Where(k =>
-                    loaiHoSo.Any(loai => loai.Contains(k.IdHangNavigation.MaHang)));
+                _context.HoSoThiSinhs.Any(h =>
+                    h.UserId == userId &&
+                    // Nếu bạn chỉ muốn hồ sơ đã duyệt thì thêm dòng này:
+                    // h.DaDuyet == true &&
+                    h.LoaiHoSo.Contains(k.IdHangNavigation.MaHang)
+                    )
+                );
             }
 
             // nhớ using Microsoft.EntityFrameworkCore; ở đầu file
@@ -191,5 +199,27 @@ namespace dacn_dtgplx.Controllers
             // Chuyển sang trang thanh toán
             return RedirectToAction("StartPayment", "Payment", new { dangKyId = dk.IdDangKy });
         }
+
+        [AllowAnonymous]
+        [HttpGet("details/{id:int}")]
+        public async Task<IActionResult> Details(int id)
+        {
+            var kh = await _context.KhoaHocs
+                .Include(k => k.IdHangNavigation)
+                .Include(k => k.LichHocs)
+                    .ThenInclude(l => l.LopHoc)
+                .Include(k => k.LichHocs)
+                    .ThenInclude(l => l.XeTapLai)
+                .FirstOrDefaultAsync(k => k.KhoaHocId == id);
+
+            if (kh == null)
+            {
+                TempData["Error"] = "Khóa học không tồn tại.";
+                return RedirectToAction("Index");
+            }
+
+            return View(kh);
+        }
+
     }
 }

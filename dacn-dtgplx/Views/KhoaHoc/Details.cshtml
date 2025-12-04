@@ -1,0 +1,184 @@
+﻿@model dacn_dtgplx.Models.KhoaHoc
+@{
+    ViewBag.Title = "Chi tiết khóa học";
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+<style>
+    .card-info {
+        background: #fff;
+        padding: 22px;
+        border-radius: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,.08);
+    }
+
+    .schedule-card {
+        border-left: 5px solid #0d6efd;
+        padding: 15px;
+        border-radius: 8px;
+        background: #f8f9ff;
+        margin-bottom: 15px;
+        transition: .2s;
+    }
+
+        .schedule-card:hover {
+            background: #eef3ff;
+            transform: translateX(4px);
+        }
+
+    .section-title {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 15px;
+        color: #0d6efd;
+    }
+</style>
+
+<div class="container mt-4">
+
+    <h2 class="fw-bold text-primary">
+        📘 Chi tiết khóa học: @Model.TenKhoaHoc
+    </h2>
+
+    <div class="row mt-4 g-4">
+
+        <!-- ==================== KHUNG 1: THÔNG TIN KHÓA HỌC ==================== -->
+        <div class="col-md-5">
+            <div class="card-info">
+
+                <h4 class="fw-bold">@Model.TenKhoaHoc</h4>
+
+                <p class="mt-3">
+                    <i class="fa-solid fa-id-card"></i>
+                    <strong>Hạng GPLX:</strong> @Model.IdHangNavigation?.MaHang
+                </p>
+
+                <p>
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <strong>Thời gian học:</strong>
+                    @Model.NgayBatDau?.ToString("dd/MM/yyyy")
+                    → @Model.NgayKetThuc?.ToString("dd/MM/yyyy")
+                </p>
+
+                <p>
+                    <i class="fa-solid fa-users"></i>
+                    <strong>Số lượng tối đa:</strong> @Model.SlToiDa
+                </p>
+
+                <p>
+                    <i class="fa-solid fa-money-bill-wave"></i>
+                    <strong>Học phí:</strong>
+                    @(Model.IdHangNavigation?.ChiPhi?.ToString("N0") ?? "Liên hệ") VNĐ
+                </p>
+
+                @if (!string.IsNullOrWhiteSpace(Model.MoTa))
+                {
+                    <p class="mt-3">
+                        <strong>Mô tả khóa học:</strong><br />
+                        @Model.MoTa
+                    </p>
+                }
+
+                <div class="mt-4">
+                    @if (User.Identity?.IsAuthenticated ?? false)
+                    {
+                        <a href="/khoahoc/register/@Model.KhoaHocId"
+                           class="btn btn-success w-100 fw-semibold">
+                            Đăng ký ngay
+                        </a>
+                    }
+                    else
+                    {
+                        <a href="Auth/login" class="btn btn-outline-primary w-100 fw-semibold">
+                            Đăng nhập để đăng ký
+                        </a>
+                    }
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ==================== KHUNG 2: LỊCH HỌC ==================== -->
+        <div class="col-md-7">
+
+            <div class="card-info">
+
+                <div class="section-title">
+                    📅 Lịch học của khóa
+                </div>
+
+                @if (!Model.LichHocs.Any())
+                {
+                    <div class="alert alert-info">
+                        Khóa học này chưa có lịch học nào.
+                    </div>
+                }
+                else
+                {
+                    foreach (var lh in Model.LichHocs.OrderBy(l => l.NgayHoc))
+                    {
+                        <div class="schedule-card">
+
+                            <p class="mb-1">
+                                <i class="fa-solid fa-calendar-day"></i>
+                                <strong>Ngày học:</strong>
+                                @lh.NgayHoc.ToString("dd/MM/yyyy")
+                            </p>
+
+                            <p class="mb-1">
+                                <i class="fa-solid fa-clock"></i>
+                                <strong>Thời gian:</strong>
+                                @lh.TgBatDau.ToString("HH\\:mm") → @lh.TgKetThuc.ToString("HH\\:mm")
+                            </p>
+
+                            @if (!string.IsNullOrWhiteSpace(lh.NoiDung))
+                            {
+                                <p class="mb-1">
+                                    <i class="fa-solid fa-book"></i>
+                                    <strong>Nội dung:</strong> @lh.NoiDung
+                                </p>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(lh.DiaDiem))
+                            {
+                                <p class="mb-1">
+                                    <i class="fa-solid fa-location-dot"></i>
+                                    <strong>Địa điểm:</strong> @lh.DiaDiem
+                                </p>
+                            }
+
+                            @if (lh.LopHoc != null)
+                            {
+                                <p class="mb-1">
+                                    <i class="fa-solid fa-school"></i>
+                                    <strong>Lớp học:</strong> @lh.LopHoc.TenLop
+                                </p>
+                            }
+
+                            @if (lh.XeTapLai != null)
+                            {
+                                <p class="mb-1">
+                                    <i class="fa-solid fa-car-side"></i>
+                                    <strong>Xe tập lái:</strong> @lh.XeTapLai.LoaiXe
+                                </p>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(lh.GhiChu))
+                            {
+                                <p class="text-muted">
+                                    <i class="fa-solid fa-note-sticky"></i>
+                                    @lh.GhiChu
+                                </p>
+                            }
+
+                        </div>
+                    }
+                }
+
+            </div>
+
+        </div>
+
+    </div>
+</div>

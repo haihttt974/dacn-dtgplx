@@ -89,6 +89,63 @@
         opacity: 1;
         transform: translateX(0);
     }
+
+    .toggle-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 6px;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .toggle-switch {
+        position: relative;
+        width: 46px;
+        height: 24px;
+    }
+
+        .toggle-switch input {
+            position: absolute;
+            opacity: 0;
+            width: 46px; /* full width của toggle */
+            height: 24px;
+            cursor: pointer;
+            z-index: 2; /* input nằm trên slider */
+        }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        border-radius: 34px;
+        transition: .3s;
+    }
+
+        .toggle-slider:before {
+            content: "";
+            position: absolute;
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            border-radius: 50%;
+            transition: .3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+    .toggle-switch input:checked + .toggle-slider {
+        background-color: #0d6efd; /* xanh bootstrap */
+    }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(22px);
+        }
 </style>
 
 
@@ -126,16 +183,21 @@
             <input type="date" id="filterNgay" class="form-control" />
 
             <!-- Phù hợp hồ sơ -->
-            <label>Phù hợp hồ sơ</label>
+            <label class="fw-semibold">Phù hợp hồ sơ</label>
+
             @if (User.Identity?.IsAuthenticated ?? false)
             {
-                <div>
-                    <input type="checkbox" id="filterHoSo" /> Chỉ khóa học phù hợp
+                <div class="toggle-wrap">
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="filterHoSo">
+                        <span class="toggle-slider"></span>
+                    </div>
+                    <span>Chỉ khóa học phù hợp</span>
                 </div>
             }
             else
             {
-                <a href="Auth/login" class="btn btn-outline-primary w-100 mt-2">
+                <a href="/login" class="btn btn-outline-primary w-100 mt-2">
                     Đăng nhập để lọc theo hồ sơ
                 </a>
             }
@@ -172,7 +234,6 @@
     <script>
 
         function loadCourses(page = 1) {
-
             const search = document.getElementById("filterSearch").value;
             const hang = document.getElementById("filterHang").value;
             const ngay = document.getElementById("filterNgay").value;
@@ -182,9 +243,7 @@
 
             const sort = document.getElementById("filterSort").value;
 
-            // ĐỔI URL -> /khoahoc/load
             let url = `/khoahoc/load?page=${page}`;
-
             if (search) url += `&search=${search}`;
             if (hang) url += `&hang=${hang}`;
             if (ngay) url += `&ngay=${ngay}`;
@@ -198,10 +257,7 @@
                 });
         }
 
-        // Manually filter
         document.getElementById("btnFilter").onclick = () => loadCourses();
-
-        // Reset filter
         document.getElementById("btnReset").onclick = () => {
             document.getElementById("filterSearch").value = "";
             document.getElementById("filterHang").value = "";
@@ -212,7 +268,14 @@
             loadCourses();
         };
 
-        // Auto load first time
+        // ⭐ BẮT SỰ KIỆN TOGGLE
+        document.addEventListener("DOMContentLoaded", () => {
+            const hoSoToggle = document.getElementById("filterHoSo");
+            if (hoSoToggle) {
+                hoSoToggle.addEventListener("change", () => loadCourses());
+            }
+        });
+
         loadCourses();
 
     </script>
