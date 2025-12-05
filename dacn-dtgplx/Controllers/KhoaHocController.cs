@@ -167,7 +167,7 @@ namespace dacn_dtgplx.Controllers
         // ============================================================
         [HttpPost("register/confirm")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ConfirmRegister(int khoaHocId, int hoSoId)
+        public async Task<IActionResult> ConfirmRegister(int khoaHocId, int hoSoId, string? noiDung)
         {
             int userId = GetUserId();
 
@@ -175,29 +175,40 @@ namespace dacn_dtgplx.Controllers
                 .Include(k => k.IdHangNavigation)
                 .FirstOrDefaultAsync(k => k.KhoaHocId == khoaHocId);
 
-            var hoSo = await _context.HoSoThiSinhs
-                .FirstOrDefaultAsync(h => h.HoSoId == hoSoId && h.UserId == userId);
-
-            if (khoaHoc == null || hoSo == null)
+            if (khoaHoc == null)
             {
-                TempData["Error"] = "Đăng ký không hợp lệ.";
-                return RedirectToAction(nameof(Index));
+                TempData["Error"] = "Khóa học không tồn tại.";
+                return RedirectToAction("Index");
             }
 
-            // Tạo đăng ký mới
+            // 1️⃣ TẠO ĐĂNG KÝ MỚI
             var dk = new DangKyHoc
             {
-                HoSoId = hoSo.HoSoId,
-                KhoaHocId = khoaHoc.KhoaHocId,
+                HoSoId = hoSoId,
+                KhoaHocId = khoaHocId,
                 NgayDangKy = DateOnly.FromDateTime(DateTime.Now),
-                TrangThai = false
+                TrangThai = null,
+                GhiChu = noiDung
             };
 
             _context.Add(dk);
             await _context.SaveChangesAsync();
 
-            // Chuyển sang trang thanh toán
-            return RedirectToAction("StartPayment", "Payment", new { dangKyId = dk.IdDangKy });
+            // 2️⃣ TẠO HÓA ĐƠN
+            var hoaDon = new HoaDonThanhToan
+            {
+                IdDangKy = dk.IdDangKy,
+                NgayThanhToan = null,
+                TrangThai = null,
+                SoTien = khoaHoc.IdHangNavigation.ChiPhi,
+                NoiDung = noiDung,
+                PhuongThucThanhToan = null
+            };
+
+            _context.Add(hoaDon);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("StartPayment", "Payment", new { hoaDonId = hoaDon.IdThanhToan });
         }
 
         [AllowAnonymous]

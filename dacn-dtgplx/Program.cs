@@ -23,6 +23,8 @@ builder.Services.AddDbContext<DtGplxContext>(options =>
 builder.Services.AddControllersWithViews()
     .AddRazorRuntimeCompilation();
 
+builder.Services.AddScoped<IMailService, MailService>();
+
 // View Renderer (nếu bạn dùng gửi email template)
 builder.Services.AddScoped<IViewRenderService, ViewRenderService>();
 
