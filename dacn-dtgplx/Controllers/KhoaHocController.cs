@@ -162,12 +162,52 @@ namespace dacn_dtgplx.Controllers
             return View(khoaHoc);
         }
 
+        [Authorize]
+        [HttpGet("check-duplicate")]
+        public async Task<IActionResult> CheckDuplicate(int khoaHocId)
+        {
+            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            // lấy hạng của khóa muốn đăng ký
+            var khoaHoc = await _context.KhoaHocs
+                .Include(k => k.IdHangNavigation)
+                .FirstOrDefaultAsync(k => k.KhoaHocId == khoaHocId);
+
+            if (khoaHoc == null)
+                return Json(new { exists = false });
+
+            int hangId = khoaHoc.IdHang;
+
+            // kiểm tra user đã có khóa học cùng hạng & TRẠNG THÁI TRUE chưa
+            var dkTonTai = await _context.DangKyHocs
+                .Include(d => d.KhoaHoc)
+                .Where(d => d.HoSo.UserId == userId &&
+                            d.KhoaHoc.IdHang == hangId &&
+                            d.TrangThai == true)
+                .Select(d => new
+                {
+                    khoaHoc = d.KhoaHoc.TenKhoaHoc,
+                    hang = d.KhoaHoc.IdHangNavigation.MaHang
+                })
+                .FirstOrDefaultAsync();
+
+            if (dkTonTai == null)
+                return Json(new { exists = false });
+
+            return Json(new
+            {
+                exists = true,
+                khoaHoc = dkTonTai.khoaHoc,
+                hang = dkTonTai.hang
+            });
+        }
+
         // ============================================================
         // 3) CONFIRM REGISTER – LƯU VÀ CHUYỂN QUA THANH TOÁN
         // ============================================================
         [HttpPost("register/confirm")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ConfirmRegister(int khoaHocId, int hoSoId)
+        public async Task<IActionResult> ConfirmRegister(int khoaHocId, int hoSoId, string? noiDung)
         {
             int userId = GetUserId();
 
@@ -175,29 +215,40 @@ namespace dacn_dtgplx.Controllers
                 .Include(k => k.IdHangNavigation)
                 .FirstOrDefaultAsync(k => k.KhoaHocId == khoaHocId);
 
-            var hoSo = await _context.HoSoThiSinhs
-                .FirstOrDefaultAsync(h => h.HoSoId == hoSoId && h.UserId == userId);
-
-            if (khoaHoc == null || hoSo == null)
+            if (khoaHoc == null)
             {
-                TempData["Error"] = "Đăng ký không hợp lệ.";
-                return RedirectToAction(nameof(Index));
+                TempData["Error"] = "Khóa học không tồn tại.";
+                return RedirectToAction("Index");
             }
 
-            // Tạo đăng ký mới
+            // 1️⃣ TẠO ĐĂNG KÝ MỚI
             var dk = new DangKyHoc
             {
-                HoSoId = hoSo.HoSoId,
-                KhoaHocId = khoaHoc.KhoaHocId,
+                HoSoId = hoSoId,
+                KhoaHocId = khoaHocId,
                 NgayDangKy = DateOnly.FromDateTime(DateTime.Now),
-                TrangThai = false
+                TrangThai = null,
+                GhiChu = noiDung
             };
 
             _context.Add(dk);
             await _context.SaveChangesAsync();
 
-            // Chuyển sang trang thanh toán
-            return RedirectToAction("StartPayment", "Payment", new { dangKyId = dk.IdDangKy });
+            // 2️⃣ TẠO HÓA ĐƠN
+            var hoaDon = new HoaDonThanhToan
+            {
+                IdDangKy = dk.IdDangKy,
+                NgayThanhToan = null,
+                TrangThai = null,
+                SoTien = khoaHoc.IdHangNavigation.ChiPhi,
+                NoiDung = noiDung,
+                PhuongThucThanhToan = null
+            };
+
+            _context.Add(hoaDon);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("StartPayment", "Payment", new { hoaDonId = hoaDon.IdThanhToan });
         }
 
         [AllowAnonymous]
@@ -221,5 +272,57 @@ namespace dacn_dtgplx.Controllers
             return View(kh);
         }
 
+        [HttpGet("my-courses")]
+        [Authorize]
+        public async Task<IActionResult> MyCourses()
+        {
+            int userId = GetUserId();
+
+            var myCourses = await _context.DangKyHocs
+                .Include(d => d.KhoaHoc)
+                    .ThenInclude(k => k.IdHangNavigation)
+                .Include(d => d.HoSo)
+                .Where(d => d.HoSo.UserId == userId && d.TrangThai == true)
+                .OrderByDescending(d => d.NgayDangKy)
+                .ToListAsync();
+
+            return View(myCourses);   // Views/KhoaHoc/MyCourses.cshtml
+        }
+
+        [Authorize]
+        [HttpGet("schedule/{khoaHocId}")]
+        public async Task<IActionResult> Schedule(int khoaHocId)
+        {
+            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            // Kiểm tra quyền xem
+            bool hasAccess = await _context.DangKyHocs
+                .AnyAsync(d => d.KhoaHocId == khoaHocId
+                            && d.HoSo.UserId == userId
+                            && d.TrangThai == true);
+
+            if (!hasAccess)
+            {
+                TempData["Error"] = "Bạn không có quyền xem lịch học của khóa này.";
+                return RedirectToAction("MyCourses");
+            }
+
+            // Lấy lịch học đầy đủ
+            var lichHocs = await _context.LichHocs
+                .Include(l => l.LopHoc)
+                .Include(l => l.XeTapLai)
+                .Where(l => l.KhoaHocId == khoaHocId)
+                .OrderBy(l => l.NgayHoc)
+                .ThenBy(l => l.TgBatDau)
+                .ToListAsync();
+
+            var khoaHoc = await _context.KhoaHocs
+                .Include(k => k.IdHangNavigation)
+                .FirstAsync(k => k.KhoaHocId == khoaHocId);
+
+            ViewBag.KhoaHoc = khoaHoc;
+
+            return View("Schedule", lichHocs);
+        }
     }
 }

@@ -1,0 +1,69 @@
+﻿@model List<dacn_dtgplx.Models.LichHoc>
+
+@{
+    var kh = ViewBag.KhoaHoc as dacn_dtgplx.Models.KhoaHoc;
+}
+
+<div class="container mt-4" style="max-width: 900px;">
+
+    <h3 class="fw-bold text-primary mb-3">
+        📅 Lịch học – @kh.TenKhoaHoc (@kh.IdHangNavigation.MaHang)
+    </h3>
+
+    <p class="text-muted">
+        Thời gian: @kh.NgayBatDau?.ToString("dd/MM/yyyy") → @kh.NgayKetThuc?.ToString("dd/MM/yyyy")
+    </p>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            Hiện chưa có lịch học nào cho khóa học này.
+        </div>
+    }
+    else
+    {
+        <table class="table table-bordered table-hover shadow-sm">
+            <thead class="table-primary">
+                <tr>
+                    <th>Ngày học</th>
+                    <th>Giờ</th>
+                    <th>Lớp</th>
+                    <th>Xe tập lái</th>
+                    <th>Nội dung</th>
+                    <th>Địa điểm</th>
+                    <th>Ghi chú</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var l in Model)
+                {
+                    <tr>
+                        <td>@l.NgayHoc.ToString("dd/MM/yyyy")</td>
+
+                        <td>
+                            @l.TgBatDau.ToString("HH:mm") - @l.TgKetThuc.ToString("HH:mm")
+                        </td>
+
+                        <td>
+                            @(l.LopHoc != null ? l.LopHoc.TenLop : "—")
+                        </td>
+
+                        <td>
+                            @(l.XeTapLai != null ? l.XeTapLai.LoaiXe : "—")
+                        </td>
+
+                        <td>@l.NoiDung</td>
+
+                        <td>@l.DiaDiem</td>
+
+                        <td>@l.GhiChu</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <a href="@Url.Action("MyCourses", "KhoaHoc")" class="btn btn-secondary mt-3">
+        ⬅ Quay lại Khóa học của tôi
+    </a>
+</div>
