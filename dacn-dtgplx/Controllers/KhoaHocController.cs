@@ -162,6 +162,46 @@ namespace dacn_dtgplx.Controllers
             return View(khoaHoc);
         }
 
+        [Authorize]
+        [HttpGet("check-duplicate")]
+        public async Task<IActionResult> CheckDuplicate(int khoaHocId)
+        {
+            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            // lấy hạng của khóa muốn đăng ký
+            var khoaHoc = await _context.KhoaHocs
+                .Include(k => k.IdHangNavigation)
+                .FirstOrDefaultAsync(k => k.KhoaHocId == khoaHocId);
+
+            if (khoaHoc == null)
+                return Json(new { exists = false });
+
+            int hangId = khoaHoc.IdHang;
+
+            // kiểm tra user đã có khóa học cùng hạng & TRẠNG THÁI TRUE chưa
+            var dkTonTai = await _context.DangKyHocs
+                .Include(d => d.KhoaHoc)
+                .Where(d => d.HoSo.UserId == userId &&
+                            d.KhoaHoc.IdHang == hangId &&
+                            d.TrangThai == true)
+                .Select(d => new
+                {
+                    khoaHoc = d.KhoaHoc.TenKhoaHoc,
+                    hang = d.KhoaHoc.IdHangNavigation.MaHang
+                })
+                .FirstOrDefaultAsync();
+
+            if (dkTonTai == null)
+                return Json(new { exists = false });
+
+            return Json(new
+            {
+                exists = true,
+                khoaHoc = dkTonTai.khoaHoc,
+                hang = dkTonTai.hang
+            });
+        }
+
         // ============================================================
         // 3) CONFIRM REGISTER – LƯU VÀ CHUYỂN QUA THANH TOÁN
         // ============================================================

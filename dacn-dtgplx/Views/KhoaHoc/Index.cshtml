@@ -229,6 +229,37 @@
     </div>
 </div>
 
+<div class="modal fade" id="duplicateModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow">
+
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                    Cảnh báo đăng ký trùng hạng
+                </h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <p id="duplicateMessage" class="mb-3"></p>
+                <small class="text-muted">
+                    Bạn chỉ nên tham gia một khóa học trong cùng hạng GPLX để đảm bảo chất lượng và lịch trình học.
+                </small>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">
+                    Hủy
+                </button>
+                <a id="confirmRegisterBtn" class="btn btn-primary">
+                    Vẫn tiếp tục đăng ký
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
 
 @section Scripts {
     <script>
@@ -278,5 +309,39 @@
 
         loadCourses();
 
+        // =====================
+        // BẮT SỰ KIỆN CHO NÚT ĐĂNG KÝ (DÙ LÀ HTML TẢI AJAX)
+        // =====================
+        document.addEventListener("click", function (e) {
+
+            const btn = e.target.closest(".btnDangKy"); // tìm đúng nút
+
+            if (!btn) return; // không phải nút đăng ký → bỏ qua
+
+            e.preventDefault();
+
+            const khoaHocId = btn.getAttribute("data-id");
+            const targetUrl = btn.getAttribute("href");
+
+            fetch(`/khoahoc/check-duplicate?khoaHocId=${khoaHocId}`)
+                .then(res => res.json())
+                .then(data => {
+
+                    if (!data.exists) {
+                        window.location.href = targetUrl;
+                        return;
+                    }
+
+                    // Có đăng ký cùng hạng
+                    document.getElementById("duplicateMessage").innerHTML =
+                        `Bạn đã đăng ký khóa học <strong>${data.khoaHoc}</strong> thuộc hạng
+                         <strong>${data.hang}</strong>.<br>
+                         Bạn có chắc muốn đăng ký thêm khóa này không?`;
+
+                    document.getElementById("confirmRegisterBtn").href = targetUrl;
+
+                    new bootstrap.Modal(document.getElementById("duplicateModal")).show();
+                });
+        });
     </script>
 }

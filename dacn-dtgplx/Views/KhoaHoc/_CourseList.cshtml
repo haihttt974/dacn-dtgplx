@@ -20,50 +20,59 @@ else
             <div class="col">
                 <div class="course-card h-100 d-flex flex-column">
 
+                    <!-- Tên khóa học -->
                     <h5 class="fw-bold text-primary mb-2">@item.TenKhoaHoc</h5>
 
+                    <!-- Hạng GPLX -->
                     <p class="mb-1">
                         <i class="fa-solid fa-id-card"></i>
                         <strong> Hạng:</strong> @item.IdHangNavigation.MaHang
                     </p>
 
+                    <!-- Ngày học -->
                     <p class="mb-1">
                         <i class="fa-solid fa-calendar-days"></i>
                         @item.NgayBatDau?.ToString("dd/MM/yyyy")
                         → @item.NgayKetThuc?.ToString("dd/MM/yyyy")
                     </p>
 
+                    <!-- Số lượng -->
                     <p class="mb-3">
                         <i class="fa-solid fa-users"></i>
                         Số lượng tối đa: @item.SlToiDa
                     </p>
 
-                    <!-- Overlay học phí -->
-                    <div class="card-overlay">
+                    <!-- Học phí overlay -->
+                    <div class="price-overlay">
                         Học phí: @(item.IdHangNavigation.ChiPhi?.ToString("N0") ?? "Liên hệ") VNĐ
                     </div>
 
-                    <!-- NÚT HÀNG DỌC -->
+                    <!-- Nút -->
                     <div class="mt-auto pt-2">
+
+                        <!-- Chi tiết -->
                         <a href="/khoahoc/details/@item.KhoaHocId"
                            class="btn btn-outline-primary w-100 fw-semibold rounded-3 mb-2">
                             <i class="fa-solid fa-circle-info me-1"></i> Chi tiết khóa học
                         </a>
 
+                        <!-- Đăng ký -->
                         @if (User.Identity?.IsAuthenticated ?? false)
                         {
                             <a href="/khoahoc/register/@item.KhoaHocId"
-                               class="btn btn-success w-100 fw-semibold rounded-3">
+                               class="btn btn-success w-100 fw-semibold rounded-3 btnDangKy"
+                               data-id="@item.KhoaHocId">
                                 <i class="fa-solid fa-check me-1"></i> Đăng ký khóa học
                             </a>
                         }
                         else
                         {
-                            <a href="Auth/login"
+                            <a href="/auth/login"
                                class="btn btn-outline-secondary w-100 fw-semibold rounded-3">
                                 <i class="fa-solid fa-lock me-1"></i> Đăng nhập để đăng ký
                             </a>
                         }
+
                     </div>
 
                 </div>
@@ -73,6 +82,7 @@ else
     </div>
 }
 
+<!-- PHÂN TRANG -->
 @if (totalPages > 1)
 {
     <nav class="mt-4">
