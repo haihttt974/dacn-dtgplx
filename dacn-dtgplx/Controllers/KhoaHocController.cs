@@ -232,5 +232,57 @@ namespace dacn_dtgplx.Controllers
             return View(kh);
         }
 
+        [HttpGet("my-courses")]
+        [Authorize]
+        public async Task<IActionResult> MyCourses()
+        {
+            int userId = GetUserId();
+
+            var myCourses = await _context.DangKyHocs
+                .Include(d => d.KhoaHoc)
+                    .ThenInclude(k => k.IdHangNavigation)
+                .Include(d => d.HoSo)
+                .Where(d => d.HoSo.UserId == userId && d.TrangThai == true)
+                .OrderByDescending(d => d.NgayDangKy)
+                .ToListAsync();
+
+            return View(myCourses);   // Views/KhoaHoc/MyCourses.cshtml
+        }
+
+        [Authorize]
+        [HttpGet("schedule/{khoaHocId}")]
+        public async Task<IActionResult> Schedule(int khoaHocId)
+        {
+            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            // Kiểm tra quyền xem
+            bool hasAccess = await _context.DangKyHocs
+                .AnyAsync(d => d.KhoaHocId == khoaHocId
+                            && d.HoSo.UserId == userId
+                            && d.TrangThai == true);
+
+            if (!hasAccess)
+            {
+                TempData["Error"] = "Bạn không có quyền xem lịch học của khóa này.";
+                return RedirectToAction("MyCourses");
+            }
+
+            // Lấy lịch học đầy đủ
+            var lichHocs = await _context.LichHocs
+                .Include(l => l.LopHoc)
+                .Include(l => l.XeTapLai)
+                .Where(l => l.KhoaHocId == khoaHocId)
+                .OrderBy(l => l.NgayHoc)
+                .ThenBy(l => l.TgBatDau)
+                .ToListAsync();
+
+            var khoaHoc = await _context.KhoaHocs
+                .Include(k => k.IdHangNavigation)
+                .FirstAsync(k => k.KhoaHocId == khoaHocId);
+
+            ViewBag.KhoaHoc = khoaHoc;
+
+            return View("Schedule", lichHocs);
+        }
     }
 }

@@ -458,12 +458,28 @@
                         </ul>
                     </li>
                     <!-- Khóa học -->
-                    <li class="nav-item">
-                        <a class="nav-link d-flex align-items-center gap-1"
-                           href="@Url.Action("Index", "KhoaHoc")">
+                    <li class="dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center gap-1"
+                           href="#" data-bs-toggle="dropdown">
                             <i class="fa-solid fa-book"></i>
                             <span>Khóa học</span>
                         </a>
+                        <ul class="dropdown-menu shadow border-0 rounded-4 dropdown-menu-center">
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center"
+                                   href="@Url.Action("Index", "KhoaHoc")">
+                                    <i class="fa-solid fa-list me-2"></i> Danh sách
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center"
+                                   href="@(User?.Identity?.IsAuthenticated == true
+                                                                   ? Url.Action("MyCourses", "KhoaHoc")
+                                                                   : Url.Action("Login", "Auth"))">
+                                    <i class="fa-solid fa-book-open me-2"></i> Khóa học của tôi
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                     <!-- Giới thiệu trung tâm -->
                     <li class="dropdown">

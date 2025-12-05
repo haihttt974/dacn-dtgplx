@@ -1,0 +1,114 @@
+﻿@model List<dacn_dtgplx.Models.DangKyHoc>
+
+@{
+    ViewData["Title"] = "Khóa học của tôi";
+}
+
+<div class="container mt-4">
+    <h2 class="fw-bold text-primary mb-4">
+        📚 Khóa học của tôi
+    </h2>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info">
+            Bạn chưa có khóa học nào đã thanh toán thành công.
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var dk in Model)
+            {
+                var kh = dk.KhoaHoc;
+                var hang = kh.IdHangNavigation;
+
+                // phân loại trạng thái thời gian (chỉ để hiển thị đẹp hơn)
+                var now = DateTime.Now;
+                string statusText;
+                string statusClass;
+
+                if (kh.NgayBatDau.HasValue && kh.NgayKetThuc.HasValue)
+                {
+                    if (now < kh.NgayBatDau.Value)
+                    {
+                        statusText = "Sắp khai giảng";
+                        statusClass = "badge bg-warning text-dark";
+                    }
+                    else if (now > kh.NgayKetThuc.Value)
+                    {
+                        statusText = "Đã kết thúc";
+                        statusClass = "badge bg-secondary";
+                    }
+                    else
+                    {
+                        statusText = "Đang học";
+                        statusClass = "badge bg-success";
+                    }
+                }
+                else
+                {
+                    statusText = "Đã đăng ký";
+                    statusClass = "badge bg-primary";
+                }
+
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100 border-0 rounded-4">
+                        <div class="card-body">
+                            <h5 class="fw-bold text-primary mb-1">
+                                @kh.TenKhoaHoc
+                            </h5>
+
+                            <div class="mb-2">
+                                <span class="@statusClass">@statusText</span>
+                                <span class="badge bg-outline-success border ms-2 text-success">
+                                    Đã thanh toán
+                                </span>
+                            </div>
+
+                            <p class="mb-1">
+                                <i class="fa-solid fa-id-card me-1"></i>
+                                <strong>Hạng GPLX:</strong> @hang.MaHang
+                            </p>
+
+                            <p class="mb-1">
+                                <i class="fa-solid fa-calendar-days me-1"></i>
+                                <strong>Thời gian học:</strong>
+                                @kh.NgayBatDau?.ToString("dd/MM/yyyy") →
+                                @kh.NgayKetThuc?.ToString("dd/MM/yyyy")
+                            </p>
+
+                            <p class="mb-2">
+                                <i class="fa-solid fa-money-bill-wave me-1"></i>
+                                <strong>Học phí:</strong>
+                                @(hang.ChiPhi?.ToString("N0") ?? "0") VNĐ
+                            </p>
+
+                            <p class="text-muted mb-3" style="font-size: 0.9rem;">
+                                Ngày đăng ký: @dk.NgayDangKy?.ToString("dd/MM/yyyy")
+                            </p>
+
+                            <div class="d-flex gap-2">
+
+                                @* <a href="/khoahoc/details/@kh.KhoaHocId"
+                                   class="btn btn-outline-primary btn-sm flex-fill">
+                                    Chi tiết khóa học
+                                </a> *@
+
+                                <a href="@Url.Action("Schedule", "KhoaHoc", new { khoaHocId = kh.KhoaHocId })"
+                                   class="btn btn-warning btn-sm flex-fill">
+                                    📅 Lịch học
+                                </a>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://kit.fontawesome.com/4ec8c4cf3a.js" crossorigin="anonymous"></script>
+}
