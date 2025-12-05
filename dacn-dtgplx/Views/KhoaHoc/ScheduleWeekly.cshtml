@@ -1,0 +1,167 @@
+﻿@model List<dacn_dtgplx.Models.LichHoc>
+@{
+    var kh = ViewBag.KhoaHoc as dacn_dtgplx.Models.KhoaHoc;
+
+    // nhóm lịch theo tuần
+    var grouped = Model
+        .GroupBy(l =>
+            System.Globalization.CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(
+                l.NgayHoc.ToDateTime(TimeOnly.MinValue),
+                System.Globalization.CalendarWeekRule.FirstDay,
+                DayOfWeek.Monday
+            ))
+        .OrderBy(g => g.Key)
+        .ToList();
+
+    // generate khung giờ
+    var timeSlots = new List<(string Start, string End)>
+    {
+        ("07:00", "09:00"),
+        ("09:00", "11:00"),
+        ("13:00", "15:00"),
+        ("15:00", "17:00"),
+    };
+}
+
+<style>
+    .timetable-container {
+        background: #fff;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 5px 18px rgba(0,0,0,.08);
+    }
+
+    .week-title {
+        font-size: 22px;
+        font-weight: 700;
+        padding: 12px;
+        background: #f1f5ff;
+        border-left: 6px solid #0d6efd;
+        margin-bottom: 20px;
+        border-radius: 8px;
+    }
+
+    table.timetable {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        table.timetable th {
+            background: #0d6efd;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-weight: 600;
+            border: 1px solid #dce3f0;
+        }
+
+        table.timetable td {
+            height: 95px;
+            border: 1px solid #e5e5e5;
+            vertical-align: top;
+            padding: 4px;
+            position: relative;
+        }
+
+    .event-block {
+        background: #4c8ffd;
+        color: white;
+        padding: 6px;
+        border-radius: 6px;
+        font-size: 13px;
+        line-height: 1.3;
+        box-shadow: 0 2px 6px rgba(0,0,0,.15);
+        margin-bottom: 5px;
+    }
+</style>
+
+<div class="container mt-4" style="max-width: 1100px;">
+
+    <h3 class="fw-bold text-primary mb-2">
+        📅 Thời khóa biểu – @kh.TenKhoaHoc (@kh.IdHangNavigation.MaHang)
+    </h3>
+
+    <p class="text-muted mb-4">
+        Thời gian: @kh.NgayBatDau?.ToString("dd/MM/yyyy") → @kh.NgayKetThuc?.ToString("dd/MM/yyyy")
+    </p>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            Hiện chưa có lịch học nào cho khóa học này.
+        </div>
+    }
+    else
+    {
+        foreach (var week in grouped)
+        {
+            <div class="timetable-container mb-4">
+                <div class="week-title">
+                    📆 Tuần @week.Key
+                </div>
+
+                <table class="timetable">
+                    <thead>
+                        <tr>
+                            <th>Giờ</th>
+                            <th>Thứ 2</th>
+                            <th>Thứ 3</th>
+                            <th>Thứ 4</th>
+                            <th>Thứ 5</th>
+                            <th>Thứ 6</th>
+                            <th>Thứ 7</th>
+                            <th>CN</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var slot in timeSlots)
+                        {
+                            <tr>
+                                <th style="background:#eef3ff;color:#333;">
+                                    @slot.Start – @slot.End
+                                </th>
+
+                                @for (int day = 1; day <= 7; day++)
+                                {
+                                    <td>
+                                        @{
+                                            var eventsToday = week.Where(l =>
+                                            ((int)l.NgayHoc.DayOfWeek == day % 7) && // CN = 0
+                                            l.TgBatDau.ToString("HH:mm") == slot.Start
+                                            );
+                                        }
+
+                                        @foreach (var ev in eventsToday)
+                                        {
+                                            <div class="event-block">
+                                                <strong>@ev.NoiDung</strong><br />
+                                                @ev.TgBatDau.ToString("HH:mm")
+                                                - @ev.TgKetThuc.ToString("HH:mm") <br />
+
+                                                @if (ev.LopHoc != null)
+                                                {
+                                                    <span>Lớp: @ev.LopHoc.TenLop</span>
+                            
+                                                    <br />
+                                                }
+
+                                                @if (ev.XeTapLai != null)
+                                                {
+                                                    <span>Xe: @ev.XeTapLai.LoaiXe</span>
+                                                }
+                                            </div>
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+
+    <a href="@Url.Action("MyCourses", "KhoaHoc")" class="btn btn-secondary mt-3">
+        ⬅ Quay lại Khóa học của tôi
+    </a>
+</div>

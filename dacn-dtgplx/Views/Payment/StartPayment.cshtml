@@ -37,17 +37,37 @@
             <h5 class="fw-bold mb-2">💰 Chọn phương thức thanh toán</h5>
 
             <!-- VNPAY -->
-            <label class="payment-option shadow-sm">
+            <!-- VNPAY -->
+            <label class="payment-card">
                 <input type="radio" name="method" value="VNPAY" checked />
-                <img src="https://sandbox.vnpayment.vn/paymentv2/images/logo.png" width="140" />
-                <span class="fw-semibold text-dark">Thanh toán qua VNPAY</span>
+
+                <div class="icon-wrap">
+                    <img src="~/images/Logo/vnpay-logo.2.png" alt="VNPAY" class="payment-logo">
+                </div>
+
+                <div class="text-wrap">
+                    <div class="title">Thanh toán qua VNPAY</div>
+                    <div class="sub">Hỗ trợ quét mã QR & ngân hàng nội địa</div>
+                </div>
+
+                <i class="fa-solid fa-circle-check check-icon"></i>
             </label>
 
-            <!-- PAYPAL (Hiện UI nhưng chưa dùng) -->
-            <label class="payment-option shadow-sm">
+            <!-- PAYPAL -->
+            <label class="payment-card disabled">
                 <input type="radio" disabled />
-                <img src="https://www.paypalobjects.com/webstatic/icon/pp258.png" width="55" />
-                <span class="text-muted">PayPal (chưa hỗ trợ)</span>
+
+                <div class="icon-wrap">
+                    <img src="https://www.paypalobjects.com/webstatic/icon/pp258.png"
+                         alt="PayPal" class="payment-logo">
+                </div>
+
+                <div class="text-wrap">
+                    <div class="title">PayPal</div>
+                    <div class="sub text-muted">(chưa hỗ trợ)</div>
+                </div>
+
+                <i class="fa-regular fa-circle-xmark check-icon text-muted"></i>
             </label>
 
             <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-3 mt-3">
@@ -59,25 +79,82 @@
 </div>
 
 <style>
-    .payment-option {
+    .payment-methods {
         display: flex;
-        align-items: center;
-        gap: 15px;
-        padding: 15px;
-        border: 1px solid #e0e6f1;
-        border-radius: 10px;
-        cursor: pointer;
-        margin-bottom: 12px;
-        transition: .2s;
-        background: #fff;
+        flex-direction: column;
+        gap: 14px;
     }
 
-        .payment-option:hover {
+    /* CARD */
+    .payment-card {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 18px 20px;
+        border: 2px solid #e7eaf3;
+        border-radius: 16px;
+        background: #fff;
+        cursor: pointer;
+        transition: 0.25s ease;
+        position: relative;
+    }
+
+        .payment-card:hover {
             border-color: #0d6efd;
-            background: #f0f7ff;
+            background: #f4f9ff;
         }
 
-        .payment-option input {
-            transform: scale(1.3);
+        /* DISABLED STYLE */
+        .payment-card.disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
         }
+
+        /* RADIO */
+        .payment-card input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+    /* LOGO */
+    .payment-logo {
+        height: 36px;
+        width: auto;
+        object-fit: contain;
+    }
+
+    /* TEXT */
+    .text-wrap .title {
+        font-weight: 600;
+        font-size: 1.05rem;
+        color: #1b1b1b;
+    }
+
+    .text-wrap .sub {
+        font-size: 0.85rem;
+        margin-top: 2px;
+    }
+
+    /* CHECK ICON */
+    .check-icon {
+        margin-left: auto;
+        font-size: 20px;
+        opacity: 0;
+        transition: 0.25s;
+        color: #0d6efd;
+    }
+
+    /* WHEN SELECTED */
+    .payment-card input[type="radio"]:checked + .icon-wrap + .text-wrap + .check-icon {
+        opacity: 1;
+    }
+
+    .payment-card input[type="radio"]:checked ~ .check-icon {
+        opacity: 1;
+    }
+
+    .payment-card input[type="radio"]:checked {
+        border-color: #0d6efd;
+    }
 </style>

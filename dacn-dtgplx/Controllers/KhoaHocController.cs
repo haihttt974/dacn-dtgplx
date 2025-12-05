@@ -289,40 +289,36 @@ namespace dacn_dtgplx.Controllers
             return View(myCourses);   // Views/KhoaHoc/MyCourses.cshtml
         }
 
-        [Authorize]
         [HttpGet("schedule/{khoaHocId}")]
-        public async Task<IActionResult> Schedule(int khoaHocId)
+        public async Task<IActionResult> Schedule(int khoaHocId, DateTime? weekStart)
         {
-            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
-            // Kiểm tra quyền xem
-            bool hasAccess = await _context.DangKyHocs
-                .AnyAsync(d => d.KhoaHocId == khoaHocId
-                            && d.HoSo.UserId == userId
-                            && d.TrangThai == true);
-
-            if (!hasAccess)
-            {
-                TempData["Error"] = "Bạn không có quyền xem lịch học của khóa này.";
-                return RedirectToAction("MyCourses");
-            }
-
-            // Lấy lịch học đầy đủ
-            var lichHocs = await _context.LichHocs
-                .Include(l => l.LopHoc)
-                .Include(l => l.XeTapLai)
-                .Where(l => l.KhoaHocId == khoaHocId)
-                .OrderBy(l => l.NgayHoc)
-                .ThenBy(l => l.TgBatDau)
-                .ToListAsync();
-
-            var khoaHoc = await _context.KhoaHocs
+            var kh = await _context.KhoaHocs
                 .Include(k => k.IdHangNavigation)
                 .FirstAsync(k => k.KhoaHocId == khoaHocId);
 
-            ViewBag.KhoaHoc = khoaHoc;
+            // ================================
+            // FIX LỖI TÍNH TUẦN (CHUẨN VIỆT NAM)
+            // ================================
+            int dow = (int)DateTime.Today.DayOfWeek;
+            if (dow == 0) dow = 7;
 
-            return View("Schedule", lichHocs);
+            DateTime start = weekStart ?? DateTime.Today.AddDays(-(dow - 1));
+            DateTime end = start.AddDays(6);
+
+            ViewBag.KhoaHoc = kh;
+            ViewBag.WeekStart = start;
+            ViewBag.WeekEnd = end;
+
+            // ================================
+            // LOAD LỊCH HỌC TRONG TUẦN
+            // ================================
+            var lich = await _context.LichHocs
+                .Where(l => l.KhoaHocId == khoaHocId &&
+                            l.NgayHoc >= DateOnly.FromDateTime(start) &&
+                            l.NgayHoc <= DateOnly.FromDateTime(end))
+                .ToListAsync();
+
+            return View(lich);
         }
     }
 }
