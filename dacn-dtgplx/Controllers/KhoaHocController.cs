@@ -79,18 +79,9 @@ namespace dacn_dtgplx.Controllers
 
             if (onlyHoSo == true && isLogged)
             {
-                //var loaiHoSo = await _context.HoSoThiSinhs
-                //    .Where(h => h.UserId == userId)
-                //    .Select(h => h.LoaiHoSo)
-                //    .ToListAsync();
-
-                //query = query.Where(k =>
-                //    loaiHoSo.Any(loai => loai.Contains(k.IdHangNavigation.MaHang)));
                 query = query.Where(k =>
                 _context.HoSoThiSinhs.Any(h =>
                     h.UserId == userId &&
-                    // Nếu bạn chỉ muốn hồ sơ đã duyệt thì thêm dòng này:
-                    // h.DaDuyet == true &&
                     h.LoaiHoSo.Contains(k.IdHangNavigation.MaHang)
                     )
                 );
@@ -168,7 +159,7 @@ namespace dacn_dtgplx.Controllers
         {
             int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-            // lấy hạng của khóa muốn đăng ký
+            // lấy khóa học
             var khoaHoc = await _context.KhoaHocs
                 .Include(k => k.IdHangNavigation)
                 .FirstOrDefaultAsync(k => k.KhoaHocId == khoaHocId);
@@ -178,7 +169,23 @@ namespace dacn_dtgplx.Controllers
 
             int hangId = khoaHoc.IdHang;
 
-            // kiểm tra user đã có khóa học cùng hạng & TRẠNG THÁI TRUE chưa
+            // ⭐ KIỂM TRA ĐÃ ĐĂNG KÝ CHÍNH KHÓA HỌC NÀY CHƯA
+            var daDangKyKhoaNay = await _context.DangKyHocs
+                .AnyAsync(d => d.KhoaHocId == khoaHocId
+                               && d.HoSo.UserId == userId
+                               && d.TrangThai == true);
+
+            if (daDangKyKhoaNay)
+            {
+                return Json(new
+                {
+                    exists = true,
+                    isSameCourse = true,
+                    khoaHoc = khoaHoc.TenKhoaHoc
+                });
+            }
+
+            // ⭐ KIỂM TRA ĐĂNG KÝ TRÙNG HẠNG
             var dkTonTai = await _context.DangKyHocs
                 .Include(d => d.KhoaHoc)
                 .Where(d => d.HoSo.UserId == userId &&
@@ -197,6 +204,7 @@ namespace dacn_dtgplx.Controllers
             return Json(new
             {
                 exists = true,
+                isSameCourse = false,
                 khoaHoc = dkTonTai.khoaHoc,
                 hang = dkTonTai.hang
             });

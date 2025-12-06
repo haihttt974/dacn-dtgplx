@@ -1,0 +1,96 @@
+﻿@model List<dacn_dtgplx.Models.HoaDonThanhToan>
+
+@{
+    ViewData["Title"] = "Lịch sử thanh toán";
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+<div class="container mt-4">
+
+    <h2 class="fw-bold mb-4 text-primary">
+        <i class="fa-solid fa-file-invoice-dollar me-2"></i>
+        Lịch sử thanh toán của bạn
+    </h2>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info shadow-sm">
+            <i class="fa-solid fa-circle-info me-2"></i>
+            Hiện bạn chưa có thanh toán nào.
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm rounded-4">
+            <div class="card-body p-4">
+
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Mã thanh toán</th>
+                            <th>Khóa học</th>
+                            <th>Ngày thanh toán</th>
+                            <th>Số tiền</th>
+                            <th>Phương thức</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var hd in Model)
+                        {
+                            var status = hd.TrangThai == true
+                            ? "<span class='badge bg-success'><i class='fa-solid fa-check-circle me-1'></i>Thành công</span>"
+                            : "<span class='badge bg-danger'><i class='fa-solid fa-xmark-circle me-1'></i>Thất bại</span>";
+
+                            <tr>
+                                <td class="fw-bold">@hd.IdThanhToan</td>
+
+                                <td>
+                                    @if (hd.IdDangKyNavigation?.KhoaHoc != null)
+                                    {
+                                        <span>@hd.IdDangKyNavigation.KhoaHoc.TenKhoaHoc</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">(Không xác định)</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @if (hd.NgayThanhToan.HasValue)
+                                    {
+                                        @hd.NgayThanhToan.Value.ToString("dd/MM/yyyy")
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">---</span>
+                                    }
+                                </td>
+
+                                <td class="fw-bold text-danger">
+                                    @((hd.SoTien ?? 0).ToString("N0")) đ
+                                </td>
+
+                                <td>
+                                    @(hd.PhuongThucThanhToan ?? "Không rõ")
+                                </td>
+
+                                <td>
+                                    @Html.Raw(status)
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    table tbody tr:hover {
+        background: #f8f9fa;
+    }
+</style>

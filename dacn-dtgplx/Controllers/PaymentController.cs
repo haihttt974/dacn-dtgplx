@@ -199,8 +199,28 @@ namespace dacn_dtgplx.Controllers
                 hd.TrangThai = true;
                 hd.NgayThanhToan = DateOnly.FromDateTime(DateTime.Now);
                 dk.TrangThai = true;
-
                 await _context.SaveChangesAsync();
+
+                //  TẠO THÔNG BÁO CHO USER
+                var thongBao = new ThongBao
+                {
+                    TieuDe = "Thanh toán thành công",
+                    NoiDung = $"Bạn đã thanh toán thành công {dk.KhoaHoc.TenKhoaHoc}.",
+                    TaoLuc = DateTime.Now,
+                    SendRole = null
+                };
+                _context.ThongBaos.Add(thongBao);
+                await _context.SaveChangesAsync();
+                var ct = new CtThongBao
+                {
+                    UserId = user.UserId,
+                    ThongBaoId = thongBao.ThongBaoId,
+                    ThoiGianGui = DateTime.Now,
+                    DaXem = false
+                };
+                _context.CtThongBaos.Add(ct);
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Thanh toán thành công!";
 
                 await _mail.SendPaymentSuccessEmail(
                     user.Email!,

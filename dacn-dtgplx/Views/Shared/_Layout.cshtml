@@ -476,6 +476,17 @@
                             </li>
                         </ul>
                     </li>
+                    <!-- Hóa đơn -->
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "HoaDonThanhToan"
+                                                    && ViewContext.RouteData.Values["action"]?.ToString() == "Index"
+                                                    ? "active" : "")"
+                           href="@(User?.Identity?.IsAuthenticated == true
+                                           ? Url.Action("Index", "HoaDonThanhToan")
+                                           : Url.Action("Login", "Auth"))">
+                            <i class="fa-solid fa-file-invoice-dollar"></i> Hóa đơn
+                        </a>
+                    </li>
                     <!-- Giới thiệu trung tâm -->
                     <li class="dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center gap-1"

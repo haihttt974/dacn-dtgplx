@@ -261,6 +261,35 @@
     </div>
 </div>
 
+<div class="modal fade" id="sameCourseModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 shadow">
+
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid fa-ban me-2"></i>
+                    Bạn đã đăng ký khóa học này
+                </h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <p id="sameCourseMessage" class="mb-3"></p>
+                <small class="text-muted">
+                    Khóa học này đang hoạt động, bạn không thể đăng ký lại lần nữa.
+                </small>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">
+                    Đóng
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
 
@@ -327,21 +356,30 @@
                 .then(res => res.json())
                 .then(data => {
 
-                    if (!data.exists) {
-                        window.location.href = targetUrl;
-                        return;
-                    }
+                // ❌ 1. Nếu trùng khóa học → không cho đăng ký
+                if (data.exists && data.isSameCourse) {
 
-                    // Có đăng ký cùng hạng
-                    document.getElementById("duplicateMessage").innerHTML =
-                        `Bạn đã đăng ký khóa học <strong>${data.khoaHoc}</strong> thuộc hạng
-                         <strong>${data.hang}</strong>.<br>
-                         Bạn có chắc muốn đăng ký thêm khóa này không?`;
+                    document.getElementById("sameCourseMessage").innerHTML =
+                        `Bạn đã đăng ký khóa học <strong>${data.khoaHoc}</strong> và khóa học này đang hoạt động.<br>
+                            Bạn không thể đăng ký lại.`;
 
+                    new bootstrap.Modal(document.getElementById("sameCourseModal")).show();
+                    return;
+                }
+                // ⚠ 2. Nếu chỉ trùng hạng → cảnh báo có thể tiếp tục
+                if (data.exists && !data.isSameCourse) {
+                document.getElementById("duplicateMessage").innerHTML =
+                    `Bạn đã đăng ký khóa học <strong>${data.khoaHoc}</strong> thuộc hạng
+                        <strong>${data.hang}</strong>.<br>
+                        Bạn có chắc muốn đăng ký thêm khóa này không?`;
                     document.getElementById("confirmRegisterBtn").href = targetUrl;
-
                     new bootstrap.Modal(document.getElementById("duplicateModal")).show();
-                });
+                    return;
+                }
+                // ✔ Không trùng → cho đăng ký luôn
+                window.location.href = targetUrl;
+            });
+
         });
     </script>
 }
