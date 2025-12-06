@@ -37,7 +37,6 @@
             <h5 class="fw-bold mb-2">💰 Chọn phương thức thanh toán</h5>
 
             <!-- VNPAY -->
-            <!-- VNPAY -->
             <label class="payment-card">
                 <input type="radio" name="method" value="VNPAY" checked />
 
@@ -54,8 +53,9 @@
             </label>
 
             <!-- PAYPAL -->
-            <label class="payment-card disabled">
-                <input type="radio" disabled />
+            <label class="payment-card">
+                <!-- QUAN TRỌNG: thêm name + value, bỏ disabled -->
+                <input type="radio" name="method" value="PAYPAL" />
 
                 <div class="icon-wrap">
                     <img src="https://www.paypalobjects.com/webstatic/icon/pp258.png"
@@ -64,10 +64,10 @@
 
                 <div class="text-wrap">
                     <div class="title">PayPal</div>
-                    <div class="sub text-muted">(chưa hỗ trợ)</div>
+                    <div class="sub">Thanh toán quốc tế qua PayPal</div>
                 </div>
 
-                <i class="fa-regular fa-circle-xmark check-icon text-muted"></i>
+                <i class="fa-solid fa-circle-check check-icon"></i>
             </label>
 
             <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-3 mt-3">
