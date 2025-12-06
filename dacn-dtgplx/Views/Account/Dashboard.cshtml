@@ -1,0 +1,206 @@
+﻿@model dacn_dtgplx.DTOs.UserDashboardDto
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@{
+    var avatarPath = Model.Avatar ?? "";
+    if (!string.IsNullOrWhiteSpace(avatarPath))
+    {
+        avatarPath = avatarPath.Replace("\\", "/");
+
+        if (avatarPath.StartsWith("wwwroot/", StringComparison.OrdinalIgnoreCase))
+        {
+            avatarPath = "/" + avatarPath.Substring("wwwroot/".Length);
+        }
+        else if (!avatarPath.StartsWith("/"))
+        {
+            avatarPath = "/" + avatarPath;
+        }
+    }
+    else
+    {
+        avatarPath = Url.Content("~/images/avatar/default.png");
+    }
+}
+
+<div class="container mt-4">
+
+    <!-- TITLE -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">
+            <i class="fa-solid fa-gauge-high me-2 text-primary"></i>
+            Dashboard
+        </h2>
+        <span class="badge bg-primary fs-6">@Model.RoleName</span>
+    </div>
+
+    <div class="row">
+
+        <!-- ===============================
+             THÔNG TIN CÁ NHÂN
+        =================================== -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <i class="fa-solid fa-user me-2"></i>Thông tin cá nhân
+                </div>
+                <div class="card-body text-center">
+
+                    <!-- Avatar -->
+                    @if (!string.IsNullOrEmpty(Model.Avatar))
+                    {
+                        <img src="@avatarPath" class="rounded-circle mb-3" width="90" height="90" />
+                    }
+                    else
+                    {
+                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mb-3"
+                             style="width: 90px; height: 90px;">
+                            <i class="fa-solid fa-user text-white fa-2x"></i>
+                        </div>
+                    }
+
+                    <h5>@Model.FullName</h5>
+                    <p class="text-muted">@Model.Email</p>
+
+                    <div class="text-start mt-3">
+                        <p><strong>Ngày tham gia:</strong> @Model.CreatedAt?.ToString("dd/MM/yyyy")</p>
+                        <p><strong>Đăng nhập gần nhất:</strong> @Model.LastLogin?.ToString("dd/MM/yyyy HH:mm")</p>
+
+                        @if (Model.HoSo != null)
+                        {
+                            <p><strong>Hạng đăng ký:</strong> @Model.HoSo.HangTen</p>
+                            <p>
+                                <strong>Hồ sơ:</strong>
+                                @if (Model.HoSo.DaDuyet)
+                                {
+                                    <span class="badge bg-success">Đã duyệt</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning">Chưa duyệt</span>
+                                }
+                            </p>
+                        }
+                    </div>
+
+                    <a asp-action="Profile" class="btn btn-outline-primary w-100 mt-3">
+                        <i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa thông tin
+                    </a>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- ===============================
+             TIẾN ĐỘ HỌC
+        =================================== -->
+        <div class="col-md-8 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <i class="fa-solid fa-chart-line me-2"></i>Tiến độ học tập
+                </div>
+                <div class="card-body">
+
+                    @if (Model.TienDo != null)
+                    {
+                        <div class="row text-center">
+
+                            <div class="col-md-3 col-6 mb-3">
+                                <div class="card bg-primary text-white p-3">
+                                    <i class="fa-solid fa-book-open fa-2x mb-2"></i>
+                                    <h4>@Model.TienDo.HtLyThuyet / 1</h4>
+                                    <div>Lý thuyết</div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 col-6 mb-3">
+                                <div class="card bg-info text-white p-3">
+                                    <i class="fa-solid fa-car-burst fa-2x mb-2"></i>
+                                    <h4>@Model.TienDo.HtMoPhong / 1</h4>
+                                    <div>Mô phỏng</div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 col-6 mb-3">
+                                <div class="card bg-warning text-white p-3">
+                                    <i class="fa-solid fa-road fa-2x mb-2"></i>
+                                    <h4>@Model.TienDo.HtSaHinh / 1</h4>
+                                    <div>Sa hình</div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 col-6 mb-3">
+                                <div class="card bg-danger text-white p-3">
+                                    <i class="fa-solid fa-route fa-2x mb-2"></i>
+                                    <h4>@Model.TienDo.HtDuongTruong / 1</h4>
+                                    <div>Đường trường</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (Model.TienDo.DuDkThiTn == true)
+                        {
+                            <div class="alert alert-success mt-3">
+                                <i class="fa-solid fa-check-circle"></i> Bạn đã đủ điều kiện thi tốt nghiệp!
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-center text-muted">Chưa có tiến độ học tập.</p>
+                    }
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===============================
+         LỊCH HỌC SẮP TỚI
+    =================================== -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <i class="fa-solid fa-calendar-days me-2"></i>Lịch học sắp tới
+                </div>
+                <div class="card-body">
+
+                    @if (Model.LichHoc.Any())
+                    {
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Ngày</th>
+                                    <th>Nội dung</th>
+                                    <th>Khóa học</th>
+                                    <th>Xe tập lái</th>
+                                    <th>Địa điểm</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var lh in Model.LichHoc)
+                                {
+                                    <tr>
+                                        <td>@lh.NgayHoc.ToString("dd/MM/yyyy")</td>
+                                        <td>@lh.NoiDung</td>
+                                        <td>@lh.TenKhoaHoc</td>
+                                        <td>@lh.LoaiXe</td>
+                                        <td>@lh.DiaDiem</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <p class="text-center text-muted">Không có lịch học sắp tới.</p>
+                    }
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

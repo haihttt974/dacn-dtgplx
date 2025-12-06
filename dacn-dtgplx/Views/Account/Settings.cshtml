@@ -1,0 +1,321 @@
+﻿@model dacn_dtgplx.ViewModels.UserSettingsViewModel
+@{
+    ViewData["Title"] = "Cài đặt tài khoản";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-header bg-info text-white rounded-top-4">
+                <h4 class="mb-0 d-flex align-items-center">
+                    <i class="fa-solid fa-cog me-2"></i> Cài đặt tài khoản
+                </h4>
+            </div>
+
+            <div class="card-body p-4">
+
+                <!-- ACCOUNT INFO -->
+                <h5 class="border-bottom pb-2 mb-3">
+                    <i class="fa-solid fa-user me-2"></i>Thông tin tài khoản
+                </h5>
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <p><strong>Email:</strong> @Model.Email</p>
+                        <p><strong>Username:</strong> @Model.Username</p>
+                        <p>
+                            <strong>Vai trò:</strong>
+                            <span class="badge bg-primary">@Model.RoleName</span>
+                        </p>
+                    </div>
+
+                    <div class="col-md-6">
+                        <p><strong>Ngày tham gia:</strong> @Model.TaoLuc.ToString("dd/MM/yyyy")</p>
+                        <p><strong>Đăng nhập cuối:</strong> @Model.LanDangNhapGanNhat?.ToString("dd/MM/yyyy HH:mm")</p>
+                        <p>
+                            <strong>Trạng thái:</strong>
+                            @if (Model.TrangThai == true)
+                            {
+                                <span class="badge bg-success">Hoạt động</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">Không hoạt động</span>
+                            }
+                        </p>
+                    </div>
+                </div>
+
+                <!-- SECURITY -->
+                <h5 class="border-bottom pb-2 mb-3">
+                    <i class="fa-solid fa-shield-halved me-2"></i>Bảo mật
+                </h5>
+
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-warning">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fa-solid fa-key text-warning me-2"></i>Đổi mật khẩu
+                                </h6>
+                                <p class="text-muted small">Tăng cường bảo mật cho tài khoản của bạn</p>
+                                <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                                    <i class="fa-solid fa-edit me-1"></i>Đổi mật khẩu
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-info">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fa-solid fa-history text-info me-2"></i>Lịch sử đăng nhập
+                                </h6>
+                                <p class="text-muted small">Chức năng sẽ được cập nhật sau</p>
+                                <button class="btn btn-info btn-sm" disabled>
+                                    <i class="fa-solid fa-clock me-1"></i>Sắp có
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PRIVACY -->
+                <h5 class="border-bottom pb-2 mb-3">
+                    <i class="fa-solid fa-user-secret me-2"></i>Quyền riêng tư
+                </h5>
+
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="AllowProfileVisibility"
+                           @(Model.AllowProfileVisibility ? "checked" : "")>
+                    <label class="form-check-label" for="AllowProfileVisibility">
+                        Cho phép người khác xem hồ sơ của tôi
+                    </label>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="AllowEmailNotifications"
+                           @(Model.AllowEmailNotifications ? "checked" : "")>
+                    <label class="form-check-label" for="AllowEmailNotifications">
+                        Nhận thông báo qua Email
+                    </label>
+                </div>
+
+                <div class="form-check form-switch mb-4">
+                    <input class="form-check-input" type="checkbox" id="AllowScheduleNotifications"
+                           @(Model.AllowScheduleNotifications ? "checked" : "")>
+                    <label class="form-check-label" for="AllowScheduleNotifications">
+                        Nhận thông báo lịch học / lịch thi
+                    </label>
+                </div>
+
+                <!-- DANGER ZONE -->
+                <h5 class="border-bottom pb-2 text-danger mb-3">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i>Vùng nguy hiểm
+                </h5>
+
+                <div class="alert alert-danger">
+                    <strong>Cảnh báo!</strong> Nếu xóa tài khoản, bạn sẽ không thể khôi phục lại dữ liệu.
+                    <br /><br />
+                    <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                        <i class="fa-solid fa-trash me-1"></i>Xóa tài khoản
+                    </button>
+                </div>
+
+                <!-- ACTION BUTTONS -->
+                <div class="d-flex justify-content-between mt-4">
+                    <a asp-action="Dashboard" class="btn btn-secondary">
+                        <i class="fa-solid fa-arrow-left me-1"></i>Quay lại Dashboard
+                    </a>
+
+                    <button type="button" class="btn btn-success px-4" onclick="saveSettings()">
+                        <i class="fa-solid fa-save me-1"></i>Lưu cài đặt
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ========================================================
+                MODAL ĐỔI MẬT KHẨU
+============================================================ -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title text-white">
+                    <i class="fa-solid fa-key me-2"></i>Đổi mật khẩu
+                </h5>
+                <button type="button" class="btn-close"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <div class="mb-3">
+                    <label class="form-label">Mật khẩu hiện tại</label>
+                    <input type="password" id="CurrentPassword" class="form-control" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Mật khẩu mới</label>
+                    <input type="password" id="NewPassword" class="form-control" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Xác nhận mật khẩu mới</label>
+                    <input type="password" id="ConfirmPassword" class="form-control" />
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button class="btn btn-warning" onclick="changePassword()">
+                    <i class="fa-solid fa-save me-1"></i>Lưu mật khẩu
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- ========================================================
+                MODAL XÓA TÀI KHOẢN
+============================================================ -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fa-solid fa-skull-crossbones me-2"></i>Xóa tài khoản
+                </h5>
+                <button class="btn-close"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <div class="alert alert-danger">
+                    <strong>Cảnh báo!</strong> Hành động này không thể hoàn tác.
+                </div>
+
+                <label class="form-label">Nhập "XÓA TÀI KHOẢN" để xác nhận</label>
+                <input type="text" id="DeleteConfirm" class="form-control" placeholder="XÓA TÀI KHOẢN" />
+
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button class="btn btn-danger" onclick="deleteAccount()">
+                    <i class="fa-solid fa-trash me-1"></i>Xóa tài khoản
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- ========================================================
+                    AJAX + THÔNG BÁO
+============================================================ -->
+@section Scripts {
+    <script>
+
+        // Lưu cài đặt
+        function saveSettings() {
+
+            let data = {
+                AllowProfileVisibility: document.getElementById("AllowProfileVisibility").checked,
+                AllowEmailNotifications: document.getElementById("AllowEmailNotifications").checked,
+                AllowScheduleNotifications: document.getElementById("AllowScheduleNotifications").checked
+            };
+
+            fetch("/Account/SaveSettings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            })
+                .then(res => res.json())
+                .then(res => showToast(res.message, res.success))
+        }
+
+
+        // Đổi mật khẩu
+        function changePassword() {
+
+            let currentPassword = document.getElementById("CurrentPassword").value;
+            let newPassword = document.getElementById("NewPassword").value;
+            let confirmPassword = document.getElementById("ConfirmPassword").value;
+
+            fetch("/Account/ChangePassword", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    currentPassword: currentPassword,
+                    newPassword: newPassword,
+                    confirmPassword: confirmPassword
+                })
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    window.location.href = res.redirect; // Reload + show TempData["Success"]
+                } else {
+                    showToast(res.message, false);
+                }
+            });
+        }
+
+        // Xóa tài khoản
+        function deleteAccount() {
+
+            let data = {
+                DeleteConfirmText: document.getElementById("DeleteConfirm").value
+            };
+
+            fetch("/Account/DeleteAccount", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            })
+                .then(res => res.json())
+                .then(res => {
+                    showToast(res.message, res.success);
+                    if (res.success) window.location.href = "/Auth/Login";
+                });
+        }
+
+
+        // Toast thông báo
+        function showToast(message, isSuccess) {
+
+            let color = isSuccess ? "bg-success" : "bg-danger";
+
+            let toast = document.createElement("div");
+            toast.className = `toast align-items-center text-white ${color} border-0 position-fixed top-0 end-0 m-4`;
+            toast.style.zIndex = "9999";
+            toast.role = "alert";
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+
+            document.body.appendChild(toast);
+            new bootstrap.Toast(toast).show();
+
+            setTimeout(() => toast.remove(), 3500);
+        }
+
+    </script>
+}
