@@ -1,12 +1,13 @@
-﻿using System.Globalization;
-using System.Security.Claims;
-using System.Text;
-using CinemaS.VNPAY;
+﻿using CinemaS.VNPAY;
 using dacn_dtgplx.Models;
+using dacn_dtgplx.Payments;
 using dacn_dtgplx.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
+using System.Security.Claims;
+using System.Text;
 
 namespace dacn_dtgplx.Controllers
 {
@@ -17,12 +18,13 @@ namespace dacn_dtgplx.Controllers
         private readonly DtGplxContext _context;
         private readonly IConfiguration _config;
         private readonly IMailService _mail;
-
-        public PaymentController(DtGplxContext context, IConfiguration config, IMailService mail)
+        private readonly IPayPalService _payPal;
+        public PaymentController(DtGplxContext context, IConfiguration config, IMailService mail, IPayPalService payPal)
         {
             _context = context;
             _config = config;
             _mail = mail;
+            _payPal = payPal;
         }
 
         private int GetUserId() =>
@@ -76,6 +78,9 @@ namespace dacn_dtgplx.Controllers
 
             if (method == "VNPAY")
                 return RedirectToAction("VnPay", new { hoaDonId });
+
+            if (method == "PAYPAL")
+                return RedirectToAction("PayPal", new { hoaDonId });
 
             TempData["Error"] = "Phương thức thanh toán chưa được hỗ trợ.";
             return RedirectToAction("StartPayment", new { hoaDonId });
@@ -236,5 +241,122 @@ namespace dacn_dtgplx.Controllers
                 .Replace("đ", "d")
                 .Replace("Đ", "D");
         }
+
+        // ============================================================
+        // PAYPAL
+        // ============================================================
+        [HttpGet("paypal")]
+        public async Task<IActionResult> PayPal(int hoaDonId)
+        {
+            var hd = await _context.HoaDonThanhToans
+                .Include(h => h.IdDangKyNavigation)
+                    .ThenInclude(d => d.KhoaHoc)
+                .FirstOrDefaultAsync(h => h.IdThanhToan == hoaDonId);
+
+            if (hd == null)
+            {
+                TempData["Error"] = "Không tìm thấy hóa đơn.";
+                return RedirectToAction("Index", "KhoaHoc");
+            }
+
+            var amountDecimal = hd.SoTien ?? 0;
+            if (amountDecimal <= 0)
+            {
+                TempData["Error"] = "Số tiền thanh toán không hợp lệ.";
+                return RedirectToAction("StartPayment", new { hoaDonId });
+            }
+
+            // số tiền đang lưu trong DB là VND
+            decimal amountVND = hd.SoTien ?? 0;
+
+            // quy đổi sang USD (tạm dùng 1 USD = 24,000 VND)
+            decimal amountUSD = Math.Round(amountVND / 24000, 2);
+
+            // PayPal không nhận số > 2 ký tự thập phân
+            string returnUrl = Url.Action("PayPalReturn", "Payment", new { hoaDonId }, Request.Scheme)!;
+            string cancelUrl = Url.Action("PayPalCancel", "Payment", new { hoaDonId }, Request.Scheme)!;
+
+            // Tạo order PayPal
+            string? approvalUrl = await _payPal.CreateOrderAsync(amountUSD, "USD", returnUrl, cancelUrl);
+
+            if (string.IsNullOrEmpty(approvalUrl))
+            {
+                TempData["Error"] = "Không tạo được đơn hàng PayPal.";
+                return RedirectToAction("StartPayment", new { hoaDonId });
+            }
+
+            return Redirect(approvalUrl);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("paypalreturn")]
+        public async Task<IActionResult> PayPalReturn(int hoaDonId, string token) // token = order id
+        {
+            // 1. Capture order với PayPal
+            bool success = await _payPal.CaptureOrderAsync(token);
+
+            var hd = await _context.HoaDonThanhToans
+                .Include(h => h.IdDangKyNavigation)
+                    .ThenInclude(d => d.HoSo)
+                        .ThenInclude(hs => hs.User)
+                .Include(h => h.IdDangKyNavigation.KhoaHoc)
+                .FirstOrDefaultAsync(h => h.IdThanhToan == hoaDonId);
+
+            if (hd == null)
+            {
+                ViewBag.Message = "Không tìm thấy hóa đơn khi PayPal trả về.";
+                return View("PaymentFail");
+            }
+
+            var dk = hd.IdDangKyNavigation;
+            var user = dk.HoSo.User;
+
+            if (success)
+            {
+                hd.TrangThai = true;
+                hd.NgayThanhToan = DateOnly.FromDateTime(DateTime.Now);
+                dk.TrangThai = true;
+
+                await _context.SaveChangesAsync();
+
+                await _mail.SendPaymentSuccessEmail(
+                    user.Email!,
+                    user.TenDayDu ?? user.Username,
+                    dk.KhoaHoc.TenKhoaHoc!,
+                    hd.SoTien ?? 0
+                );
+
+                return View("PaymentSuccess");
+            }
+            else
+            {
+                hd.TrangThai = false;
+                dk.TrangThai = false;
+                await _context.SaveChangesAsync();
+
+                ViewBag.Message = "Thanh toán PayPal thất bại hoặc bị hủy.";
+                return View("PaymentFail");
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpGet("paypalcancel")]
+        public async Task<IActionResult> PayPalCancel(int hoaDonId)
+        {
+            var hd = await _context.HoaDonThanhToans
+                .Include(h => h.IdDangKyNavigation)
+                .FirstOrDefaultAsync(h => h.IdThanhToan == hoaDonId);
+
+            if (hd != null)
+            {
+                hd.TrangThai = false;
+                hd.IdDangKyNavigation.TrangThai = false;
+                await _context.SaveChangesAsync();
+            }
+
+            ViewBag.Message = "Bạn đã hủy thanh toán PayPal.";
+            return View("PaymentFail");
+        }
+
     }
 }
