@@ -36,6 +36,7 @@ builder.Services.AddSession();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddScoped<AutoUpdateKhoaHocService>();
 builder.Services.AddScoped<SteganographyService>();
+builder.Services.AddScoped<DashboardService>();
 
 builder.Services.AddSignalR();
 builder.Services.AddHostedService<OnlineUserMonitor>();
