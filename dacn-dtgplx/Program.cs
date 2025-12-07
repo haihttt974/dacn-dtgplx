@@ -1,7 +1,6 @@
 ﻿using dacn_dtgplx.Configs;
 using dacn_dtgplx.Hubs;
 using dacn_dtgplx.Models;
-using dacn_dtgplx.Payments;
 using dacn_dtgplx.Services;
 using dacn_dtgplx.ViewModels;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -23,9 +22,8 @@ builder.Services.AddDbContext<DtGplxContext>(options =>
 // MVC + View + Runtime Compilation
 builder.Services.AddControllersWithViews()
     .AddRazorRuntimeCompilation();
-
+builder.Services.AddHttpClient();
 builder.Services.AddScoped<IMailService, MailService>();
-builder.Services.Configure<PayPalSettings>(builder.Configuration.GetSection("PayPal"));
 builder.Services.AddScoped<IPayPalService, PayPalService>();
 
 // View Renderer (nếu bạn dùng gửi email template)
