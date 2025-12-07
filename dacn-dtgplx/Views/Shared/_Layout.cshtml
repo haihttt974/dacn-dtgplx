@@ -476,6 +476,15 @@
                             </li>
                         </ul>
                     </li>
+                    <!-- Học -->
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Hoc"
+                                                           && ViewContext.RouteData.Values["action"]?.ToString() == "Index"
+                                                           ? "active" : "")"
+                           href="@Url.Action("Index", "Hoc")">
+                            <i class="fa-solid fa-graduation-cap"></i> Học
+                        </a>
+                    </li>
                     <!-- Hóa đơn -->
                     <li class="nav-item">
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "HoaDonThanhToan"
@@ -574,26 +583,31 @@
                             <div class="dropdown">
                                 <a class="d-flex align-items-center gap-2 text-decoration-none dropdown-toggle" href="#" data-bs-toggle="dropdown">
                                     <img src="@avatarSrc" class="user-avatar" />
-                                    <span class="user-name">@fullName</span>
-                                    @{
-                                        var role = Context.Session.GetString("Role");
-                                        var roleClass = "bg-secondary"; // màu mặc định
 
-                                        if (role == "Giáo viên")
-                                        {
-                                            roleClass = "bg-primary";   // màu cho giáo viên
+                                    <div class="d-flex flex-column align-items-start">
+                                        <span class="user-name">@fullName</span>
+
+                                        @{
+                                            var role = Context.Session.GetString("Role");
+                                            var roleClass = "bg-secondary"; // màu mặc định
+
+                                            if (role == "Giáo viên")
+                                            {
+                                                roleClass = "bg-primary";
+                                            }
+                                            else if (role == "Học viên")
+                                            {
+                                                roleClass = "bg-success";
+                                            }
                                         }
-                                        else if (role == "Học viên")
+
+                                        @if (!string.IsNullOrEmpty(role))
                                         {
-                                            roleClass = "bg-success";   // màu cho học viên
+                                            <span class="badge text-white @roleClass" style="font-size: 0.75rem;">
+                                                @role
+                                            </span>
                                         }
-                                    }
-                                    @if (!string.IsNullOrEmpty(role))
-                                    {
-                                        <span class="badge text-white @roleClass" style="font-size: 0.75rem;">
-                                            @role
-                                        </span>
-                                    }
+                                    </div>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end shadow">
                                     <li>
