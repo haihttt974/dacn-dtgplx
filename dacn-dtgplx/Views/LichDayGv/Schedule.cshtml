@@ -1,0 +1,330 @@
+﻿@using Newtonsoft.Json
+@model dacn_dtgplx.Models.TtGiaoVien
+@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+
+    var hangPhuTrach = ViewBag.HangPhuTrach as List<string>;
+    var lichDay = ViewBag.LichDay as List<int>;
+    var khoaHocHienTai = ViewBag.LichHienTai as List<dacn_dtgplx.Models.KhoaHoc>;
+    var xungDot = ViewBag.XungDot as Dictionary<int, string>;
+}
+
+<style>
+    /* ==========================
+           STYLE NÚT CHỌN
+           ========================== */
+    .choice-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 16px;
+        border-radius: 999px;
+        border: 2px solid #0d6efd;
+        color: #0d6efd;
+        font-weight: 600;
+        cursor: pointer;
+        user-select: none;
+        background-color: #fff;
+        transition: 0.2s ease-in-out;
+    }
+
+        .choice-toggle input {
+            display: none;
+        }
+
+        .choice-toggle .check-box {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 2px solid #0d6efd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: .2s ease-in-out;
+            font-size: 12px;
+            font-weight: bold;
+            color: transparent;
+        }
+
+        .choice-toggle.is-checked {
+            background-color: #9c27b0;
+            border-color: #9c27b0;
+            color: white;
+        }
+
+            .choice-toggle.is-checked .check-box {
+                background: #fff;
+                border-color: #fff;
+                color: #9c27b0;
+            }
+
+                .choice-toggle.is-checked .check-box::after {
+                    content: "✓";
+                }
+</style>
+
+<h2 class="mb-4">Phân lịch giảng dạy</h2>
+
+<!-- =========================
+     THÔNG TIN GIÁO VIÊN
+========================= -->
+<div class="card p-3 mb-4 shadow-sm">
+    <h4 class="mb-3">Thông tin giáo viên</h4>
+    <p><strong>Họ tên:</strong> @Model.User.TenDayDu</p>
+    <p><strong>Chuyên môn:</strong> @Model.ChuyenMon</p>
+</div>
+
+<!-- =========================
+     KHÓA HỌC ĐANG PHỤ TRÁCH
+========================= -->
+<div class="card p-3 mb-4">
+    <h4 class="mb-3 fw-bold">Khóa học đang phụ trách</h4>
+
+    @if (((List<dacn_dtgplx.Models.KhoaHoc>)ViewBag.LichHienTai).Count == 0)
+    {
+        <p class="text-muted fst-italic">Chưa phụ trách khóa học nào.</p>
+    }
+    else
+    {
+        <div class="list-group course-list">
+
+            @foreach (var kh in ViewBag.LichHienTai)
+            {
+                <div class="list-group-item course-item d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="course-icon">
+                            <i class="bi bi-journal-bookmark-fill"></i>
+                        </div>
+
+                        <div>
+                            <div class="fw-bold">@kh.TenKhoaHoc</div>
+                            <small class="text-muted">
+                                Mã khóa: @kh.KhoaHocId
+                            </small>
+                        </div>
+                    </div>
+
+                    <span class="badge course-badge">
+                        @kh.IdHangNavigation.MaHang
+                    </span>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- =========================
+     CHỌN HẠNG GIẢNG DẠY
+========================= -->
+<div class="card p-3 shadow-sm">
+    <h4>Sắp xếp lịch giảng dạy</h4>
+
+    <label class="fw-bold">Chọn hạng đào tạo:</label>
+    <select class="form-select mb-3" id="chonHang">
+        <option value="">-- Chọn hạng --</option>
+        @foreach (var h in hangPhuTrach)
+        {
+            <option value="@h">@h</option>
+        }
+    </select>
+
+    <!-- DANH SÁCH KHÓA HỌC -->
+    <div id="khoaHocContainer"></div>
+</div>
+
+<!-- =========================
+     MODAL CẢNH BÁO
+========================= -->
+<div class="modal fade" id="conflictModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">⚠ Cảnh báo trùng lịch</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <p id="conflictMessage" class="fw-bold text-danger"></p>
+                <p>Bạn không thể chọn các khóa học trùng giờ. Vui lòng chọn lại.</p>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="btnCancel">Hủy</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =========================
+     JAVASCRIPT
+========================= -->
+<script>
+    const khoaHoc = @Html.Raw(JsonConvert.SerializeObject(ViewBag.KhoaHocJs));
+    const lichHoc = @Html.Raw(JsonConvert.SerializeObject(ViewBag.LichHocJs));
+    let tempChecked = [];   // lưu checkbox vừa chọn
+
+    // -------------------------
+    // HÀM KIỂM TRA TRÙNG GIỜ
+    // -------------------------
+    function isConflict(kh1, kh2) {
+        let a = lichHoc[kh1];
+        let b = lichHoc[kh2];
+
+        if (!a || !b) return false;
+
+        for (let i of a) {
+            for (let j of b) {
+                if (i.ngay === j.ngay) {
+                    if (i.bd < j.kt && j.bd < i.kt) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    // -------------------------
+    // RENDER KHÓA HỌC THEO HẠNG
+    // -------------------------
+    document.getElementById("chonHang").addEventListener("change", function () {
+        let hang = this.value.trim();
+        let list = khoaHoc.filter(k =>
+            k.maHang.trim().toUpperCase() === hang.trim().toUpperCase()
+        );
+        let container = document.getElementById("khoaHocContainer");
+        if (!hang) return container.innerHTML = "";
+
+        let html = `
+            <table class="table table-bordered mt-3">
+                <thead>
+                    <tr>
+                        <th>Khóa học</th>
+                        <th>Bắt đầu</th>
+                        <th>Kết thúc</th>
+                        <th>SL tối đa</th>
+                        <th>Chọn</th>
+                    </tr>
+                </thead><tbody>
+        `;
+
+        list.forEach(k => {
+            html += `
+                <tr>
+                    <td>${k.tenKhoaHoc}</td>
+                    <td>${k.thoiGianBatDau}</td>
+                    <td>${k.thoiGianKetThuc}</td>
+                    <td>${k.soLuongToiDa ?? "-"}</td>
+                    <td>
+                        <label class="choice-toggle">
+                            <input type="checkbox" class="toggleKH" value="${k.khoaHocId}">
+                            <span class="check-box"></span>
+                            <span class="choice-text">Chọn</span>
+                        </label>
+                    </td>
+                </tr>`;
+        });
+
+        html += `
+                </tbody>
+            </table>
+            <button class="btn btn-success mt-3" id="btnSave">Lưu lịch dạy</button>
+        `;
+
+        container.innerHTML = html;
+        registerToggleHandlers();
+        registerSaveHandler();
+    });
+
+    // -------------------------
+    // HANDLE NÚT CHỌN
+    // -------------------------
+        function registerToggleHandlers() {
+        document.querySelectorAll(".toggleKH").forEach(cb => {
+
+            cb.addEventListener("change", function () {
+
+                const label = cb.closest(".choice-toggle");
+
+                // Check / uncheck UI
+                if (cb.checked) {
+                    label.classList.add("is-checked");
+                    tempChecked.push(cb);
+                } else {
+                    label.classList.remove("is-checked");
+                    tempChecked = tempChecked.filter(x => x !== cb);
+                    return;
+                }
+
+                // Danh sách đang chọn
+                let selected = [...document.querySelectorAll(".toggleKH:checked")].map(x => +x.value);
+
+                // Hàm bỏ chọn
+                function clearTempChecked() {
+                    tempChecked.forEach(x => {
+                        x.checked = false;
+                        x.closest(".choice-toggle").classList.remove("is-checked");
+                    });
+                    tempChecked = [];
+                }
+
+                // ----- KIỂM TRA TRÙNG GIỜ -----
+                for (let i = 0; i < selected.length; i++) {
+                    for (let j = i + 1; j < selected.length; j++) {
+
+                        if (isConflict(selected[i], selected[j])) {
+
+                            document.getElementById("conflictMessage").innerText =
+                                `Khóa ${selected[i]} bị trùng giờ với khóa ${selected[j]}.`;
+
+                            const modalEl = document.getElementById("conflictModal");
+                            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+                            let handled = false;
+
+                            // NÚT HỦY
+                            document.getElementById("btnCancel").onclick = () => {
+                                clearTempChecked();
+                                handled = true;
+                                modal.hide();
+                            };
+
+                            // ĐÓNG BẰNG X / NỀN NGOÀI
+                            modalEl.addEventListener("hidden.bs.modal", function handler() {
+                                modalEl.removeEventListener("hidden.bs.modal", handler);
+
+                                if (!handled) clearTempChecked();
+                            });
+
+                            modal.show();
+                            return;
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    // -------------------------
+    // NÚT LƯU DỮ LIỆU
+    // -------------------------
+    function registerSaveHandler() {
+        document.getElementById("btnSave").addEventListener("click", () => {
+            let selected = [...document.querySelectorAll(".toggleKH:checked")].map(x => x.value);
+
+            let form = document.createElement("form");
+            form.method = "POST";
+            form.action = "/LichDayGv/SaveSchedule";
+
+            form.innerHTML = `
+                <input type="hidden" name="id" value="${@Model.TtGiaoVienId}">
+                ${selected.map(x =>
+                    `<input type="hidden" name="khoaHocIds" value="${x}">`
+                ).join("")}
+            `;
+
+            document.body.appendChild(form);
+            form.submit();
+        });
+    }
+</script>

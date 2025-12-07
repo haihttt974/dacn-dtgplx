@@ -113,6 +113,16 @@
                         Bảng điều khiển
                     </a>
                 </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a asp-controller="AdminUsers" asp-action="Index" class="nav-link fw-semibold text-primary">
+                        Người dùng
+                    </a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a asp-controller="AdminPayments" asp-action="Index" class="nav-link fw-semibold text-primary">
+                        Hóa đơn thanh toán
+                    </a>
+                </li>
             </ul>
 
             <ul class="navbar-nav ms-auto">
@@ -175,16 +185,6 @@
                             </a>
                         </li>
 
-                        <!-- Quản lý người dùng -->
-                        <li class="nav-item">
-                            <a asp-controller="AdminUsers"
-                               asp-action="Index"
-                               class="nav-link @(currentController == "AdminUsers" ? "active" : "")">
-                                <i class="nav-icon fa fa-users"></i>
-                                <p>Người dùng</p>
-                            </a>
-                        </li>
-
                         <!-- Khóa học -->
                         <li class="nav-item">
                             <a asp-controller="AdminCourses"
@@ -192,6 +192,16 @@
                                class="nav-link @(currentController == "AdminCourses" ? "active" : "")">
                                 <i class="nav-icon fa fa-book"></i>
                                 <p>Khóa học</p>
+                            </a>
+                        </li>
+
+                        <!-- Quản lý lịch dạy -->
+                        <li class="nav-item">
+                            <a asp-controller="LichDayGv"
+                               asp-action="Index"
+                               class="nav-link @(currentController == "LichDayGv" ? "active" : "")">
+                                <i class="nav-icon fa fa-calendar"></i>
+                                <p>Quản lý lịch dạy</p>
                             </a>
                         </li>
 
@@ -297,14 +307,6 @@
                             <a asp-controller="AdminProfiles" asp-action="Index" class="nav-link">
                                 <i class="nav-icon fa fa-id-card"></i>
                                 <p>Hồ sơ học viên</p>
-                            </a>
-                        </li>
-
-                        <!-- Thanh toán -->
-                        <li class="nav-item">
-                            <a asp-controller="AdminPayments" asp-action="Index" class="nav-link">
-                                <i class="nav-icon fa fa-id-card"></i>
-                                <p>Thanh toán</p>
                             </a>
                         </li>
 

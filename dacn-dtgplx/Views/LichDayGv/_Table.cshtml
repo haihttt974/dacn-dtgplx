@@ -1,0 +1,54 @@
+﻿@model List<dacn_dtgplx.ViewModels.GiaoVienIndexVM>
+
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th>Họ tên</th>
+            <th>Chuyên môn</th>
+            <th>Chuyên đào tạo</th>
+            <th>Ngày vào làm</th>
+            <th>Lịch dạy</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @if (!Model.Any())
+        {
+            <tr><td colspan="5" class="text-center text-muted">Không tìm thấy giáo viên nào.</td></tr>
+        }
+        else
+        {
+            foreach (var gv in Model)
+            {
+                <tr onclick="location.href='@Url.Action("Schedule", "LichDayGv", new { id = gv.Id })'"
+                    style="cursor:pointer">
+
+                    <td>@gv.Ten</td>
+                    <td>@gv.ChuyenMon</td>
+
+                    <td>
+                        @foreach (var h in gv.ChuyenDaoTao)
+                        {
+                            <span class="badge bg-primary me-1">@h</span>
+                        }
+                    </td>
+
+                    <td>@gv.NgayVaoLam?.ToString("dd/MM/yyyy")</td>
+
+                    <td>
+                        @if (gv.LichDay.Count == 0)
+                        {
+                            <span class="badge bg-danger">Chưa có lịch dạy</span>
+                        }
+                        else
+                        {
+
+                            <span class="badge bg-success">Đang phụ trách @gv.LichDay.Count khóa</span>
+                        }
+                    </td>
+
+                </tr>
+            }
+        }
+    </tbody>
+</table>

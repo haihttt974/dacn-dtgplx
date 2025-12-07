@@ -1,0 +1,57 @@
+﻿@model List<dacn_dtgplx.ViewModels.GiaoVienIndexVM>
+@{
+    ViewData["Title"] = "Lịch dạy";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+<div class="row g-2 mb-3">
+    <div class="col-md-4">
+        <input type="text"
+               id="searchBox"
+               value="@ViewBag.Search"
+               class="form-control"
+               placeholder="Tìm theo tên giáo viên..." />
+    </div>
+
+    <div class="col-md-3">
+        <select id="hangSelect" class="form-select">
+            <option value="">-- Lọc theo hạng đào tạo --</option>
+
+            @foreach (var h in ViewBag.AllHangs as List<string>)
+            {
+                <option value="@h" selected="@(ViewBag.Hang == h ? "selected" : "")">@h</option>
+            }
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <a class="btn btn-secondary w-100" href="@Url.Action("Index", "LichDayGv")">Reset</a>
+    </div>
+</div>
+
+<div id="tableArea">
+    @await Html.PartialAsync("_Table", Model)
+</div>
+
+<script>
+    let typingTimer;
+    const debounceTime = 500;
+
+    document.getElementById("searchBox").addEventListener("keyup", function () {
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(loadData, debounceTime);
+    });
+
+    document.getElementById("hangSelect").addEventListener("change", loadData);
+
+    function loadData() {
+        let search = document.getElementById("searchBox").value;
+        let hang = document.getElementById("hangSelect").value;
+
+        fetch(`/LichDayGv?search=${encodeURIComponent(search)}&hang=${encodeURIComponent(hang)}`,
+            { headers: { "X-Requested-With": "XMLHttpRequest" } })
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById("tableArea").innerHTML = html;
+            });
+    }
+</script>
