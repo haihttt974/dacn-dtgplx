@@ -96,7 +96,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
-
+app.MapHub<ChatHub>("/chatHub");
+app.MapHub<OnlineHub>("/onlineHub");
 // =============================================
 // 2️⃣ Middleware Pipeline
 // =============================================

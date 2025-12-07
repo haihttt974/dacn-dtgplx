@@ -7,6 +7,7 @@ namespace dacn_dtgplx.Hubs
     public class OnlineHub : Hub
     {
         private readonly DtGplxContext _context;
+
         public OnlineHub(DtGplxContext context)
         {
             _context = context;
@@ -15,21 +16,15 @@ namespace dacn_dtgplx.Hubs
         public override async Task OnConnectedAsync()
         {
             var http = Context.GetHttpContext();
-            var username = http.Session.GetString("Username");
-            var userIdStr = http.Session.GetString("UserId");
-
-            //if (username == null || userIdStr == null)
-            //{
-            //    await base.OnConnectedAsync();
-            //    return;
-            //}
-            if (string.IsNullOrEmpty(userIdStr))
+            if (http == null)
             {
-                Console.WriteLine("❌ Hub: Không nhận được Session UserId");
+                await base.OnConnectedAsync();
                 return;
             }
 
-            if (!int.TryParse(userIdStr, out int userId))
+            string? userIdStr = http.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userIdStr) ||
+                !int.TryParse(userIdStr, out int userId))
             {
                 await base.OnConnectedAsync();
                 return;
@@ -59,24 +54,31 @@ namespace dacn_dtgplx.Hubs
             await _context.SaveChangesAsync();
 
             await SendOnlineCount();
+            await Clients.All.SendAsync("UserStatusChanged", userId, true);
+
             await base.OnConnectedAsync();
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
             var http = Context.GetHttpContext();
-            var userIdStr = http.Session.GetString("UserId");
-
-            if (!string.IsNullOrWhiteSpace(userIdStr) && int.TryParse(userIdStr, out int userId))
+            if (http != null)
             {
-                var existing = await _context.WebsocketConnections
-                    .FirstOrDefaultAsync(x => x.UserId == userId);
-
-                if (existing != null)
+                string? userIdStr = http.Session.GetString("UserId");
+                if (!string.IsNullOrWhiteSpace(userIdStr) &&
+                    int.TryParse(userIdStr, out int userId))
                 {
-                    existing.IsOnline = false;
-                    existing.LastActivity = DateTime.UtcNow;
-                    await _context.SaveChangesAsync();
+                    var existing = await _context.WebsocketConnections
+                        .FirstOrDefaultAsync(x => x.UserId == userId);
+
+                    if (existing != null)
+                    {
+                        existing.IsOnline = false;
+                        existing.LastActivity = DateTime.UtcNow;
+                        await _context.SaveChangesAsync();
+
+                        await Clients.All.SendAsync("UserStatusChanged", userId, false);
+                    }
                 }
             }
 
@@ -87,10 +89,17 @@ namespace dacn_dtgplx.Hubs
         private async Task SendOnlineCount()
         {
             int count = await _context.WebsocketConnections
-                .Where(x => x.IsOnline)
-                .CountAsync();
+                .CountAsync(x => x.IsOnline);
 
             await Clients.All.SendAsync("ReceiveOnlineCount", count);
+        }
+
+        public async Task<bool> IsUserOnline(int userId)
+        {
+            var user = await _context.WebsocketConnections
+                .FirstOrDefaultAsync(x => x.UserId == userId);
+
+            return user != null && user.IsOnline;
         }
     }
 }
