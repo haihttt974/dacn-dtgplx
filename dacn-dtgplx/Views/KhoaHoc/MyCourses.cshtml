@@ -1,29 +1,44 @@
-﻿@model List<dacn_dtgplx.Models.DangKyHoc>
+﻿@model List<dacn_dtgplx.ViewModels.MyCourseVM>
 
 @{
     ViewData["Title"] = "Khóa học của tôi";
 }
+<style>
+    .course-card {
+        transition: 0.25s ease-in-out;
+    }
 
+        .course-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+        }
+
+    .course-info i {
+        width: 20px;
+        text-align: center;
+    }
+
+</style>
 <div class="container mt-4">
     <h2 class="fw-bold text-primary mb-4">
         📚 Khóa học của tôi
     </h2>
 
-    @if (Model == null || !Model.Any())
+    @if (!Model.Any())
     {
-        <div class="alert alert-info">
-            Bạn chưa có khóa học nào đã thanh toán thành công.
-        </div>
+        <div class="alert alert-info">Bạn chưa có khóa học nào đã thanh toán thành công.</div>
     }
     else
     {
-        <div class="row g-3">
-            @foreach (var dk in Model)
-            {
-                var kh = dk.KhoaHoc;
-                var hang = kh.IdHangNavigation;
+        <div class="row g-4">
 
-                // phân loại trạng thái thời gian (chỉ để hiển thị đẹp hơn)
+            @foreach (var item in Model)
+            {
+                var kh = item.KhoaHoc;
+                var hang = kh.IdHangNavigation;
+                var gv = item.GiaoVien;
+
+                // Trạng thái khóa học
                 var now = DateTime.Now;
                 string statusText;
                 string statusClass;
@@ -53,54 +68,60 @@
                 }
 
                 <div class="col-md-6">
-                    <div class="card shadow-sm h-100 border-0 rounded-4">
-                        <div class="card-body">
-                            <h5 class="fw-bold text-primary mb-1">
-                                @kh.TenKhoaHoc
-                            </h5>
+                    <div class="card shadow-sm border-0 rounded-4 p-3 course-card">
+                        <h4 class="text-primary fw-bold mb-2">@kh.TenKhoaHoc</h4>
 
-                            <div class="mb-2">
-                                <span class="@statusClass">@statusText</span>
-                                <span class="badge bg-outline-success border ms-2 text-success">
-                                    Đã thanh toán
-                                </span>
-                            </div>
+                        <div class="mb-3 d-flex flex-wrap gap-2">
+                            <span class="@statusClass">@statusText</span>
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success">
+                                Đã thanh toán
+                            </span>
+                        </div>
 
-                            <p class="mb-1">
-                                <i class="fa-solid fa-id-card me-1"></i>
+                        <div class="course-info">
+                            <p class="mb-2">
+                                <i class="fa-solid fa-id-card me-2 text-secondary"></i>
                                 <strong>Hạng GPLX:</strong> @hang.MaHang
                             </p>
 
-                            <p class="mb-1">
-                                <i class="fa-solid fa-calendar-days me-1"></i>
-                                <strong>Thời gian học:</strong>
+                            <p class="mb-2">
+                                <i class="fa-solid fa-calendar-days me-2 text-secondary"></i>
+                                <strong>Thời gian:</strong>
                                 @kh.NgayBatDau?.ToString("dd/MM/yyyy") →
                                 @kh.NgayKetThuc?.ToString("dd/MM/yyyy")
                             </p>
 
                             <p class="mb-2">
-                                <i class="fa-solid fa-money-bill-wave me-1"></i>
-                                <strong>Học phí:</strong>
-                                @(hang.ChiPhi?.ToString("N0") ?? "0") VNĐ
+                                <i class="fa-solid fa-user-tie me-2 text-secondary"></i>
+                                <strong>Giáo viên phụ trách:</strong>
+
+                                @if (gv == null)
+                                {
+                                    <span class="text-muted">Chưa có giáo viên</span>
+                                }
+                                else
+                                {
+                                    <span class="fw-bold text-success">@gv.TenDayDu</span>
+                                }
                             </p>
 
                             <p class="text-muted mb-3" style="font-size: 0.9rem;">
-                                Ngày đăng ký: @dk.NgayDangKy?.ToString("dd/MM/yyyy")
+                                <i class="fa-solid fa-clock me-2"></i>
+                                Ngày đăng ký: @item.DangKy.NgayDangKy?.ToString("dd/MM/yyyy")
                             </p>
+                        </div>
 
-                            <div class="d-flex gap-2">
+                        <div class="d-flex gap-2 mt-3">
+                            <a href="/KhoaHoc/Schedule/@kh.KhoaHocId" class="btn btn-outline-primary flex-fill">
+                                📅 Lịch học
+                            </a>
 
-                                @* <a href="/khoahoc/details/@kh.KhoaHocId"
-                                   class="btn btn-outline-primary btn-sm flex-fill">
-                                    Chi tiết khóa học
-                                </a> *@
-
-                                <a href="@Url.Action("Schedule", "KhoaHoc", new { khoaHocId = kh.KhoaHocId })"
-                                   class="btn btn-warning btn-sm flex-fill">
-                                    📅 Lịch học
-                                </a>
-
-                            </div>
+                            @if (gv != null)
+                            {
+                                <button class="btn btn-warning flex-fill btnContact" data-gv="@gv.UserId" data-gvten="@gv.TenDayDu" data-kh="@kh.TenKhoaHoc">
+                                    💬 Liên hệ giáo viên
+                                </button>
+                            }
                         </div>
                     </div>
                 </div>
@@ -109,6 +130,69 @@
     }
 </div>
 
-@section Scripts {
-    <script src="https://kit.fontawesome.com/4ec8c4cf3a.js" crossorigin="anonymous"></script>
-}
+
+<!-- MODAL LIÊN HỆ GIÁO VIÊN -->
+<div class="modal fade" id="contactModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title fw-bold">Liên hệ giáo viên</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <p><strong>Giáo viên:</strong> <span id="modalGvName"></span></p>
+
+                <textarea id="modalMessage" class="form-control" rows="4"></textarea>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button class="btn btn-primary" id="btnSendMessage">Gửi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedGv = 0;
+
+    document.querySelectorAll(".btnContact").forEach(btn => {
+        btn.addEventListener("click", function () {
+
+            let gvId = this.dataset.gv;
+            let gvName = this.dataset.gvten;
+            let khName = this.dataset.kh;
+
+            selectedGv = gvId;
+
+            document.getElementById("modalGvName").innerText = gvName;
+            document.getElementById("modalMessage").value =
+                `Em chào thầy/cô ${gvName} ạ,\nEm đang học khóa "${khName}" ạ.`;
+
+            new bootstrap.Modal(document.getElementById("contactModal")).show();
+        });
+    });
+
+    // gửi tin nhắn
+    document.getElementById("btnSendMessage").addEventListener("click", () => {
+        let text = document.getElementById("modalMessage").value.trim();
+        if (!text) return;
+
+    fetch("/KhoaHoc/api/contact-teacher", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            userId2: selectedGv,
+            text: text
+        })
+    })
+    .then(res => {
+            if (res.ok) {
+                alert("Gửi tin nhắn thành công!");
+                location.reload();
+            }
+        });
+    });
+</script>
