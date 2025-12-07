@@ -1,34 +1,23 @@
-﻿//using dacn_dtgplx.Models;
+﻿using dacn_dtgplx.Models;
+using Microsoft.AspNetCore.Http;
 
-//namespace dacn_dtgplx.Services
-//{
-//    public interface IMomoService
-//    {
-//        /// <summary>
-//        /// Tạo URL thanh toán MoMo
-//        /// </summary>
-//        /// <param name="payment">Thông tin thanh toán</param>
-//        /// <param name="returnUrl">URL callback (nullable - lấy từ config nếu null)</param>
-//        /// <param name="ipnUrl">URL IPN (nullable - lấy từ config nếu null)</param>
-//        /// <param name="fakePaymentUrl">URL fake payment cho sandbox mode</param>
-//        Task<string> CreatePaymentUrl(
-//            Payment payment,
-//            string? returnUrl,
-//            string? ipnUrl,
-//            string? fakePaymentUrl
-//        );
+namespace dacn_dtgplx.Services
+{
+    public interface IMomoService
+    {
+        Task<string> CreatePaymentUrl(
+            HoaDonThanhToan hoaDon,
+            string returnUrl,
+            string ipnUrl,
+            string fakeReturnUrl);
 
-//        /// <summary>
-//        /// Xử lý callback từ MoMo sau khi thanh toán
-//        /// </summary>
-//        Task<PaymentResult> ProcessReturn(IQueryCollection query);
-//    }
+        Task<MomoResult> ProcessReturn(IQueryCollection query);
+    }
 
-//    public class PaymentResult
-//    {
-//        public bool Success { get; set; }
-//        public string Message { get; set; } = string.Empty;
-//        public int? CourseId { get; set; }
-//        public int? PaymentId { get; set; }
-//    }
-//}
+    public class MomoResult
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = "";
+        public int? HoaDonId { get; set; }
+    }
+}

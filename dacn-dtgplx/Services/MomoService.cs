@@ -1,257 +1,188 @@
-﻿//using dacn_dtgplx.Models;
-//using Microsoft.EntityFrameworkCore;
-//using Newtonsoft.Json;
-//using System.Security.Cryptography;
-//using System.Text;
+﻿using dacn_dtgplx.Models;
+using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using System.Security.Cryptography;
+using System.Text;
 
-//namespace dacn_dtgplx.Services
-//{
-//    public class MomoService : IMomoService
-//    {
-//        private readonly DtGplxContext _context;
-//        private readonly IConfiguration _config;
-//        private readonly IHttpClientFactory _httpClientFactory;
+namespace dacn_dtgplx.Services
+{
+    public class MomoService : IMomoService
+    {
+        private readonly DtGplxContext _context;
+        private readonly IConfiguration _config;
+        private readonly IHttpClientFactory _http;
 
-//        public MomoService(
-//            DtGplxContext context,
-//            IConfiguration config,
-//            IHttpClientFactory httpClientFactory)
-//        {
-//            _context = context;
-//            _config = config;
-//            _httpClientFactory = httpClientFactory;
-//        }
+        public MomoService(DtGplxContext context, IConfiguration config, IHttpClientFactory http)
+        {
+            _context = context;
+            _config = config;
+            _http = http;
+        }
 
-//        public async Task<string> CreatePaymentUrl(
-//            Payment payment,
-//            string returnUrl,
-//            string ipnUrl,
-//            string fakePaymentUrl)
-//        {
-//            var useSandbox = _config.GetValue<bool>("MOMO:UseSandbox");
+        public async Task<string> CreatePaymentUrl(
+            HoaDonThanhToan hoaDon,
+            string returnUrl,
+            string ipnUrl,
+            string fakeReturnUrl)
+        {
+            bool sandbox = _config.GetValue<bool>("MOMO:UseSandbox");
 
-//            // ====== MODE DEV: DÙNG TRANG FAKE MOMO ======
-//            if (useSandbox)
-//            {
-//                if (!string.IsNullOrEmpty(fakePaymentUrl))
-//                    return fakePaymentUrl;
+            // -------------------------
+            // 1️⃣ SANDBOX MODE → FAKE PAGE
+            // -------------------------
+            if (sandbox)
+                return fakeReturnUrl;
 
-//                return "/Course/Public";
-//            }
+            // -------------------------
+            // 2️⃣ REAL MOMO PAYMENT
+            // -------------------------
+            string endpoint = _config["MOMO:Endpoint"]!;
+            string partnerCode = _config["MOMO:PartnerCode"]!;
+            string accessKey = _config["MOMO:AccessKey"]!;
+            string secretKey = _config["MOMO:SecretKey"]!;
 
-//            // ====== MODE PROD: GỌI MOMO THẬT ======
-//            var partnerCode = _config["MOMO:PartnerCode"];
-//            var accessKey = _config["MOMO:AccessKey"];
-//            var secretKey = _config["MOMO:SecretKey"];
-//            var endpoint = _config["MOMO:Endpoint"];
+            long amount = (long)(hoaDon.SoTien ?? 0);
 
-//            // ✅ LẤY RETURN URL VÀ IPN URL TỪ APPSETTINGS
-//            var configReturnUrl = _config["MOMO:ReturnUrl"];
-//            var configIpnUrl = _config["MOMO:IpnUrl"];
+            string orderId = "ORDER" + DateTime.Now.Ticks;
+            string requestId = Guid.NewGuid().ToString();
+            string orderInfo = $"Thanh toán khóa học {hoaDon.IdDangKyNavigation.KhoaHoc.TenKhoaHoc}";
+            string extraData = hoaDon.IdThanhToan.ToString();
 
-//            if (string.IsNullOrEmpty(secretKey))
-//                throw new Exception("MOMO SecretKey chưa được cấu hình!");
+            string requestType = "captureWallet";
 
-//            if (string.IsNullOrEmpty(configReturnUrl))
-//                throw new Exception("MOMO ReturnUrl chưa được cấu hình!");
+            string raw =
+                $"accessKey={accessKey}" +
+                $"&amount={amount}" +
+                $"&extraData={extraData}" +
+                $"&ipnUrl={ipnUrl}" +
+                $"&orderId={orderId}" +
+                $"&orderInfo={orderInfo}" +
+                $"&partnerCode={partnerCode}" +
+                $"&redirectUrl={returnUrl}" +
+                $"&requestId={requestId}" +
+                $"&requestType={requestType}";
 
-//            if (string.IsNullOrEmpty(configIpnUrl))
-//                throw new Exception("MOMO IpnUrl chưa được cấu hình!");
+            string signature = HmacSHA256(raw, secretKey);
 
-//            var requestId = Guid.NewGuid().ToString();
-//            var orderId = "MOMO" + DateTime.Now.Ticks;
-//            var amount = ((long)payment.Amount).ToString();
-//            var orderInfo = $"Thanh toan khoa hoc: {payment.Course?.Title ?? "eLearning"}";
-//            var extraData = payment.PaymentId.ToString();
-//            var requestType = "captureWallet";
-//            var autoCapture = true;
-//            var lang = "vi";
+            var payload = new
+            {
+                partnerCode,
+                partnerName = "GPLX Center",
+                storeId = "GPLX-STORE",
+                requestId,
+                orderId,
+                amount,
+                orderInfo,
+                redirectUrl = returnUrl,
+                ipnUrl,
+                lang = "vi",
+                requestType,
+                autoCapture = true,
+                extraData,
+                signature
+            };
 
-//            // Tạo rawSignature theo đúng format MoMo yêu cầu
-//            var rawSignature =
-//                $"accessKey={accessKey}" +
-//                $"&amount={amount}" +
-//                $"&extraData={extraData}" +
-//                $"&ipnUrl={configIpnUrl}" +
-//                $"&orderId={orderId}" +
-//                $"&orderInfo={orderInfo}" +
-//                $"&partnerCode={partnerCode}" +
-//                $"&redirectUrl={configReturnUrl}" +
-//                $"&requestId={requestId}" +
-//                $"&requestType={requestType}";
+            var client = _http.CreateClient();
 
-//            var signature = HmacSHA256(rawSignature, secretKey);
+            var response = await client.PostAsync(
+                $"{endpoint}/v2/gateway/api/create",
+                new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json")
+            );
 
-//            var requestBody = new
-//            {
-//                partnerCode,
-//                partnerName = "eLearning Platform",
-//                storeId = "eLearningStore",
-//                requestId,
-//                amount,
-//                orderId,
-//                orderInfo,
-//                redirectUrl = configReturnUrl,
-//                ipnUrl = configIpnUrl,
-//                lang,
-//                requestType,
-//                autoCapture,
-//                extraData,
-//                orderGroupId = "",
-//                signature
-//            };
+            string json = await response.Content.ReadAsStringAsync();
+            dynamic data = JsonConvert.DeserializeObject(json);
 
-//            try
-//            {
-//                var client = _httpClientFactory.CreateClient();
-//                var jsonContent = JsonConvert.SerializeObject(requestBody);
+            if (data.resultCode != 0)
+                throw new Exception($"MoMo error: {data.message}");
 
-//                System.Diagnostics.Debug.WriteLine("=== MoMo Request ===");
-//                System.Diagnostics.Debug.WriteLine($"URL: {endpoint}/v2/gateway/api/create");
-//                System.Diagnostics.Debug.WriteLine($"Body: {jsonContent}");
-//                System.Diagnostics.Debug.WriteLine($"RawSignature: {rawSignature}");
-//                System.Diagnostics.Debug.WriteLine($"Signature: {signature}");
+            return data.payUrl;
+        }
 
-//                var response = await client.PostAsync(
-//                    $"{endpoint}/v2/gateway/api/create",
-//                    new StringContent(jsonContent, Encoding.UTF8, "application/json"));
+        public async Task<MomoResult> ProcessReturn(IQueryCollection query)
+        {
+            string partnerCode = query["partnerCode"];
+            string orderId = query["orderId"];
+            string requestId = query["requestId"];
+            string amount = query["amount"];
+            string orderInfo = query["orderInfo"];
+            string orderType = query["orderType"];
+            string transId = query["transId"];
+            string resultCode = query["resultCode"];
+            string message = query["message"];
+            string payType = query["payType"];
+            string responseTime = query["responseTime"];
+            string extraData = query["extraData"];
+            string signature = query["signature"];
 
-//                var resultJson = await response.Content.ReadAsStringAsync();
-//                System.Diagnostics.Debug.WriteLine($"MoMo Response: {resultJson}");
+            string accessKey = _config["MOMO:AccessKey"]!;
+            string secretKey = _config["MOMO:SecretKey"]!;
 
-//                dynamic result = JsonConvert.DeserializeObject(resultJson);
+            string raw =
+                $"accessKey={accessKey}" +
+                $"&amount={amount}" +
+                $"&extraData={extraData}" +
+                $"&message={message}" +
+                $"&orderId={orderId}" +
+                $"&orderInfo={orderInfo}" +
+                $"&orderType={orderType}" +
+                $"&partnerCode={partnerCode}" +
+                $"&payType={payType}" +
+                $"&requestId={requestId}" +
+                $"&responseTime={responseTime}" +
+                $"&resultCode={resultCode}" +
+                $"&transId={transId}";
 
-//                // resultCode = 0 là thành công
-//                if (result?.resultCode == 0)
-//                {
-//                    payment.MoMoOrderId = orderId;
-//                    payment.MoMoRequestId = requestId;
-//                    await _context.SaveChangesAsync();
-//                    return result.payUrl;
-//                }
+            string computed = HmacSHA256(raw, secretKey);
 
-//                throw new Exception($"Tạo link MoMo thất bại: [{result?.resultCode}] {result?.message}");
-//            }
-//            catch (Exception ex)
-//            {
-//                System.Diagnostics.Debug.WriteLine($"MoMo Error: {ex.Message}");
-//                throw new Exception($"Lỗi kết nối MoMo: {ex.Message}");
-//            }
-//        }
+            if (computed != signature)
+            {
+                return new MomoResult
+                {
+                    Success = false,
+                    Message = "Sai chữ ký MoMo"
+                };
+            }
 
-//        public async Task<PaymentResult> ProcessReturn(IQueryCollection query)
-//        {
-//            var partnerCode = query["partnerCode"].ToString();
-//            var orderId = query["orderId"].ToString();
-//            var requestId = query["requestId"].ToString();
-//            var amount = query["amount"].ToString();
-//            var orderInfo = query["orderInfo"].ToString();
-//            var orderType = query["orderType"].ToString();
-//            var transId = query["transId"].ToString();
-//            var resultCode = query["resultCode"].ToString();
-//            var message = query["message"].ToString();
-//            var payType = query["payType"].ToString();
-//            var responseTime = query["responseTime"].ToString();
-//            var extraData = query["extraData"].ToString();
-//            var signature = query["signature"].ToString();
+            if (resultCode != "0")
+            {
+                return new MomoResult
+                {
+                    Success = false,
+                    Message = "Thanh toán thất bại"
+                };
+            }
 
-//            // Log để debug
-//            System.Diagnostics.Debug.WriteLine("=== MoMo Return ===");
-//            System.Diagnostics.Debug.WriteLine($"ResultCode: {resultCode}");
-//            System.Diagnostics.Debug.WriteLine($"OrderId: {orderId}");
-//            System.Diagnostics.Debug.WriteLine($"TransId: {transId}");
-//            System.Diagnostics.Debug.WriteLine($"ExtraData: {extraData}");
+            int hoaDonId = int.Parse(extraData);
 
-//            // Verify signature
-//            var secretKey = _config["MOMO:SecretKey"];
-//            var accessKey = _config["MOMO:AccessKey"];
+            var hd = await _context.HoaDonThanhToans
+                .Include(h => h.IdDangKyNavigation)
+                .FirstOrDefaultAsync(h => h.IdThanhToan == hoaDonId);
 
-//            var rawSignature =
-//                $"accessKey={accessKey}" +
-//                $"&amount={amount}" +
-//                $"&extraData={extraData}" +
-//                $"&message={message}" +
-//                $"&orderId={orderId}" +
-//                $"&orderInfo={orderInfo}" +
-//                $"&orderType={orderType}" +
-//                $"&partnerCode={partnerCode}" +
-//                $"&payType={payType}" +
-//                $"&requestId={requestId}" +
-//                $"&responseTime={responseTime}" +
-//                $"&resultCode={resultCode}" +
-//                $"&transId={transId}";
+            if (hd == null)
+                return new MomoResult { Success = false, Message = "Không tìm thấy hóa đơn" };
 
-//            var computedSignature = HmacSHA256(rawSignature, secretKey);
+            // -------------------------
+            // UPDATE HÓA ĐƠN
+            // -------------------------
+            hd.TrangThai = true;
+            hd.NgayThanhToan = DateOnly.FromDateTime(DateTime.Now);
+            hd.IdDangKyNavigation.TrangThai = true;
 
-//            System.Diagnostics.Debug.WriteLine($"RawSignature: {rawSignature}");
-//            System.Diagnostics.Debug.WriteLine($"Computed Signature: {computedSignature}");
-//            System.Diagnostics.Debug.WriteLine($"Received Signature: {signature}");
+            await _context.SaveChangesAsync();
 
-//            // Kiểm tra chữ ký
-//            if (computedSignature != signature)
-//            {
-//                System.Diagnostics.Debug.WriteLine("⚠️ Signature không khớp!");
-//                return new PaymentResult
-//                {
-//                    Success = false,
-//                    Message = "Chữ ký không hợp lệ"
-//                };
-//            }
+            return new MomoResult
+            {
+                Success = true,
+                HoaDonId = hoaDonId
+            };
+        }
 
-//            // resultCode = 0 là thành công
-//            if (resultCode == "0")
-//            {
-//                var payment = await _context.Payments
-//                    .Include(p => p.Course)
-//                    .FirstOrDefaultAsync(p => p.MoMoOrderId == orderId);
-
-//                if (payment != null && payment.Status == "Pending")
-//                {
-//                    payment.Status = "Completed";
-//                    payment.PaidAt = DateTime.Now;
-//                    payment.TransactionId = transId;
-
-//                    if (payment.Course != null)
-//                        payment.Course.EnrollmentCount++;
-
-//                    await _context.SaveChangesAsync();
-
-//                    return new PaymentResult
-//                    {
-//                        Success = true,
-//                        CourseId = payment.CourseId,
-//                        PaymentId = payment.PaymentId,
-//                        Message = "Thanh toán thành công"
-//                    };
-//                }
-
-//                return new PaymentResult
-//                {
-//                    Success = false,
-//                    Message = "Không tìm thấy đơn hàng"
-//                };
-//            }
-
-//            // Các mã lỗi khác
-//            return new PaymentResult
-//            {
-//                Success = false,
-//                Message = message ?? "Thanh toán thất bại hoặc bị hủy"
-//            };
-//        }
-
-//        private string HmacSHA256(string input, string key)
-//        {
-//            if (string.IsNullOrEmpty(key))
-//                throw new ArgumentNullException(nameof(key), "SecretKey không được để trống");
-
-//            if (string.IsNullOrEmpty(input))
-//                return string.Empty;
-
-//            var keyBytes = Encoding.UTF8.GetBytes(key);
-//            using var hmac = new HMACSHA256(keyBytes);
-//            var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(input));
-//            return BitConverter.ToString(hash).Replace("-", "").ToLower();
-//        }
-//    }
-//}
+        private string HmacSHA256(string input, string key)
+        {
+            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(key));
+            return BitConverter.ToString(
+                hmac.ComputeHash(Encoding.UTF8.GetBytes(input))
+            ).Replace("-", "").ToLower();
+        }
+    }
+}
