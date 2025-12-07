@@ -1,0 +1,239 @@
+﻿@{
+    var selectedHang = ViewBag.SelectedHang as string;
+    var listHang = ViewBag.ListHang as List<dacn_dtgplx.Models.Hang>;
+    bool showPopup = ViewBag.ShowPopup;
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+<style>
+    .feature-card {
+        background: #ffffff;
+        padding: 28px;
+        border-radius: 20px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        transition: 0.25s;
+        text-align: center;
+        cursor: pointer;
+        border: 1px solid #eef1f5;
+        position: relative; /* THÊM DÒNG NÀY */
+    }
+
+    .badge-on-card {
+        position: absolute;
+        top: 10px;
+        right: 16px;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+        background: #0a8dbb; /* màu mặc định */
+    }
+        .feature-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0px 12px 26px rgba(0,0,0,0.12);
+        }
+
+    .icon-wrapper {
+        position: relative;
+        display: inline-block;
+        margin-bottom: 15px;
+    }
+
+    .icon-box {
+        font-size: 50px;
+    }
+
+    .badge-on-icon {
+        position: absolute;
+        top: -10px;
+        right: -12px;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+        background: #0a8dbb;
+    }
+
+    .badge-orange {
+        background: #ff7d00 !important;
+    }
+
+    .badge-red {
+        background: #d9534f !important;
+    }
+
+    .badge-purple {
+        background: #5639c7 !important;
+    }
+
+    .label-text {
+        font-size: 17px;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    /* Popup modal */
+    .modal-backdrop-custom {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.45);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 2000;
+    }
+
+    .modal-content-custom {
+        background: #fff;
+        padding: 30px;
+        border-radius: 16px;
+        width: 450px;
+        animation: fadeIn 0.25s ease;
+    }
+
+    @@keyframes fadeIn {
+        from
+
+    {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    }
+
+    .select-btn {
+        width: 85px;
+        margin: 6px;
+        padding: 10px 0;
+        font-weight: 600;
+        font-size: 16px;
+        border-radius: 10px;
+    }
+</style>
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between mb-3">
+        <h2 class="fw-bold">Học lý thuyết GPLX</h2>
+
+        @if (!string.IsNullOrEmpty(selectedHang))
+        {
+            <form asp-action="Index" asp-controller="Hoc" method="get">
+                <input type="hidden" name="open" value="true" />
+                <button class="btn btn-outline-primary px-4 rounded-pill fw-semibold">
+                    Đổi hạng (Hiện tại: @selectedHang)
+                </button>
+            </form>
+        }
+    </div>
+
+    <div class="row g-4">
+
+        <!-- Thi thử đề ngẫu nhiên -->
+        <div class="col-md-4">
+            <div class="feature-card">
+                <span class="badge-on-card">@selectedHang</span>  <!-- THÊM DÒNG NÀY -->
+
+                <div class="icon-wrapper">
+                    <i class="fa-solid fa-arrows-spin icon-box" style="color:#0a8dbb"></i>
+                </div>
+                <div class="label-text">Thi thử đề ngẫu nhiên</div>
+            </div>
+        </div>
+
+        <!-- Thi thử bộ đề tạo sẵn -->
+        <div class="col-md-4">
+            <div class="feature-card">
+                <span class="badge-on-card">0/20</span>
+
+                <div class="icon-wrapper">
+                    <i class="fa-solid fa-list-check icon-box" style="color:#0a8dbb"></i>
+                </div>
+                <div class="label-text">Thi thử bộ đề tạo sẵn</div>
+            </div>
+        </div>
+
+        <!-- Ôn tập toàn bộ câu hỏi -->
+        <div class="col-md-4">
+            <div class="feature-card">
+                <span class="badge-on-card">574</span>
+
+                <div class="icon-wrapper">
+                    <i class="fa-solid fa-book icon-box" style="color:#5639c7"></i>
+                </div>
+                <div class="label-text">Ôn tập toàn bộ câu hỏi</div>
+            </div>
+        </div>
+
+        <!-- Ôn câu điểm liệt -->
+        <div class="col-md-4">
+            <div class="feature-card">
+                <span class="badge-on-card badge-orange">60</span>
+
+                <div class="icon-wrapper">
+                    <i class="fa-solid fa-star icon-box" style="color:#ff7d00"></i>
+                </div>
+                <div class="label-text">Ôn tập câu điểm liệt</div>
+            </div>
+        </div>
+
+        <!-- Câu hỏi bị sai nhiều -->
+        <div class="col-md-4">
+            <div class="feature-card">
+                <span class="badge-on-card badge-red">0/50</span>
+
+                <div class="icon-wrapper">
+                    <i class="fa-solid fa-xmark icon-box" style="color:#d9534f"></i>
+                </div>
+                <div class="label-text">Câu hỏi bị sai nhiều</div>
+            </div>
+        </div>
+
+        <!-- Biển báo -->
+        <div class="col-md-4">
+            <div class="feature-card">
+                <div class="icon-wrapper">
+                    <i class="fa-solid fa-traffic-light icon-box" style="color:#f4b400"></i>
+                </div>
+                <div class="label-text">Biển báo giao thông</div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- POPUP CHỌN HẠNG -->
+@if (showPopup)
+{
+    <div class="modal-backdrop-custom">
+        <div class="modal-content-custom">
+
+            <h4 class="fw-bold mb-3 text-center">Chọn hạng GPLX</h4>
+
+            <div class="d-flex flex-wrap justify-content-center">
+
+                @foreach (var item in listHang)
+                {
+                    <form asp-action="ChonHang" method="post">
+                        <button name="maHang" value="@item.MaHang"
+                                class="btn btn-outline-primary select-btn">
+                            @item.MaHang
+                        </button>
+                    </form>
+                }
+
+            </div>
+        </div>
+    </div>
+}

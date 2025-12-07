@@ -1,6 +1,5 @@
 ﻿using CinemaS.VNPAY;
 using dacn_dtgplx.Models;
-using dacn_dtgplx.Payments;
 using dacn_dtgplx.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,12 +18,20 @@ namespace dacn_dtgplx.Controllers
         private readonly IConfiguration _config;
         private readonly IMailService _mail;
         private readonly IPayPalService _payPal;
-        public PaymentController(DtGplxContext context, IConfiguration config, IMailService mail, IPayPalService payPal)
+        private readonly IMomoService _momo;
+
+        public PaymentController(
+            DtGplxContext context, 
+            IConfiguration config, 
+            IMailService mail, 
+            IPayPalService payPal,
+            IMomoService momo)
         {
             _context = context;
             _config = config;
             _mail = mail;
             _payPal = payPal;
+            _momo = momo;
         }
 
         private int GetUserId() =>
@@ -82,13 +89,16 @@ namespace dacn_dtgplx.Controllers
             if (method == "PAYPAL")
                 return RedirectToAction("PayPal", new { hoaDonId });
 
+            if (method == "MOMO")
+                return RedirectToAction("MoMo", new { hoaDonId });
+
             TempData["Error"] = "Phương thức thanh toán chưa được hỗ trợ.";
             return RedirectToAction("StartPayment", new { hoaDonId });
         }
 
 
         // ============================================================
-        // 3) TẠO URL THANH TOÁN VNPAY
+        // TẠO URL THANH TOÁN VNPAY
         // ============================================================
         [HttpGet("vnpay")]
         public async Task<IActionResult> VnPay(int hoaDonId)
@@ -152,9 +162,7 @@ namespace dacn_dtgplx.Controllers
             return Redirect(paymentUrl);
         }
 
-        // ============================================================
-        // 4) RETURN TỪ VNPAY
-        // ============================================================
+        // RETURN TỪ VNPAY
         [AllowAnonymous]
         [HttpGet("vnpayreturn")]
         public async Task<IActionResult> VnPayReturn()
@@ -242,9 +250,7 @@ namespace dacn_dtgplx.Controllers
             }
         }
 
-        // ============================================================
         // Helper: bỏ dấu tiếng Việt để gửi sang VNPAY
-        // ============================================================
         private static string RemoveVietnameseSigns(string input)
         {
             if (string.IsNullOrWhiteSpace(input)) return string.Empty;
@@ -270,7 +276,7 @@ namespace dacn_dtgplx.Controllers
         {
             var hd = await _context.HoaDonThanhToans
                 .Include(h => h.IdDangKyNavigation)
-                    .ThenInclude(d => d.KhoaHoc)
+                .ThenInclude(d => d.KhoaHoc)
                 .FirstOrDefaultAsync(h => h.IdThanhToan == hoaDonId);
 
             if (hd == null)
@@ -279,52 +285,46 @@ namespace dacn_dtgplx.Controllers
                 return RedirectToAction("Index", "KhoaHoc");
             }
 
-            var amountDecimal = hd.SoTien ?? 0;
-            if (amountDecimal <= 0)
+            decimal vndAmount = hd.SoTien ?? 0;
+            if (vndAmount <= 0)
             {
-                TempData["Error"] = "Số tiền thanh toán không hợp lệ.";
+                TempData["Error"] = "Số tiền không hợp lệ.";
                 return RedirectToAction("StartPayment", new { hoaDonId });
             }
 
-            // số tiền đang lưu trong DB là VND
-            decimal amountVND = hd.SoTien ?? 0;
+            decimal usd = Math.Round(vndAmount / 24000, 2);
+            if (usd < 0.01m) usd = 0.01m;
 
-            // quy đổi sang USD (tạm dùng 1 USD = 24,000 VND)
-            decimal amountUSD = Math.Round(amountVND / 24000, 2);
-
-            // PayPal không nhận số > 2 ký tự thập phân
             string returnUrl = Url.Action("PayPalReturn", "Payment", new { hoaDonId }, Request.Scheme)!;
             string cancelUrl = Url.Action("PayPalCancel", "Payment", new { hoaDonId }, Request.Scheme)!;
 
-            // Tạo order PayPal
-            string? approvalUrl = await _payPal.CreateOrderAsync(amountUSD, "USD", returnUrl, cancelUrl);
+            string? approval = await _payPal.CreateOrderAsync(usd, "USD", returnUrl, cancelUrl);
 
-            if (string.IsNullOrEmpty(approvalUrl))
+            if (approval == null)
             {
-                TempData["Error"] = "Không tạo được đơn hàng PayPal.";
+                TempData["Error"] = "Không tạo được đơn PayPal.";
                 return RedirectToAction("StartPayment", new { hoaDonId });
             }
 
-            return Redirect(approvalUrl);
+            return Redirect(approval);
         }
 
         [AllowAnonymous]
         [HttpGet("paypalreturn")]
-        public async Task<IActionResult> PayPalReturn(int hoaDonId, string token) // token = order id
+        public async Task<IActionResult> PayPalReturn(int hoaDonId, string token)
         {
-            // 1. Capture order với PayPal
             bool success = await _payPal.CaptureOrderAsync(token);
 
             var hd = await _context.HoaDonThanhToans
                 .Include(h => h.IdDangKyNavigation)
-                    .ThenInclude(d => d.HoSo)
-                        .ThenInclude(hs => hs.User)
+                .ThenInclude(d => d.HoSo)
+                    .ThenInclude(hs => hs.User)
                 .Include(h => h.IdDangKyNavigation.KhoaHoc)
                 .FirstOrDefaultAsync(h => h.IdThanhToan == hoaDonId);
 
             if (hd == null)
             {
-                ViewBag.Message = "Không tìm thấy hóa đơn khi PayPal trả về.";
+                ViewBag.Message = "Không tìm thấy hóa đơn.";
                 return View("PaymentFail");
             }
 
@@ -348,15 +348,13 @@ namespace dacn_dtgplx.Controllers
 
                 return View("PaymentSuccess");
             }
-            else
-            {
-                hd.TrangThai = false;
-                dk.TrangThai = false;
-                await _context.SaveChangesAsync();
 
-                ViewBag.Message = "Thanh toán PayPal thất bại hoặc bị hủy.";
-                return View("PaymentFail");
-            }
+            hd.TrangThai = false;
+            dk.TrangThai = false;
+            await _context.SaveChangesAsync();
+
+            ViewBag.Message = "Thanh toán PayPal thất bại hoặc bị hủy.";
+            return View("PaymentFail");
         }
 
         [AllowAnonymous]
@@ -378,5 +376,58 @@ namespace dacn_dtgplx.Controllers
             return View("PaymentFail");
         }
 
+        // ============================================================
+        // MOMO
+        // ============================================================
+        [HttpGet("momo")]
+        public async Task<IActionResult> MoMo(int hoaDonId)
+        {
+            var hd = await _context.HoaDonThanhToans
+                .Include(h => h.IdDangKyNavigation)
+                .ThenInclude(d => d.KhoaHoc)
+                .FirstOrDefaultAsync(h => h.IdThanhToan == hoaDonId);
+
+            if (hd == null)
+            {
+                TempData["Error"] = "Không tìm thấy hóa đơn.";
+                return RedirectToAction("Index", "KhoaHoc");
+            }
+
+            if ((hd.SoTien ?? 0) <= 0)
+            {
+                TempData["Error"] = "Số tiền thanh toán không hợp lệ.";
+                return RedirectToAction("StartPayment", new { hoaDonId });
+            }
+
+            string returnUrl = Url.Action("MoMoReturn", "Payment", null, Request.Scheme)!;
+            string ipnUrl = Url.Action("MoMoIpn", "Payment", null, Request.Scheme)!;
+            string fakeUrl = Url.Action("FakeMoMo", "Payment", new { hoaDonId }, Request.Scheme)!;
+
+            string payUrl = await _momo.CreatePaymentUrl(hd, returnUrl, ipnUrl, fakeUrl);
+
+            return Redirect(payUrl);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("momoreturn")]
+        public async Task<IActionResult> MoMoReturn()
+        {
+            var result = await _momo.ProcessReturn(Request.Query);
+
+            if (!result.Success)
+            {
+                ViewBag.Message = result.Message;
+                return View("PaymentFail");
+            }
+
+            return View("PaymentSuccess");
+        }
+
+        [AllowAnonymous]
+        [HttpPost("momoipn")]
+        public IActionResult MoMoIpn()
+        {
+            return Ok();
+        }
     }
 }

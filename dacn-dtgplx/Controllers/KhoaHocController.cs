@@ -1,8 +1,11 @@
-﻿using System.Security.Claims;
+﻿using dacn_dtgplx.DTOs;
 using dacn_dtgplx.Models;
+using dacn_dtgplx.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using System.Text.Json;
 
 namespace dacn_dtgplx.Controllers
 {
@@ -286,15 +289,93 @@ namespace dacn_dtgplx.Controllers
         {
             int userId = GetUserId();
 
-            var myCourses = await _context.DangKyHocs
+            var dangKyList = await _context.DangKyHocs
                 .Include(d => d.KhoaHoc)
                     .ThenInclude(k => k.IdHangNavigation)
                 .Include(d => d.HoSo)
                 .Where(d => d.HoSo.UserId == userId && d.TrangThai == true)
-                .OrderByDescending(d => d.NgayDangKy)
                 .ToListAsync();
 
-            return View(myCourses);   // Views/KhoaHoc/MyCourses.cshtml
+            // Lấy tất cả giáo viên để check lịch dạy
+            var giaoViens = await _context.TtGiaoViens
+                .Include(g => g.User)
+                .ToListAsync();
+
+            List<MyCourseVM> result = new();
+
+            foreach (var dk in dangKyList)
+            {
+                var kh = dk.KhoaHoc;
+
+                User? gvPhuTrach = null;
+
+                foreach (var gv in giaoViens)
+                {
+                    if (!string.IsNullOrEmpty(gv.LichDay))
+                    {
+                        try
+                        {
+                            var listIds = JsonSerializer.Deserialize<List<int>>(gv.LichDay);
+                            if (listIds.Contains(kh.KhoaHocId))
+                            {
+                                gvPhuTrach = gv.User;
+                                break;
+                            }
+                        }
+                        catch { }
+                    }
+                }
+
+                result.Add(new MyCourseVM
+                {
+                    DangKy = dk,
+                    KhoaHoc = kh,
+                    GiaoVien = gvPhuTrach
+                });
+            }
+
+            return View(result);
+        }
+
+        [HttpPost("api/contact-teacher")]
+        public async Task<IActionResult> CreateConversationAndMessage([FromBody] ChatDTO dto)
+        {
+            int userId = GetUserId();
+            if (userId == 0) return Unauthorized();
+            // tìm conversation cũ
+            var old = await _context.Conversations
+                .FirstOrDefaultAsync(c =>
+                    (c.UserId == userId && c.UserId2 == dto.UserId2) ||
+                    (c.UserId == dto.UserId2 && c.UserId2 == userId));
+
+            if (old == null)
+            {
+                old = new Conversation
+                {
+                    UserId = userId,
+                    UserId2 = dto.UserId2,
+                    CreatedAt = DateTime.Now,
+                    LastMessageAt = DateTime.Now
+                };
+                _context.Conversations.Add(old);
+                await _context.SaveChangesAsync();
+            }
+
+            var msg = new Message
+            {
+                ConversationsId = old.ConversationsId,
+                UserId = userId,
+                MessageText = dto.Text,
+                SentAt = DateTime.Now,
+                IsRead = false
+            };
+
+            _context.Messages.Add(msg);
+            old.LastMessageAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
         }
 
         [HttpGet("schedule/{khoaHocId}")]
