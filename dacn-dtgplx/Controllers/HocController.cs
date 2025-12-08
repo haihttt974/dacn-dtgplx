@@ -36,7 +36,8 @@ namespace dacn_dtgplx.Controllers
             bool isXeMay = hangDaChon == "A" || hangDaChon == "A1";
             vm.SelectedHang = hangDaChon;
             // 1️⃣ SỐ BỘ ĐỀ & SỐ ĐỀ ĐÃ LÀM
-            vm.TotalBoDe = _context.BoDeThiThus.Count(b => b.IdHang == hang.IdHang);
+            vm.TotalBoDe = _context.BoDeThiThus
+                .Count(b => b.IdHang == hang.IdHang && b.HoatDong == true);
             vm.DoneBoDe = (userId != null)
                 ? _context.BaiLams.Count(b =>
                         b.UserId == userId &&
@@ -58,11 +59,13 @@ namespace dacn_dtgplx.Controllers
             vm.HasMoPhong = !isXeMay;  // B, C, D, E, F
             if (vm.HasMoPhong)
             {
-                vm.MpBoDe = _context.BoDeMoPhongs.Count();
+                vm.MpBoDe = _context.BoDeMoPhongs
+                    .Count(mp => mp.IsActive == true);
                 vm.MpTinhHuong = _context.TinhHuongMoPhongs.Count();
 
                 vm.MpBoDeDone = (userId != null)
-                    ? _context.BaiLamMoPhongs.Count(b => b.UserId == userId)
+                    ? _context.BaiLamMoPhongs
+                        .Count(b => b.UserId == userId && b.IdBoDeMoPhongNavigation.IsActive == true)
                     : 0;
             }
             return View(vm);

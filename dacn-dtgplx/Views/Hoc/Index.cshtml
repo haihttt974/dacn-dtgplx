@@ -1,6 +1,8 @@
 ﻿@model dacn_dtgplx.ViewModels.HocDashboardViewModel
 
 @{
+    var userId = Context.Session.GetInt32("UserId");
+
     var selectedHang = Model.SelectedHang;
     var listHang = Model.ListHang;
     bool showPopup = Model.ShowPopup;
@@ -220,9 +222,13 @@
 
             <!-- 2. Thi thử bộ đề tạo sẵn -->
             <div class="col-md-4">
-                <a asp-controller="Hoc" asp-action="Hoc" class="feature-card feature-card-link">
-                    <span class="badge-on-card">@doneBoDe/@totalBoDe</span>
-                    <div class="icon-wrapper">
+                <a asp-controller="LyThuyet" asp-action="Index" class="feature-card feature-card-link">
+                <span class="badge-on-card">
+                    @(userId == null
+                    ? totalBoDe.ToString()
+                    : $"{doneBoDe}/{totalBoDe}")
+                </span>
+                <div class="icon-wrapper">
                         <i class="fa-solid fa-list-check icon-box" style="color:#0a8dbb"></i>
                     </div>
                     <div class="label-text">Thi thử bộ đề tạo sẵn</div>
