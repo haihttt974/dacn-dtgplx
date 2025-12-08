@@ -1,0 +1,173 @@
+﻿@model List<dacn_dtgplx.Models.BoDeThiThu>
+
+@{
+    ViewData["Title"] = "Danh sách bộ đề";
+    var userId = Context.Session.GetInt32("UserId");
+    var baiLamDict = ViewBag.BaiLamDict as Dictionary<int, dacn_dtgplx.Models.BaiLam>;
+    var hang = Context.Session.GetString("Hang") ?? "";
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+<style>
+    .exam-card {
+        background: #ffffff;
+        border-radius: 18px;
+        padding: 22px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        transition: 0.25s;
+        cursor: pointer;
+        position: relative;
+    }
+
+        .exam-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.10);
+        }
+
+    .exam-title {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 6px;
+        color: #0a5bc1;
+    }
+
+    .exam-meta {
+        font-size: 14px;
+        color: #6b7280;
+        margin-bottom: 10px;
+    }
+
+    .badge-status {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 13px;
+        color: #fff;
+    }
+
+    .badge-pass {
+        background: #16a34a;
+    }
+
+    .badge-fail {
+        background: #dc2626;
+    }
+
+    .badge-new {
+        background: #0ea5e9;
+    }
+
+    .result-box {
+        background: #f9fafb;
+        padding: 10px;
+        border-radius: 12px;
+        margin-top: 10px;
+        border: 1px solid #e5e7eb;
+    }
+
+        .result-box div {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+    .btn-history {
+        background: #2563eb;
+        color: white;
+        padding: 5px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        text-decoration: none;
+    }
+
+        .btn-history:hover {
+            background: #1e40af;
+            color: white;
+        }
+</style>
+
+
+<div class="container mt-4">
+    <h2 class="fw-bold mb-4">
+        Danh sách bộ đề lý thuyết Hạng @hang
+    </h2>
+
+    <div class="row g-4">
+
+        @foreach (var boDe in Model)
+        {
+            baiLamDict.TryGetValue(boDe.IdBoDe, out var baiLam);
+
+            <div class="col-md-4">
+                <a asp-controller="LyThuyet" asp-action="Exam" asp-route-idBoDe="@boDe.IdBoDe" class="text-decoration-none text-dark">
+                    <div class="exam-card">
+
+                        <div class="exam-title">
+                            <i class="fa-solid fa-file-lines"></i> @boDe.TenBoDe
+                        </div>
+
+                        <div class="exam-meta">
+                            @boDe.SoCauHoi câu hỏi • @boDe.ThoiGian phút
+                        </div>
+
+                        @if (userId == null)
+                        {
+                            <!-- CHƯA LOGIN -->
+                            <span class="badge-status badge-new">Chưa làm bài</span>
+
+                            <div class="mt-2">
+                                <a class="btn btn-primary btn-login"
+                                   asp-controller="Auth" asp-action="Login">
+                                    Đăng nhập để lưu kết quả
+                                </a>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- USER ĐÃ LOGIN -->
+                            @if (baiLam != null)
+                            {
+                                <!-- ĐÃ LÀM BÀI -->
+                                <span class="badge-status @(baiLam.KetQua == true ? "badge-pass" : "badge-fail")">
+                                    @(baiLam.KetQua == true ? "ĐẬU" : "RỚT")
+                                </span>
+
+                                <div class="result-box position-relative">
+
+                                    <div><strong>Điểm:</strong> @(boDe.SoCauHoi - baiLam.SoCauSai)/@boDe.SoCauHoi</div>
+                                    <div><strong>Sai:</strong> @baiLam.SoCauSai câu</div>
+                                    <div><strong>Thời gian:</strong> @(baiLam.ThoiGianLamBai / 60) phút @(baiLam.ThoiGianLamBai % 60) giây</div>
+
+                                    <!-- NÚT XEM LỊCH SỬ (góc phải, dưới cùng) -->
+                                    <a asp-controller="LyThuyet"
+                                       asp-action="Exam"
+                                       asp-route-idBoDe="@boDe.IdBoDe"
+                                       asp-route-history="true"
+                                       class="btn-history position-absolute"
+                                       style="right: 8px; bottom: 8px;">
+                                        Xem lịch sử
+                                    </a>
+                                </div>
+                            }
+                            else
+                            {
+                                <!-- CHƯA LÀM BÀI NHƯNG LOGIN -->
+                                <span class="badge-status badge-new">Chưa làm bài</span>
+
+                                <div class="result-box">
+                                    <div><strong>Điểm:</strong> ---</div>
+                                    <div><strong>Sai:</strong> ---</div>
+                                    <div><strong>Thời gian:</strong> ---</div>
+                                </div>
+                            }
+                        }
+
+                    </div>
+                </a>
+            </div>
+        }
+
+    </div>
+
+</div>
