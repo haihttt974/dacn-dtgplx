@@ -3,8 +3,31 @@
 @{
     ViewData["Title"] = "Lịch sử thanh toán";
 }
+@functions {
+    string GetLogo(string method)
+    {
+        if (string.IsNullOrWhiteSpace(method)) return null;
+
+        method = method.ToLower();
+
+        if (method.Contains("momo")) return "/images/logo/momo-logo.png";
+        if (method.Contains("vnpay")) return "/images/logo/vnpay-logo.png";
+        if (method.Contains("paypal")) return "/images/logo/paypal-logo.png";
+
+        return null;
+    }
+}
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<style>
+    .pay-logo {
+        height: 22px;
+        width: auto;
+        object-fit: contain;
+        vertical-align: middle;
+        margin-right: 6px;
+    }
+</style>
 
 <div class="container mt-4">
 
@@ -68,12 +91,25 @@
                                     }
                                 </td>
 
-                                <td class="fw-bold text-danger">
+                                <td class="fw-bold @(hd.TrangThai == true ? "text-success" : "text-danger")">
                                     @((hd.SoTien ?? 0).ToString("N0")) đ
                                 </td>
 
                                 <td>
-                                    @(hd.PhuongThucThanhToan ?? "Không rõ")
+                                    @{
+                                        var logo = GetLogo(hd.PhuongThucThanhToan);
+                                        var name = hd.PhuongThucThanhToan ?? "Không rõ";
+                                    }
+
+                                    @if (logo != null)
+                                    {
+                                        <img src="@logo" alt="@name" style="height:22px; width:auto; margin-right:6px; vertical-align:middle;">
+                                        <span>@name</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@name</span>
+                                    }
                                 </td>
 
                                 <td>

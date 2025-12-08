@@ -11,5 +11,9 @@ public partial class XeTapLai
 
     public bool TrangThaiXe { get; set; }
 
+    public string? BienSo { get; set; }   // thêm
+
+    public decimal? GiaThueTheoGio { get; set; }   // thêm
+
     public virtual ICollection<LichHoc> LichHocs { get; set; } = new List<LichHoc>();
 }
