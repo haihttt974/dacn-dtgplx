@@ -18,6 +18,12 @@
     int mpBoDe = Model.MpBoDe;
     int mpBoDeDone = Model.MpBoDeDone;
     int mpTinhHuong = Model.MpTinhHuong;
+
+    int soCauThiNgauNhien =
+        (!string.IsNullOrEmpty(selectedHang) &&
+        (selectedHang.ToUpper() == "A" || selectedHang.ToUpper() == "A1"))
+        ? 25
+        : 30;
 }
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
@@ -210,7 +216,7 @@
 
             <!-- 1. Thi thử đề ngẫu nhiên -->
             <div class="col-md-4">
-                <a asp-controller="Hoc" asp-action="Hoc" class="feature-card feature-card-link">
+                <a href="#" onclick="showConfirmRandom()" class="feature-card feature-card-link">
                     <span class="badge-on-card">@selectedHang</span>
                     <div class="icon-wrapper">
                         <i class="fa-solid fa-arrows-spin icon-box" style="color:#0a8dbb"></i>
@@ -354,4 +360,63 @@
             </div>
         </div>
     </div>
+}
+
+@section Scripts {
+    <script>
+        function showConfirmRandom() {
+            const hang = '@selectedHang';
+            const soCau = @soCauThiNgauNhien;
+            const thoiGian = @Model.ThoiGianThi; // hoặc số phút bạn muốn
+
+            let popup = `
+            <div class="modal fade show" style="display:block; background:rgba(0,0,0,.45)">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title">
+                                <i class="fa-solid fa-circle-play me-2"></i>
+                                Xác nhận bắt đầu thi
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white"
+                                    onclick="location.reload()"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-3">
+                                Bạn chắc chắn muốn bắt đầu <strong>thi thử đề ngẫu nhiên</strong>?
+                            </p>
+
+                            <div class="p-3 rounded" style="background:#f5f7fb;">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Hạng thi:</span>
+                                    <strong>${hang}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Tổng số câu:</span>
+                                    <strong>${soCau}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Thời gian:</span>
+                                    <strong>${thoiGian} phút</strong>
+                                </div>
+                            </div>
+
+                            <p class="mt-3 text-muted mb-0">
+                                Hệ thống sẽ tự động tạo một bộ đề ngẫu nhiên theo hạng ${hang}.
+                            </p>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-outline-secondary" onclick="location.reload()">
+                                <i class="fa-solid fa-xmark me-1"></i> Hủy
+                            </button>
+                            <a class="btn btn-primary" href="/LyThuyet/RandomExam">
+                                <i class="fa-solid fa-circle-play me-1"></i> Bắt đầu thi
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML("beforeend", popup);
+        }
+    </script>
 }

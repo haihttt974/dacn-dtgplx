@@ -127,7 +127,22 @@ namespace dacn_dtgplx.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Exam(int idBoDe, int timeLeftSeconds)
         {
-            var vm = BuildExamViewModel(idBoDe);
+            ExamViewModel vm;
+
+            if (idBoDe == -1)
+            {
+                vm = BuildRandomExamViewModel_FromSession();
+                if (vm == null)
+                {
+                    TempData["Error"] = "Phiên thi ngẫu nhiên đã hết hạn.";
+                    return RedirectToAction("RandomExam");
+                }
+            }
+            else
+            {
+                vm = BuildExamViewModel(idBoDe);
+            }
+
             if (vm == null)
             {
                 TempData["Error"] = "Bộ đề không tồn tại hoặc không khả dụng.";
@@ -194,7 +209,7 @@ namespace dacn_dtgplx.Controllers
 
             // Nếu user đã đăng nhập -> lưu vào DB
             int? userId = HttpContext.Session.GetInt32("UserId");
-            if (userId != null)
+            if (userId != null && !vm.IsRandomExam)
             {
                 SaveExamResultToDatabase(userId.Value, vm);
             }
@@ -237,7 +252,8 @@ namespace dacn_dtgplx.Controllers
                 Hang = hang.MaHang,
                 ThoiGian = thoiGian,
                 TongCau = boDe.SoCauHoi ?? boDe.ChiTietBoDeTns.Count,
-                DiemDat = hang.DiemDat
+                DiemDat = hang.DiemDat,
+                IsRandomExam = false
             };
 
             var chiTietOrdered = boDe.ChiTietBoDeTns
@@ -253,7 +269,8 @@ namespace dacn_dtgplx.Controllers
                     IdCauHoi = ch.IdCauHoi,
                     NoiDung = ch.NoiDung ?? "",
                     LaCauLiet = ch.CauLiet == true,
-                    ImageUrl = NormalizeImagePath(ch.HinhAnh)
+                    ImageUrl = NormalizeImagePath(ch.HinhAnh),
+                    UrlAnhMeo = NormalizeImagePath(ch.UrlAnhMeo)
                 };
 
                 // Dap an: chỉ cần Id + thứ tự. Text trong ảnh nên Label chỉ là số
@@ -271,30 +288,28 @@ namespace dacn_dtgplx.Controllers
                 qVm.DapAn = dapAns.OrderBy(_ => Guid.NewGuid()).ToList();
 
                 vm.CauHoi.Add(qVm);
+                if (!string.IsNullOrEmpty(qVm.UrlAnhMeo))
+                {
+                    vm.DanhSachMeo.Add(qVm.UrlAnhMeo);
+                }
             }
 
             return vm;
         }
 
         /// Chuẩn hóa đường dẫn ảnh: bỏ "wwwroot" nếu có
-        private string? NormalizeImagePath(string? rawPath)
+        private string? NormalizeImagePath(string? path)
         {
-            if (string.IsNullOrWhiteSpace(rawPath))
+            if (string.IsNullOrWhiteSpace(path))
                 return null;
 
-            var path = rawPath.Replace("\\", "/");
-            if (path.StartsWith("wwwroot/", StringComparison.OrdinalIgnoreCase))
-            {
-                path = path.Substring("wwwroot/".Length);
-            }
+            path = path.Replace("\\", "/");
 
-            // thêm "~/" để Razor hiểu là root
-            if (!path.StartsWith("~"))
-            {
-                path = "~/" + path.TrimStart('/');
-            }
+            // bỏ wwwroot nếu có
+            if (path.StartsWith("wwwroot/"))
+                path = path.Substring(7);
 
-            return path;
+            return "~/" + path.TrimStart('/');
         }
 
         private void SaveExamResultToDatabase(int userId, ExamViewModel vm)
@@ -332,6 +347,161 @@ namespace dacn_dtgplx.Controllers
             }
 
             _context.SaveChanges();
+        }
+
+        public IActionResult RandomExam()
+        {
+            var hang = HttpContext.Session.GetString("Hang");
+            if (string.IsNullOrEmpty(hang))
+                return RedirectToAction("Index", "Hoc");
+
+            var listCauHoi = BuildRandomCauHoiList(hang);
+            HttpContext.Session.SetString("RandomExamCauHoi",
+                string.Join(",", listCauHoi.Select(c => c.IdCauHoi)));
+
+            var vm = BuildRandomExamViewModel(listCauHoi, hang);
+            vm.ThoiGian = (HttpContext.Session.GetInt32("RandomExamTime") ?? (vm.ThoiGian / 60));
+            vm.IsRandomExam = true;
+
+            return View("Exam", vm);
+        }
+
+        private List<CauHoiLyThuyet> BuildRandomCauHoiList(string hang)
+        {
+            bool isA = hang.ToUpper() == "A" || hang.ToUpper() == "A1";
+            int soCauThi = isA ? 25 : 30;
+
+            var percentA = new Dictionary<int, double>
+            {
+                {1, 0.392}, {2, 0.032}, {3, 0.032}, {4, 0.000}, {5, 0.360}, {6, 0.184}
+            };
+
+            var percentB = new Dictionary<int, double>
+            {
+                {1, 0.3083}, {2, 0.0417}, {3, 0.1250}, {4, 0.1333}, {5, 0.1667}, {6, 0.2250}
+            };
+
+            var percent = isA ? percentA : percentB;
+
+            var all = _context.CauHoiLyThuyets.Include(c => c.DapAns).ToList();
+            List<CauHoiLyThuyet> result = new();
+
+            // Random theo phần trăm
+            foreach (var kv in percent)
+            {
+                int chuongId = kv.Key;
+                double tile = kv.Value;
+
+                int soCau = (int)Math.Round(soCauThi * tile);
+
+                var list = all.Where(c => c.ChuongId == chuongId).ToList();
+
+                var pick = list.OrderBy(_ => Guid.NewGuid()).Take(soCau).ToList();
+
+                result.AddRange(pick);
+            }
+
+            // ==== BẮT BUỘC PHẢI CÓ ÍT NHẤT 1 CÂU LIỆT ====
+            if (!result.Any(c => c.CauLiet == true))
+            {
+                var cauLiet = all.Where(c => c.CauLiet == true)
+                                 .OrderBy(_ => Guid.NewGuid())
+                                 .FirstOrDefault();
+
+                if (cauLiet != null)
+                    result.Add(cauLiet);
+            }
+
+            // ==== Sửa lại số câu ====
+            result = result.Distinct().ToList();
+
+            while (result.Count < soCauThi)
+            {
+                var add = all.OrderBy(_ => Guid.NewGuid()).First();
+                if (!result.Contains(add))
+                    result.Add(add);
+            }
+
+            if (result.Count > soCauThi)
+            {
+                // ưu tiên bỏ câu thường trước, giữ câu liệt lại
+                result = result
+                    .OrderBy(c => c.CauLiet == true ? 0 : 1)
+                    .Take(soCauThi)
+                    .ToList();
+            }
+
+            return result.OrderBy(_ => Guid.NewGuid()).ToList();
+        }
+
+        private ExamViewModel BuildRandomExamViewModel(List<CauHoiLyThuyet> list, string hang)
+        {
+            var h = _context.Hangs.First(x => x.MaHang == hang);
+
+            var vm = new ExamViewModel
+            {
+                IdBoDe = -1, // đề ngẫu nhiên, không phải đề thật
+                TenBoDe = "Đề thi ngẫu nhiên",
+                Hang = hang,
+                ThoiGian = h.ThoiGianTn,
+                TongCau = list.Count,
+                DiemDat = h.DiemDat
+            };
+
+            foreach (var ch in list)
+            {
+                var q = new ExamQuestionVM
+                {
+                    IdCauHoi = ch.IdCauHoi,
+                    NoiDung = ch.NoiDung,
+                    LaCauLiet = ch.CauLiet ?? false,
+                    ImageUrl = NormalizeImagePath(ch.HinhAnh),
+                    UrlAnhMeo = NormalizeImagePath(ch.UrlAnhMeo)
+                };
+
+                var dapan = ch.DapAns
+                    .OrderBy(d => Guid.NewGuid())
+                    .Select((d, index) => new ExamAnswerVM
+                    {
+                        IdDapAn = d.IdDapAn,
+                        Label = (index + 1).ToString(),
+                        IsCorrect = d.DapAnDung
+                    })
+                    .ToList();
+
+                q.DapAn = dapan;
+                vm.CauHoi.Add(q);
+                if (!string.IsNullOrEmpty(q.UrlAnhMeo))
+                {
+                    vm.DanhSachMeo.Add(q.UrlAnhMeo);
+                }
+            }
+
+            return vm;
+        }
+        private ExamViewModel? BuildRandomExamViewModel_FromSession()
+        {
+            string? raw = HttpContext.Session.GetString("RandomExamCauHoi");
+            string? hang = HttpContext.Session.GetString("Hang");
+
+            if (string.IsNullOrEmpty(raw) || string.IsNullOrEmpty(hang))
+                return null;
+
+            var ids = raw.Split(',').Select(int.Parse).ToList();
+
+            var list = _context.CauHoiLyThuyets
+                .Include(c => c.DapAns)
+                .Where(c => ids.Contains(c.IdCauHoi))
+                .ToList();
+
+            list = ids.Select(id => list.First(c => c.IdCauHoi == id)).ToList();
+
+            var vm = BuildRandomExamViewModel(list, hang);
+            vm.IsRandomExam = true;
+
+            vm.ThoiGian = HttpContext.Session.GetInt32("RandomExamTime") ?? vm.ThoiGian / 60;
+
+            return vm;
         }
     }
 }
