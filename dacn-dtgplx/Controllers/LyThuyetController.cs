@@ -307,7 +307,7 @@ namespace dacn_dtgplx.Controllers
 
             // bỏ wwwroot nếu có
             if (path.StartsWith("wwwroot/"))
-                path = path.Substring(7);
+                path = path.Substring(8);
 
             return "~/" + path.TrimStart('/');
         }
@@ -502,6 +502,110 @@ namespace dacn_dtgplx.Controllers
             vm.ThoiGian = HttpContext.Session.GetInt32("RandomExamTime") ?? vm.ThoiGian / 60;
 
             return vm;
+        }
+
+        // ================================
+        // 👉 ÔN TOÀN BỘ CÂU HỎI
+        // ================================
+        public IActionResult HocAll()
+        {
+            var vm = new HocAllViewModel();
+
+            // Lấy hạng đang chọn trong session
+            var selectedHang = HttpContext.Session.GetString("Hang");
+            if (string.IsNullOrEmpty(selectedHang))
+            {
+                // Chưa chọn hạng → quay về dashboard & mở popup chọn hạng
+                return RedirectToAction("Index", "Hoc", new { open = true });
+            }
+
+            selectedHang = selectedHang.Trim().ToUpper();
+            vm.SelectedHang = selectedHang;
+
+            // A / A1 là xe máy
+            vm.IsXeMay = selectedHang == "A" || selectedHang == "A1";
+
+            // Query câu hỏi
+            var query = _context.CauHoiLyThuyets
+                .Include(q => q.DapAns)
+                .Include(q => q.Chuong)
+                .AsQueryable();
+
+            if (vm.IsXeMay)
+            {
+                // A, A1 → chỉ lấy câu dành cho xe máy
+                query = query.Where(q => q.XeMay == true);
+            }
+
+            // Sắp xếp: theo thứ tự chương rồi tới IdCauHoi
+            var allQuestions = query
+                .OrderBy(q => q.Chuong.ThuTu ?? int.MaxValue)
+                .ThenBy(q => q.IdCauHoi)
+                .ToList();
+
+            if (!allQuestions.Any())
+            {
+                // Không có dữ liệu
+                return View(vm);
+            }
+
+            int globalIndex = 1;
+
+            // Group theo chương
+            var chapterGroups = allQuestions
+                .GroupBy(q => q.Chuong)
+                .OrderBy(g => g.Key.ThuTu ?? int.MaxValue)
+                .ToList();
+
+            foreach (var g in chapterGroups)
+            {
+                var chapterVm = new HocAllChapterVM
+                {
+                    ChuongId = g.Key.ChuongId,
+                    TenChuong = g.Key.TenChuong,
+                    ThuTu = g.Key.ThuTu ?? int.MaxValue
+                };
+
+                foreach (var q in g)
+                {
+                    var qVm = new HocAllQuestionVM
+                    {
+                        GlobalIndex = globalIndex++,
+                        IdCauHoi = q.IdCauHoi,
+                        NoiDung = q.NoiDung,
+                        ImageUrl = NormalizeImagePath(q.HinhAnh),
+                        UrlAnhMeo = NormalizeImagePath(q.UrlAnhMeo),
+                        IsCauLiet = q.CauLiet == true,
+                        IsChuY = q.ChuY == true,
+                        IsXeMay = q.XeMay == true
+                    };
+
+                    var orderedAnswers = q.DapAns
+                        .OrderBy(a => a.ThuTu)
+                        .ToList();
+
+                    for (int i = 0; i < orderedAnswers.Count; i++)
+                    {
+                        var a = orderedAnswers[i];
+
+                        qVm.DapAns.Add(new HocAllAnswerVM
+                        {
+                            IdDapAn = a.IdDapAn,
+                            Label = (i + 1).ToString(),   // 1,2,3,...
+                            IsCorrect = a.DapAnDung
+                        });
+                    }
+
+                    chapterVm.Questions.Add(qVm);
+                }
+
+                vm.Chapters.Add(chapterVm);
+            }
+
+            vm.TotalChapters = vm.Chapters.Count;
+            vm.TotalQuestions = allQuestions.Count;
+
+            return View(vm);
         }
     }
 }

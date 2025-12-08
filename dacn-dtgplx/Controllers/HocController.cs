@@ -45,7 +45,15 @@ namespace dacn_dtgplx.Controllers
                         b.IdBoDeNavigation.IdHang == hang.IdHang)
                 : 0;
             // 2️⃣ TỔNG SỐ CÂU HỎI LÝ THUYẾT
-            vm.TotalCauHoi = _context.CauHoiLyThuyets.Count();
+            if (isXeMay)
+            {
+                vm.TotalCauHoi = _context.CauHoiLyThuyets
+                    .Count(ch => ch.XeMay == true);
+            }
+            else
+            {
+                vm.TotalCauHoi = _context.CauHoiLyThuyets.Count();
+            }
             // 3️⃣ SỐ CÂU ĐIỂM LIỆT
             vm.TotalCauLiet = _context.CauHoiLyThuyets
                 .Where(ch => ch.CauLiet == true && (isXeMay ? ch.XeMay == true : true))
