@@ -364,10 +364,9 @@
     }
 
         .img-modal-inner img {
-            max-width: 100%;
-            max-height: 100%;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            max-width: 95vw;
+            max-height: 95vh;
+            object-fit: contain;
             background: #fff;
         }
 
@@ -385,6 +384,11 @@
         background: rgba(15,23,42,0.9);
         color: #fff;
         cursor: pointer;
+    }
+
+    #meoModal.d-none,
+    #imageModal.d-none {
+        display: none !important;
     }
 
 </style>
@@ -540,7 +544,11 @@
                         var questionCss = "exam-question";
                         if (i != 0) questionCss += " d-none";
 
-                        <div class="@questionCss" data-question-index="@i" data-question-id="@q.IdCauHoi" data-la-liet="@(q.LaCauLiet ? "1" : "0")">
+                        <div class="@questionCss"
+                             data-question-index="@i"
+                             data-question-id="@q.IdCauHoi"
+                             data-la-liet="@(q.LaCauLiet ? "1" : "0")"
+                             data-meo="@Url.Content(q.UrlAnhMeo)">
                             <div class="mb-2 fw-semibold">@q.NoiDung</div>
 
                             @if (!string.IsNullOrEmpty(q.ImageUrl))
@@ -595,17 +603,23 @@
                     </div>
 
                     <div class="exam-actions-right">
-                        @if (!Model.IsSubmitted)
+                        @if (Model.IsSubmitted)
+                        {
+                            <button type="button"
+                                    id="btnViewMeo"
+                                    class="btn btn-warning me-2">
+                                <i class="fa-solid fa-lightbulb me-1"></i> Xem ảnh mẹo
+                            </button>
+
+                            <a asp-action="Index" class="btn btn-outline-primary">
+                                <i class="fa-solid fa-rotate-left me-1"></i> Quay lại danh sách đề
+                            </a>
+                        }
+                        else
                         {
                             <button type="button" class="btn btn-danger" id="btnSubmitExam">
                                 <i class="fa-solid fa-flag-checkered me-1"></i> Nộp bài
                             </button>
-                        }
-                        else
-                        {
-                            <a asp-action="Index" class="btn btn-outline-primary">
-                                <i class="fa-solid fa-rotate-left me-1"></i> Quay lại danh sách đề
-                            </a>
                         }
                     </div>
                 </div>
@@ -659,6 +673,15 @@
                 </button>
             </div>
         </div>
+    </div>
+</div>
+<!-- Modal XEM ẢNH MẸO -->
+<div id="meoModal" class="img-modal d-none">
+    <div class="img-modal-inner">
+        <button type="button" id="meoModalClose" class="img-modal-close">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <img id="meoModalImg" src="" alt="Ảnh mẹo" />
     </div>
 </div>
 
@@ -953,13 +976,58 @@
         }
 
         function initBeforeUnloadGuard() {
-            if (isSubmitted === "true") return;
-            window.addEventListener("beforeunload", beforeUnloadHandler);
+            if (isSubmitted === "true") {
+                window.removeEventListener("beforeunload", beforeUnloadHandler);
+            }
         }
 
         function beforeUnloadHandler(e) {
             e.preventDefault();
             e.returnValue = "Bạn có chắc muốn rời khỏi trang? Bài thi sẽ không được lưu.";
         }
+        
+        document.addEventListener("DOMContentLoaded", function () {
+            const meoModal = document.getElementById("meoModal");
+            const meoModalImg = document.getElementById("meoModalImg");
+            const meoModalClose = document.getElementById("meoModalClose");
+
+            // nút xem ảnh mẹo
+            const btnViewMeo = document.getElementById("btnViewMeo");
+
+            if (btnViewMeo) {
+                btnViewMeo.addEventListener("click", function () {
+
+                    const listMeo = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DanhSachMeo));
+
+                    if (listMeo.length === 0) {
+                        alert("Không có ảnh mẹo cho bài thi này.");
+                        return;
+                    }
+
+                    // Ảnh mẹo của câu hiện tại nếu có
+                    const current = document.querySelector(`.exam-question[data-question-index='${currentIndex}']`);
+                    const meoUrl = current.getAttribute("data-meo");
+
+                    if (meoUrl) {
+                        meoModalImg.src = meoUrl.replace("~", "");
+                    } else {
+                        meoModalImg.src = listMeo[0];
+                    }
+
+                    meoModal.classList.remove("d-none");
+                });
+            }
+
+            meoModalClose.addEventListener("click", function () {
+                meoModal.classList.add("d-none");
+            });
+
+            meoModal.addEventListener("click", function (e) {
+                if (e.target === meoModal) {
+                    meoModal.classList.add("d-none");
+                }
+            });
+
+        });
     </script>
 }

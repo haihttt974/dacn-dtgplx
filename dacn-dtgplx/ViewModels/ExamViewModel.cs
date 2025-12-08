@@ -24,5 +24,7 @@ namespace dacn_dtgplx.ViewModels
 
         // IdCauHoi -> IdDapAn đã chọn (hoặc null)
         public Dictionary<int, int?> DapAnDaChon { get; set; } = new Dictionary<int, int?>();
+        public bool IsRandomExam { get; set; } = false;
+        public List<string> DanhSachMeo { get; set; } = new();
     }
 }

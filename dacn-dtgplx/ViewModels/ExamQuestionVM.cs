@@ -8,6 +8,8 @@ namespace dacn_dtgplx.ViewModels
         public string NoiDung { get; set; } = "";
         public string? ImageUrl { get; set; }   // đã được xử lý bỏ "wwwroot"
         public bool LaCauLiet { get; set; }
+        public string? UrlAnhMeo { get; set; }
+        
 
         public List<ExamAnswerVM> DapAn { get; set; } = new List<ExamAnswerVM>();
     }
