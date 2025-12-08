@@ -485,6 +485,15 @@
                             <i class="fa-solid fa-graduation-cap"></i> Học
                         </a>
                     </li>
+                    <!-- Thuê xe -->
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "ThueXe"
+                                                  && ViewContext.RouteData.Values["action"]?.ToString() == "Index"
+                                                  ? "active" : "")"
+                           href="@Url.Action("Index", "ThueXe")">
+                            <i class="fa-solid fa-car-side"></i> Thuê xe
+                        </a>
+                    </li>
                     <!-- Hóa đơn -->
                     <li class="nav-item">
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "HoaDonThanhToan"

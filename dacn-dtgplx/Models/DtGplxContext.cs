@@ -980,6 +980,15 @@ public partial class DtGplxContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("loaiXe");
             entity.Property(e => e.TrangThaiXe).HasColumnName("trangThaiXe");
+            entity.Property(e => e.BienSo)
+                .HasMaxLength(20)
+                .HasColumnName("bienSo");
+            entity.Property(e => e.GiaThueTheoGio)
+                .HasColumnType("decimal(18,2)")
+                .HasColumnName("giaThueTheoGio");
+            entity.Property(e => e.AnhXe)
+                .HasMaxLength(300)
+                .HasColumnName("anhXe");
         });
 
         OnModelCreatingPartial(modelBuilder);
