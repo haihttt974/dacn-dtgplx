@@ -15,5 +15,7 @@ public partial class XeTapLai
 
     public decimal? GiaThueTheoGio { get; set; }   // thêm
 
+    public string? AnhXe { get; set; }
+
     public virtual ICollection<LichHoc> LichHocs { get; set; } = new List<LichHoc>();
 }

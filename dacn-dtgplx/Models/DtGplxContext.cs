@@ -986,6 +986,9 @@ public partial class DtGplxContext : DbContext
             entity.Property(e => e.GiaThueTheoGio)
                 .HasColumnType("decimal(18,2)")
                 .HasColumnName("giaThueTheoGio");
+            entity.Property(e => e.AnhXe)
+                .HasMaxLength(300)
+                .HasColumnName("anhXe");
         });
 
         OnModelCreatingPartial(modelBuilder);
