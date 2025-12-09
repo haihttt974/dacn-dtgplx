@@ -1,0 +1,294 @@
+﻿@model IEnumerable<dacn_dtgplx.Models.XeTapLai>
+
+@{
+    ViewData["Title"] = "Thuê Xe Tập Lái";
+}
+
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+
+<style>
+
+    :root {
+        --green: #00A862;
+        --green-dark: #01804b;
+        --red: #ff4d4d;
+    }
+
+    /* KHUNG LỌC */
+    .filter-box {
+        background: white;
+        padding: 25px;
+        border-radius: 18px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        margin-bottom: 30px;
+    }
+
+    /* GRID INPUT */
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+    }
+
+    /* INPUT */
+    .filter-item label {
+        font-weight: 600;
+    }
+
+    .form-control, .form-select {
+        border-radius: 12px;
+        padding: 10px 14px;
+        border: 1.5px solid #dbdbdb;
+    }
+
+    /* ===============================
+       SLIDER CHUẨN GRAB STYLE FIXED
+       =============================== */
+
+    .price-slider {
+        position: relative;
+        height: 90px; /* đủ chỗ cho bubble + track + thumb */
+        margin-top: 10px;
+    }
+
+    /* TRACK (thanh nằm giữa) */
+    .slider-track {
+        position: absolute;
+        top: 42px; /* vị trí thanh */
+        left: 0;
+        width: 100%;
+        height: 6px;
+        background: #e5e5e5;
+        border-radius: 10px;
+    }
+
+    /* TRACK HIGHLIGHT */
+    .slider-range {
+        position: absolute;
+        top: 42px;
+        height: 6px;
+        background: #00A862;
+        border-radius: 10px;
+    }
+
+    /* INPUT RANGE */
+    .price-slider input[type=range] {
+        position: absolute;
+        top: 28px;
+        left: 0;
+        width: 100%;
+        background: none;
+        pointer-events: none;
+        -webkit-appearance: none;
+        z-index: 10;
+    }
+
+        /* THUMB (NÚT KÉO) – nằm DƯỚI THANH */
+        .price-slider input[type=range]::-webkit-slider-thumb {
+            pointer-events: all;
+            width: 18px;
+            height: 18px;
+            background: #b34dff;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0px 2px 6px rgba(0,0,0,0.25);
+            cursor: pointer;
+            -webkit-appearance: none;
+            position: relative;
+            top: 26px; /* ĐẨY NÚT XUỐNG dưới thanh -> CHUẨN 2 CHẤM ĐỎ */
+        }
+
+    /* BUBBLE GIÁ – nằm trên thanh nhưng sát */
+    .bubble {
+        position: absolute;
+        top: 12px; /* gần sát thanh nhưng không che text */
+        transform: translateX(-50%);
+        background: #00A862;
+        padding: 4px 10px;
+        font-size: 12px;
+        color: white;
+        border-radius: 12px;
+        white-space: nowrap;
+    }
+
+    /* NÚT LỌC */
+    .btn-filter {
+        background: var(--green);
+        color: white;
+        border-radius: 12px;
+        padding: 10px 25px;
+        font-weight: 600;
+    }
+
+        .btn-filter:hover {
+            background: var(--green-dark);
+        }
+
+    /* NÚT RESET */
+    .btn-reset {
+        border: 2px solid var(--red);
+        color: var(--red);
+        background: white;
+        border-radius: 12px;
+        padding: 10px 25px;
+        font-weight: 600;
+    }
+
+        .btn-reset:hover {
+            background: var(--red);
+            color: white;
+        }
+
+</style>
+
+
+<div class="container py-4">
+
+    <h2 class="fw-bold text-center mb-4">Danh Sách Xe Tập Lái</h2>
+
+    <!-- BỘ LỌC -->
+    <div class="filter-box">
+
+        <!-- HÀNG 1 -->
+        <div class="filter-grid">
+
+            <div class="filter-item">
+                <label>Tên xe:</label>
+                <input id="searchBox" class="form-control" placeholder="Nhập tên xe..." />
+            </div>
+
+            <div class="filter-item">
+                <label>Loại xe:</label>
+                <select id="typeSelect" class="form-select">
+                    <option value="">Tất cả</option>
+                    @foreach (var loai in ViewBag.LoaiXeList)
+                    {
+                        <option value="@loai">@loai</option>
+                    }
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <label>Sắp xếp giá:</label>
+                <select id="sortSelect" class="form-select">
+                    <option value="">Mặc định</option>
+                    <option value="asc">Giá tăng dần</option>
+                    <option value="desc">Giá giảm dần</option>
+                </select>
+            </div>
+
+        </div>
+
+        <!-- SLIDER -->
+        <div class="mt-4">
+            <label class="fw-bold" style="margin-bottom: 0px; display:block;">
+                Giá thuê (0 - 1.000.000đ):
+            </label>
+
+            <div class="price-slider">
+                <div class="slider-track"></div>
+                <div id="sliderRange" class="slider-range"></div>
+
+                <span id="bubbleMin" class="bubble">0 đ</span>
+                <span id="bubbleMax" class="bubble">1.000.000 đ</span>
+
+                <input id="minRange" type="range" min="0" max="1000000" value="0" step="10000">
+                <input id="maxRange" type="range" min="0" max="1000000" value="1000000" step="10000">
+            </div>
+
+            <div class="fw-bold mt-1">
+                <span id="minVal">0 đ</span> – <span id="maxVal">1,000,000 đ</span>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <!-- Chọn ngày -->
+            <div class="col-md-3">
+                <label class="fw-bold">Ngày thuê:</label>
+                <input type="date" id="filterDate" class="form-control" />
+            </div>
+
+            <!-- Chọn giờ -->
+            <div class="col-md-3">
+                <label class="fw-bold">Giờ thuê:</label>
+                <input type="time" id="filterTime" class="form-control" />
+            </div>
+        </div>
+        <!-- NÚT DƯỚI GÓC PHẢI -->
+        <div class="d-flex justify-content-end gap-3 mt-4">
+            <button onclick="loadData()" class="btn-filter">Lọc</button>
+            <button onclick="resetFilter()" class="btn-reset">Xóa lọc</button>
+        </div>
+
+    </div>
+
+    <!-- DANH SÁCH XE -->
+    <div id="xeContainer">
+        @Html.Partial("_XeCards", Model)
+    </div>
+
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+<script>
+
+    function updateSlider() {
+        let min = parseInt($("#minRange").val());
+        let max = parseInt($("#maxRange").val());
+
+        if (min > max) {
+            [min, max] = [max, min];
+            $("#minRange").val(min);
+            $("#maxRange").val(max);
+        }
+
+        $("#minVal").text(min.toLocaleString() + " đ");
+        $("#maxVal").text(max.toLocaleString() + " đ");
+
+        let minPercent = min / 1000000 * 100;
+        let maxPercent = max / 1000000 * 100;
+
+        $("#sliderRange").css({ left: minPercent + "%", width: (maxPercent - minPercent) + "%" });
+
+        $("#bubbleMin").css("left", minPercent + "%").text(min.toLocaleString() + " đ");
+        $("#bubbleMax").css("left", maxPercent + "%").text(max.toLocaleString() + " đ");
+    }
+
+    $("#minRange, #maxRange").on("input", updateSlider);
+    updateSlider();
+
+    function loadData(page = 1) {
+        $.ajax({
+            url: "/ThueXe/Filter",
+            data: {
+                page,
+                search: $("#searchBox").val(),
+                type: $("#typeSelect").val(),
+                sort: $("#sortSelect").val(),
+                min: $("#minRange").val(),
+                max: $("#maxRange").val(),
+
+                // THÊM 2 DÒNG NÀY
+                rentDate: $("#filterDate").val(),
+                rentTime: $("#filterTime").val()
+            },
+            success: res => $("#xeContainer").html(res)
+        });
+    }
+
+    function resetFilter() {
+        $("#searchBox").val("");
+        $("#typeSelect").val("");
+        $("#sortSelect").val("");
+        $("#minRange").val(0);
+        $("#maxRange").val(1000000);
+        $("#filterDate").val("");
+        $("#filterTime").val("");
+
+        updateSlider();
+        loadData(1);
+    }
+
+</script>
