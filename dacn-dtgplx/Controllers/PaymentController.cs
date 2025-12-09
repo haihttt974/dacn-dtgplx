@@ -21,9 +21,9 @@ namespace dacn_dtgplx.Controllers
         private readonly IMomoService _momo;
 
         public PaymentController(
-            DtGplxContext context, 
-            IConfiguration config, 
-            IMailService mail, 
+            DtGplxContext context,
+            IConfiguration config,
+            IMailService mail,
             IPayPalService payPal,
             IMomoService momo)
         {
@@ -205,7 +205,7 @@ namespace dacn_dtgplx.Controllers
             if (responseCode == "00")
             {
                 hd.TrangThai = true;
-                hd.NgayThanhToan = DateOnly.FromDateTime(DateTime.Now);
+                hd.NgayThanhToan = DateTime.Now;
                 dk.TrangThai = true;
                 await _context.SaveChangesAsync();
 
@@ -334,7 +334,7 @@ namespace dacn_dtgplx.Controllers
             if (success)
             {
                 hd.TrangThai = true;
-                hd.NgayThanhToan = DateOnly.FromDateTime(DateTime.Now);
+                hd.NgayThanhToan = DateTime.Now;
                 dk.TrangThai = true;
 
                 await _context.SaveChangesAsync();

@@ -452,38 +452,39 @@
                             </li>
                         </ul>
                     </li>
-                    <!-- Khóa học -->
+                    <!-- Học tập -->
                     <li class="dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center gap-1"
                            href="#" data-bs-toggle="dropdown">
-                            <i class="fa-solid fa-book"></i>
-                            <span>Khóa học</span>
+                            <i class="fa-solid fa-graduation-cap"></i>
+                            <span>Học tập</span>
                         </a>
                         <ul class="dropdown-menu shadow border-0 rounded-4 dropdown-menu-center">
+                            <!-- Tài liệu -->
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center"
+                                   href="@Url.Action("Index", "Hoc")">
+                                    <i class="fa-solid fa-file-lines me-2"></i> Tài liệu
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <!-- Khóa học: Danh sách -->
                             <li>
                                 <a class="dropdown-item d-flex align-items-center"
                                    href="@Url.Action("Index", "KhoaHoc")">
-                                    <i class="fa-solid fa-list me-2"></i> Danh sách
+                                    <i class="fa-solid fa-list me-2"></i> Danh sách khóa học
                                 </a>
                             </li>
+                            <!-- Khóa học: Khóa học của tôi -->
                             <li>
                                 <a class="dropdown-item d-flex align-items-center"
                                    href="@(User?.Identity?.IsAuthenticated == true
-                                                                   ? Url.Action("MyCourses", "KhoaHoc")
-                                                                   : Url.Action("Login", "Auth"))">
+                                                              ? Url.Action("MyCourses", "KhoaHoc")
+                                                              : Url.Action("Login", "Auth"))">
                                     <i class="fa-solid fa-book-open me-2"></i> Khóa học của tôi
                                 </a>
                             </li>
                         </ul>
-                    </li>
-                    <!-- Học -->
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Hoc"
-                                                           && ViewContext.RouteData.Values["action"]?.ToString() == "Index"
-                                                           ? "active" : "")"
-                           href="@Url.Action("Index", "Hoc")">
-                            <i class="fa-solid fa-graduation-cap"></i> Học
-                        </a>
                     </li>
                     <!-- Thuê xe -->
                     <li class="nav-item">

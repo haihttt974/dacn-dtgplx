@@ -1,0 +1,68 @@
+﻿@{
+    ViewData["Title"] = "Thanh toán thất bại";
+}
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+<style>
+    .fail-box {
+        max-width: 650px;
+        margin: 50px auto;
+        background: white;
+        padding: 35px;
+        border-radius: 18px;
+        text-align: center;
+        box-shadow: 0 6px 25px rgba(0,0,0,0.1);
+    }
+
+    .icon-fail {
+        font-size: 80px;
+        color: #ff4d4d;
+        margin-bottom: 15px;
+    }
+
+    .btn-back {
+        background: #ff4d4d;
+        color: white;
+        padding: 12px 25px;
+        font-size: 18px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+        .btn-back:hover {
+            background: #d93636;
+            color: #fff;
+        }
+
+    .info-box {
+        background: #fff5f5;
+        border-left: 4px solid #ff4d4d;
+        padding: 12px 15px;
+        margin: 20px 0;
+        border-radius: 10px;
+        text-align: left;
+    }
+</style>
+
+<div class="fail-box">
+    <div class="icon-fail">
+        ✖
+    </div>
+
+    <h2 class="fw-bold text-danger">Thanh toán thất bại!</h2>
+
+    <p class="mt-2">
+        Rất tiếc, giao dịch không thể hoàn tất.
+        <br />
+        Vui lòng thử lại hoặc chọn phương thức thanh toán khác.
+    </p>
+
+    <div class="info-box">
+        <p class="mb-1"><strong>Lỗi:</strong> @ViewBag.Message</p>
+        <p class="mb-0">Nếu bạn cần hỗ trợ, vui lòng liên hệ trung tâm.</p>
+    </div>
+
+    <a href="/" class="btn-back mt-3">Về trang chủ</a>
+</div>
