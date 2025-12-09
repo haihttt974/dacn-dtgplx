@@ -7,7 +7,7 @@ public partial class HoaDonThanhToan
 {
     public int IdThanhToan { get; set; }
 
-    public DateOnly? NgayThanhToan { get; set; }
+    public DateTime? NgayThanhToan { get; set; }
 
     public decimal? SoTien { get; set; }
 

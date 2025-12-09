@@ -1,0 +1,146 @@
+﻿@model dacn_dtgplx.Models.XeTapLai
+@{
+    var info = ViewBag.Info as dacn_dtgplx.DTOs.ThongTinThueXeDTO;
+    ViewData["Title"] = "Xác Nhận Thuê Xe";
+}
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+<style>
+    .confirm-box {
+        max-width: 900px;
+        margin: 40px auto;
+        background: white;
+        padding: 30px;
+        border-radius: 18px;
+        box-shadow: 0 4px 22px rgba(0, 0, 0, 0.08);
+    }
+
+    .xe-img {
+        width: 100%;
+        height: 240px;
+        object-fit: contain;
+        border-radius: 14px;
+        background: #fff;
+    }
+
+    .price-tag {
+        background: #eafff1;
+        border: 1px solid #c6efd6;
+        padding: 12px;
+        border-radius: 12px;
+        font-weight: bold;
+        font-size: 18px;
+        color: #00A862;
+    }
+
+    .btn-pay {
+        background: #00A862;
+        color: #fff;
+        font-size: 18px;
+        padding: 12px;
+        border-radius: 14px;
+        width: 100%;
+        font-weight: 600;
+    }
+
+        .btn-pay:hover {
+            background: #01804b;
+        }
+</style>
+
+<div class="confirm-box">
+
+    <h3 class="fw-bold text-center mb-4">Xác Nhận Thuê Xe</h3>
+
+    <div class="row g-4">
+
+        <!-- ======================= -->
+        <!-- CỘT TRÁI: THÔNG TIN XE -->
+        <!-- ======================= -->
+        <div class="col-md-5">
+            <img src="@Model.AnhXe" class="xe-img mb-3" />
+
+            <h4 class="fw-bold text-primary">@Model.LoaiXe</h4>
+
+            <p><strong>Biển số:</strong> @Model.BienSo</p>
+            <p><strong>Giá thuê theo giờ:</strong> @Model.GiaThueTheoGio?.ToString("N0") đ</p>
+        </div>
+
+        <!-- =========================== -->
+        <!-- CỘT PHẢI: THÔNG TIN NGƯỜI THUÊ -->
+        <!-- =========================== -->
+        <div class="col-md-7">
+
+            <form method="post" action="/ThueXe/XacNhanThue">
+
+                <input type="hidden" name="xeId" value="@info?.XeId" />
+
+                <!-- HIDDEN FIELDS GỬI LÊN SERVER -->
+                <input type="hidden" name="rentStart" value="@info?.RentStart.ToString("yyyy-MM-ddTHH:mm")" />
+                <input type="hidden" name="duration" value="@info?.Duration" />
+
+                <h5 class="fw-bold mb-3">Thông tin người thuê</h5>
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label class="form-label">Họ tên</label>
+                        <input class="form-control" value="@info?.Ten" disabled />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        <input class="form-control" value="@info?.Email" disabled />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Số điện thoại</label>
+                        <input class="form-control" value="@info?.SDT" disabled />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">CCCD</label>
+                        <input class="form-control" value="@info?.CCCD" disabled />
+                    </div>
+
+                    <hr class="my-3" />
+
+                    <!-- ========================= -->
+                    <!-- THỜI GIAN THUÊ (CHỈ XEM) -->
+                    <!-- ========================= -->
+                    <h6 class="fw-bold">Thời gian thuê</h6>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Ngày & giờ bắt đầu</label>
+                        <input class="form-control"
+                               value="@info?.RentStart.ToString("dd/MM/yyyy HH:mm")"
+                               disabled />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Thời lượng</label>
+                        <input class="form-control"
+                               value="@info?.Duration giờ"
+                               disabled />
+                    </div>
+
+                    <!-- ==================== -->
+                    <!-- TỔNG TIỀN DỰ KIẾN -->
+                    <!-- ==================== -->
+                    <div class="price-tag mt-3">
+                        Tổng tiền dự kiến:
+                        <b>@((info?.Duration ?? 0) * (Model.GiaThueTheoGio ?? 0))</b> đ
+                    </div>
+
+                    <button class="btn-pay mt-4" type="submit">Xác nhận & Thanh toán</button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>

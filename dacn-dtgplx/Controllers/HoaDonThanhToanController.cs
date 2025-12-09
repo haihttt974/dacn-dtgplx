@@ -1,4 +1,5 @@
 ﻿using dacn_dtgplx.Models;
+using dacn_dtgplx.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,7 +19,10 @@ public class HoaDonThanhToanController : Controller
     {
         int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
-        var payments = await _context.HoaDonThanhToans
+        // --------------------------
+        // 1. Hóa đơn khóa học
+        // --------------------------
+        var paymentsKhoaHoc = await _context.HoaDonThanhToans
             .Include(h => h.IdDangKyNavigation)
                 .ThenInclude(dk => dk.KhoaHoc)
             .Include(h => h.IdDangKyNavigation.HoSo)
@@ -26,6 +30,22 @@ public class HoaDonThanhToanController : Controller
             .OrderByDescending(h => h.NgayThanhToan)
             .ToListAsync();
 
-        return View(payments);
+        // --------------------------
+        // 2. Hóa đơn thuê xe
+        // --------------------------
+        var paymentsThueXe = await _context.HoaDonThanhToans
+            .Include(h => h.PhieuTx)
+                .ThenInclude(p => p.Xe)
+            .Where(h => h.PhieuTx != null && h.PhieuTx.UserId == userId)
+            .OrderByDescending(h => h.NgayThanhToan)
+            .ToListAsync();
+
+        var vm = new PaymentHistoryVM
+        {
+            PaymentsKhoaHoc = paymentsKhoaHoc,
+            PaymentsThueXe = paymentsThueXe
+        };
+
+        return View(vm);
     }
 }

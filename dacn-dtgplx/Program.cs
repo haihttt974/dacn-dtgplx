@@ -6,6 +6,7 @@ using dacn_dtgplx.ViewModels;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using QuestPDF.Infrastructure;
 using System.Text;
 using System.Text.Json;
 
@@ -93,6 +94,8 @@ builder.Services.AddSingleton<SteganographyService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+QuestPDF.Settings.License = LicenseType.Community;
+
 var app = builder.Build();
 app.MapHub<ChatHub>("/chatHub");
 app.MapHub<OnlineHub>("/onlineHub");
@@ -110,6 +113,20 @@ else
     //app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
+// Middleware tùy chỉnh để vô hiệu hóa một số tính năng người dùng
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path.Value?.ToLower() ?? "";
+
+    if (path.Contains("vnpayreturn") ||
+        path.Contains("momoreturn") ||
+        path.Contains("paypalreturn"))
+    {
+        context.Items["DisableUserFeatures"] = true;
+    }
+
+    await next();
+});
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

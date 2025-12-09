@@ -1,0 +1,129 @@
+﻿@model dacn_dtgplx.Models.HoaDonThanhToan
+
+@{
+    ViewData["Title"] = "Thanh toán thuê xe";
+    var phieu = Model.PhieuTx;
+}
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+<style>
+    .pay-box {
+        max-width: 850px;
+        margin: 40px auto;
+        background: white;
+        padding: 30px;
+        border-radius: 16px;
+        box-shadow: 0 6px 25px rgba(0,0,0,0.08);
+    }
+
+    .car-img {
+        width: 100%;
+        height: 200px;
+        object-fit: contain;
+        border-radius: 12px;
+        background: #fafafa;
+    }
+
+    .method-box {
+        border: 2px solid #ddd;
+        padding: 15px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: .2s;
+    }
+
+        .method-box:hover {
+            border-color: #00A862;
+            background: #f3fff9;
+        }
+
+    input[type=radio]:checked + .method-box {
+        border-color: #00A862;
+        background: #eafff3;
+    }
+</style>
+
+<div class="pay-box">
+
+    <h3 class="fw-bold text-center mb-3">Thanh toán thuê xe</h3>
+
+    <!-- Thông tin xe -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <img src="@phieu.Xe.AnhXe" class="car-img" />
+        </div>
+        <div class="col-md-8">
+            <h4 class="fw-bold text-primary">@phieu.Xe.LoaiXe</h4>
+            <p><strong>Biển số:</strong> @phieu.Xe.BienSo</p>
+            <p><strong>Giá thuê theo giờ:</strong> @phieu.Xe.GiaThueTheoGio?.ToString("N0") đ</p>
+            <p><strong>Thời gian bắt đầu:</strong> @phieu.TgBatDau?.ToString("dd/MM/yyyy HH:mm")</p>
+            <p><strong>Thời lượng:</strong> @phieu.TgThue giờ</p>
+        </div>
+    </div>
+
+    <hr />
+
+    <div class="mb-3">
+        <h5 class="fw-bold text-success">Tổng tiền cần thanh toán:</h5>
+        <div class="fs-3 fw-bold text-danger">
+            @Model.SoTien?.ToString("N0") đ
+        </div>
+    </div>
+
+    <hr />
+
+    <form method="post" action="/PaymentRent/ChooseMethod">
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" name="hoaDonId" value="@Model.IdThanhToan" />
+
+        <h5 class="fw-bold mb-3">Chọn phương thức thanh toán</h5>
+
+        <div class="row g-3">
+
+            <!-- VNPAY -->
+            <div class="col-md-4">
+                <label style="width:100%">
+                    <input type="radio" name="method" value="VNPAY" hidden />
+                    <div class="method-box text-center">
+                        <img src="/images/Logo/vnpay-logo.png" width="80" />
+                        <p class="mt-2 fw-semibold">VNPAY</p>
+                    </div>
+                </label>
+            </div>
+
+            <!-- PayPal -->
+            <div class="col-md-4">
+                <label style="width:100%">
+                    <input type="radio" name="method" value="PAYPAL" hidden />
+                    <div class="method-box text-center">
+                        <img src="/images/Logo/paypal-logo.png" width="80" />
+                        <p class="mt-2 fw-semibold">PayPal</p>
+                    </div>
+                </label>
+            </div>
+
+            <!-- Momo -->
+            <div class="col-md-4">
+                <label style="width:100%">
+                    <input type="radio" name="method" value="MOMO" hidden />
+                    <div class="method-box text-center">
+                        <img src="/images/Logo/momo-logo.png" width="80" />
+                        <p class="mt-2 fw-semibold">Momo</p>
+                    </div>
+                </label>
+            </div>
+
+        </div>
+
+        <div class="mt-4">
+            <label class="fw-bold">Nội dung thanh toán:</label>
+            <input type="text" name="noiDung" class="form-control" value="Thanh toán thuê xe tập lái @phieu.Xe.LoaiXe (@phieu.Xe.BienSo)" />
+        </div>
+
+        <button class="btn btn-success w-100 mt-4 py-2 fw-bold fs-5">
+            Xác nhận thanh toán
+        </button>
+    </form>
+</div>

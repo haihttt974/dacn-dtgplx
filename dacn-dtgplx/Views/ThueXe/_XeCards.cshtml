@@ -1,55 +1,5 @@
 ﻿@model IEnumerable<dacn_dtgplx.Models.XeTapLai>
 
-<style>
-
-    .xe-card {
-        border-radius: 14px;
-        border: 1px solid #ddd;
-        padding: 12px;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        transition: 0.25s;
-    }
-
-        .xe-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0px 6px 22px rgba(0,0,0,0.12);
-        }
-
-    .xe-img {
-        width: 100%;
-        height: 180px;
-        object-fit: contain;
-        border-radius: 12px;
-        background: #fff;
-    }
-
-    /* Nút thuê xe mới */
-    .btn-thue {
-        background: #00A862;
-        color: white;
-        border-radius: 20px;
-        padding: 8px 20px;
-        font-weight: 600;
-        text-align: center;
-        display: inline-block;
-        transition: 0.2s;
-        text-decoration: none;
-    }
-
-        .btn-thue:hover {
-            background: #01804b;
-            color: #fff;
-            text-decoration: none;
-        }
-
-        .btn-thue i {
-            margin-right: 6px;
-        }
-
-</style>
-
 <div class="row g-4">
 
     @foreach (var xe in Model)
@@ -64,41 +14,13 @@
 
                     <p><strong>Biển số:</strong> @xe.BienSo</p>
                     <p><strong>Giá thuê:</strong> @xe.GiaThueTheoGio?.ToString("N0") đ</p>
-
-                    <p>
-                        <strong>Trạng thái:</strong>
-                        @if (xe.TrangThaiXe)
-                        {
-                            <span class="badge bg-success">Sẵn sàng</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-danger">Bận</span>
-                        }
-                    </p>
                 </div>
 
-                <a href="@Url.Action("Thue", "ThueXe", new { id = xe.XeTapLaiId })"
-                   class="btn-thue mb-2 @(xe.TrangThaiXe ? "" : "disabled")">
+                <a href="javascript:void(0)" onclick="thueXe(@xe.XeTapLaiId)" class="btn-thue">
                     <i class="bi bi-truck"></i> Thuê xe
                 </a>
 
             </div>
         </div>
     }
-
 </div>
-
-@if (ViewBag.TotalPages > 1)
-{
-    <nav class="mt-4">
-        <ul class="pagination justify-content-center">
-            @for (int i = 1; i <= ViewBag.TotalPages; i++)
-            {
-                <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
-                    <a onclick="loadData(@i)" class="page-link" href="javascript:void(0)">@i</a>
-                </li>
-            }
-        </ul>
-    </nav>
-}

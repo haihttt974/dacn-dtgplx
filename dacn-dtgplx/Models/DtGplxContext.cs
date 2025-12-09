@@ -572,7 +572,9 @@ public partial class DtGplxContext : DbContext
 
             entity.Property(e => e.IdThanhToan).HasColumnName("idThanhToan");
             entity.Property(e => e.IdDangKy).HasColumnName("idDangKy");
-            entity.Property(e => e.NgayThanhToan).HasColumnName("ngayThanhToan");
+            entity.Property(e => e.NgayThanhToan)
+                .HasColumnName("ngayThanhToan")
+                .HasColumnType("datetime2");
             entity.Property(e => e.NoiDung).HasColumnName("noiDung");
             entity.Property(e => e.PhuongThucThanhToan)
                 .HasMaxLength(100)

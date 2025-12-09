@@ -1,9 +1,14 @@
-﻿using dacn_dtgplx.Models;
+﻿using dacn_dtgplx.DTOs;
+using dacn_dtgplx.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using System.Text.Json;
 
 namespace dacn_dtgplx.Controllers
 {
+    [Route("ThueXe")]
     public class ThueXeController : Controller
     {
         private readonly DtGplxContext _context;
@@ -14,6 +19,7 @@ namespace dacn_dtgplx.Controllers
             _context = context;
         }
 
+        [HttpGet("")]
         public async Task<IActionResult> Index()
         {
             ViewBag.LoaiXeList = await _context.XeTapLais
@@ -21,111 +27,169 @@ namespace dacn_dtgplx.Controllers
                 .Distinct()
                 .ToListAsync();
 
+            int total = await _context.XeTapLais.CountAsync();
+            ViewBag.TotalPages = (int)Math.Ceiling((double)total / PageSize);
+
             var xeList = await _context.XeTapLais
                 .Take(PageSize)
                 .ToListAsync();
 
-            int total = await _context.XeTapLais.CountAsync();
-
-            ViewBag.TotalPages = (int)Math.Ceiling((double)total / PageSize);
-
             return View(xeList);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> Filter(string? search, decimal? min, decimal? max,
-                                               string? type, string? sort,
-                                               DateTime? rentDate, TimeSpan? rentTime,
-                                               int page = 1)
+        // ==============================
+        //  AJAX: Nhấn nút Thuê xe
+        // ==============================
+        [HttpGet("Thue/{id}")]
+        public async Task<IActionResult> Thue(int id)
         {
-            var query = _context.XeTapLais.AsQueryable();
+            var xe = await _context.XeTapLais.FindAsync(id);
+            if (xe == null)
+                return Json(new { success = false, message = "Xe không tồn tại!" });
 
-            // Search
-            if (!string.IsNullOrEmpty(search))
-                query = query.Where(x => x.LoaiXe.Contains(search));
+            bool isLogged = User.Identity?.IsAuthenticated ?? false;
 
-            // Filter Type
-            if (!string.IsNullOrEmpty(type))
-                query = query.Where(x => x.LoaiXe.Contains(type));
-
-            // Price filter
-            if (min.HasValue)
-                query = query.Where(x => x.GiaThueTheoGio >= min);
-
-            if (max.HasValue)
-                query = query.Where(x => x.GiaThueTheoGio <= max);
-
-            // Sort
-            if (sort == "asc") query = query.OrderBy(x => x.GiaThueTheoGio);
-            if (sort == "desc") query = query.OrderByDescending(x => x.GiaThueTheoGio);
-
-            // Lọc xe theo ngày + giờ
-            if (rentDate.HasValue && rentTime.HasValue)
+            if (!isLogged)
             {
-                var date = DateOnly.FromDateTime(rentDate.Value);
-                var time = TimeOnly.FromTimeSpan(rentTime.Value);
-
-                var rentStart = rentDate.Value.Date + rentTime.Value;
-                var rentEnd = rentStart.AddHours(1); // mặc định thuê 1h
-
-                // ---- LỊCH HỌC ----
-                var busyFromLichHoc = await _context.LichHocs
-                    .Where(l =>
-                        l.KhoaHoc.IsActive == true &&
-                        l.XeTapLaiId != null &&
-                        l.NgayHoc == date &&
-                        (
-                            time >= l.TgBatDau.AddHours(-1) &&
-                            time <= l.TgKetThuc.AddHours(1)
-                        )
-                    )
-                    .Select(l => l.XeTapLaiId.Value)
-                    .ToListAsync();
-
-                // ---- XE ĐÃ ĐƯỢC THUÊ ----
-                var busyFromThueXe = await _context.PhieuThueXe
-                    .Where(p =>
-                        p.TgBatDau.HasValue &&
-                        p.TgThue.HasValue &&
-                        p.HoaDonThanhToans.Any(h => h.TrangThai == true)
-                    )
-                    .Select(p => new {
-                        p.XeId,
-                        Start = p.TgBatDau.Value,
-                        End = p.TgBatDau.Value.AddHours(p.TgThue.Value)
-                    })
-                    .ToListAsync();
-
-                var busyThueXeIds = busyFromThueXe
-                    .Where(b =>
-                        rentStart < b.End.AddHours(1) &&
-                        rentEnd > b.Start.AddHours(-1)
-                    )
-                    .Select(b => b.XeId)
-                    .ToList();
-
-                // ---- GỘP DANH SÁCH BẬN ----
-                var allBusyXeIds = busyFromLichHoc
-                    .Concat(busyThueXeIds)
-                    .Distinct()
-                    .ToList();
-
-                // ---- LOẠI XE BẬN ----
-                query = query.Where(x => !allBusyXeIds.Contains(x.XeTapLaiId));
+                // khách → show modal nhập thông tin
+                return Json(new { success = true, requireLogin = false, xeId = id });
             }
 
-            // Pagination
-            int total = await query.CountAsync();
-            int totalPage = (int)Math.Ceiling((double)total / PageSize);
+            // Đăng nhập → tự động fill form
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var user = await _context.Users.FindAsync(userId);
 
-            query = query.Skip((page - 1) * PageSize).Take(PageSize);
+            return Json(new
+            {
+                success = true,
+                requireLogin = true,
+                xeId = id,
+                userInfo = new
+                {
+                    ten = user.TenDayDu,
+                    email = user.Email,
+                    sdt = user.SoDienThoai,
+                    cccd = user.Cccd
+                }
+            });
+        }
 
-            var list = await query.ToListAsync();
+        // ==============================
+        //  Lưu tạm thông tin khách vãng lai
+        // ==============================
+        [HttpPost("LuuThongTinTam")]
+        public IActionResult LuuThongTinTam(ThongTinThueXeDTO dto)
+        {
+            HttpContext.Session.SetString("RentInfo", JsonSerializer.Serialize(dto));
+            //HttpContext.Session.SetString("rent_email", dto.Email);
+            //HttpContext.Session.SetString("rent_name", dto.Ten);
+            return Json(new { success = true });
+        }
 
-            ViewBag.TotalPages = totalPage;
-            ViewBag.CurrentPage = page;
+        [HttpGet("XacNhanThue")]
+        public async Task<IActionResult> XacNhanThue(int id)
+        {
+            var xe = await _context.XeTapLais.FindAsync(id);
+            if (xe == null) return NotFound();
 
-            return PartialView("_XeCards", list);
+            ThongTinThueXeDTO? info = null;
+
+            // Nếu là khách → lấy tất cả thông tin từ Session
+            if (!User.Identity!.IsAuthenticated)
+            {
+                var json = HttpContext.Session.GetString("RentInfo");
+                if (json != null)
+                    info = JsonSerializer.Deserialize<ThongTinThueXeDTO>(json);
+
+                // Kiểm tra xem xeId trong session có khớp không
+                if (info != null && info.XeId != id)
+                {
+                    TempData["Error"] = "Dữ liệu thuê xe không khớp.";
+                    return RedirectToAction("Index");
+                }
+            }
+            else
+            {
+                // Nếu user đã login → tự fetch thông tin
+                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
+
+                info = new ThongTinThueXeDTO
+                {
+                    Ten = user!.TenDayDu,
+                    Email = user.Email,
+                    SDT = user.SoDienThoai,
+                    CCCD = user.Cccd,
+
+                    // ⭐ Người đăng nhập nhưng vẫn phải nhập lại giờ thuê
+                    XeId = id,
+                    RentStart = DateTime.Now,    // tạm, người dùng sẽ chọn lại trong view
+                    Duration = 1
+                };
+            }
+
+            ViewBag.Info = info;
+
+            return View("XacNhanThue", xe);
+        }
+
+        // ==============================
+        //  POST: Tiến hành tạo phiếu + hóa đơn
+        // ==============================
+        [HttpPost("XacNhanThue")]
+        public async Task<IActionResult> XacNhanThue(int xeId, DateTime rentStart, int duration)
+        {
+            int userId;
+
+            if (User.Identity!.IsAuthenticated)
+            {
+                // user thật đang đăng nhập
+                userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            }
+            else
+            {
+                // 🔥 khách vãng lai → gán vào user "guest_rent"
+                var guest = await _context.Users
+                    .FirstAsync(u => u.Username == "guest_rent");
+                userId = guest.UserId;
+
+                var json = HttpContext.Session.GetString("RentInfo");
+                if (json != null)
+                {
+                    var info = JsonSerializer.Deserialize<ThongTinThueXeDTO>(json);
+                    if (info != null)
+                    {
+                        HttpContext.Session.SetString("rent_email", info.Email ?? "");
+                        HttpContext.Session.SetString("rent_name", info.Ten ?? "");
+                    }
+                }
+            }
+
+            var phieu = new PhieuThueXe
+            {
+                UserId = userId,
+                XeId = xeId,
+                TgBatDau = rentStart,
+                TgThue = duration
+            };
+
+            _context.PhieuThueXe.Add(phieu);
+            await _context.SaveChangesAsync();
+
+            var xe = await _context.XeTapLais.FindAsync(xeId);
+            decimal total = (xe!.GiaThueTheoGio ?? 0) * duration;
+
+            var hd = new HoaDonThanhToan
+            {
+                PhieuTxId = phieu.PhieuTxId,
+                SoTien = total,
+                TrangThai = null
+            };
+
+            _context.HoaDonThanhToans.Add(hd);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("StartPayment", "PaymentRent", new { hoaDonId = hd.IdThanhToan });
         }
     }
 }

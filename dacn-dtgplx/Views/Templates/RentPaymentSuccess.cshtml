@@ -1,0 +1,23 @@
+﻿@model dacn_dtgplx.ViewModels.RentPaymentEmailVM
+@{
+    Layout = null;   // <<< THÊM DÒNG NÀY
+}
+<div style="font-family:sans-serif; padding:20px;">
+    <h2 style="color:#00A862;">Xác nhận thanh toán thuê xe thành công</h2>
+
+    <p>Xin chào <strong>@Model.FullName</strong>,</p>
+
+    <p>Bạn đã thanh toán thành công cho dịch vụ thuê xe:</p>
+
+    <ul>
+        <li><b>Xe:</b> @Model.TenXe (@Model.BienSo)</li>
+        <li><b>Thời gian bắt đầu:</b> @Model.TgBatDau.ToString("dd/MM/yyyy HH:mm")</li>
+        <li><b>Thời lượng:</b> @Model.TgThue giờ</li>
+        <li><b>Số tiền:</b> @Model.SoTien.ToString("N0") đ</li>
+    </ul>
+
+    <p>Mã QR và file hóa đơn PDF đính kèm phía dưới.</p>
+
+    <p>Trân trọng,</p>
+    <p><b>DTGPLX Center</b></p>
+</div>

@@ -1,4 +1,5 @@
-﻿using dacn_dtgplx.ViewModels;
+﻿using dacn_dtgplx.Models;
+using dacn_dtgplx.ViewModels;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +19,15 @@ namespace dacn_dtgplx.Services
     public interface IMailService
     {
         Task SendPaymentSuccessEmail(string to, string name, string course, decimal amount);
+        Task SendRentPaymentEmail(
+            string to,
+            string name,
+            XeTapLai xe,
+            PhieuThueXe phieu,
+            HoaDonThanhToan hd,
+            byte[] qrBytes,
+            byte[] pdfBytes
+        );
     }
 
     public class MailService : IMailService
@@ -119,6 +129,50 @@ namespace dacn_dtgplx.Services
             email.To.Add(new MailboxAddress(name, to));
             email.Subject = $"Xác nhận thanh toán thành công - {course}";
             email.Body = new TextPart(TextFormat.Html) { Text = htmlBody };
+
+            using var smtp = new SmtpClient();
+            await smtp.ConnectAsync("smtp.gmail.com", 587, SecureSocketOptions.StartTls);
+            await smtp.AuthenticateAsync(_config["Mail:From"], _config["Mail:Password"]);
+            await smtp.SendAsync(email);
+            await smtp.DisconnectAsync(true);
+        }
+
+        public async Task SendRentPaymentEmail(
+            string to,
+            string name,
+            XeTapLai xe,
+            PhieuThueXe phieu,
+            HoaDonThanhToan hd,
+            byte[] qrBytes,
+            byte[] pdfBytes)
+        {
+            var model = new RentPaymentEmailVM
+            {
+                FullName = name,
+                TenXe = xe.LoaiXe,
+                BienSo = xe.BienSo,
+                TgBatDau = phieu.TgBatDau!.Value,
+                TgThue = phieu.TgThue ?? 0,
+                SoTien = hd.SoTien ?? 0
+            };
+
+            string htmlBody = await RenderTemplateAsync(
+                "/Views/Templates/RentPaymentSuccess.cshtml",
+                model
+            );
+
+            var email = new MimeMessage();
+            email.From.Add(new MailboxAddress("DTGPLX Center", _config["Mail:From"]));
+            email.To.Add(new MailboxAddress(name, to));
+            email.Subject = $"Hóa đơn thuê xe - {xe.LoaiXe}";
+
+            var builder = new BodyBuilder { HtmlBody = htmlBody };
+
+            builder.Attachments.Add("QRCode.png", qrBytes, new ContentType("image", "png"));
+
+            builder.Attachments.Add("HoaDonThueXe.pdf", pdfBytes, new ContentType("application", "pdf"));
+
+            email.Body = builder.ToMessageBody();
 
             using var smtp = new SmtpClient();
             await smtp.ConnectAsync("smtp.gmail.com", 587, SecureSocketOptions.StartTls);

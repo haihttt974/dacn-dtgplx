@@ -165,7 +165,7 @@ namespace dacn_dtgplx.Services
             // UPDATE HÓA ĐƠN
             // -------------------------
             hd.TrangThai = true;
-            hd.NgayThanhToan = DateOnly.FromDateTime(DateTime.Now);
+            hd.NgayThanhToan = DateTime.Now;
             hd.IdDangKyNavigation.TrangThai = true;
 
             await _context.SaveChangesAsync();
