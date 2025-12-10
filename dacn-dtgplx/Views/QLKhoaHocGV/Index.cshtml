@@ -1,0 +1,50 @@
+﻿@model List<dacn_dtgplx.Models.KhoaHoc>
+
+@{
+    ViewData["Title"] = "Khóa học của tôi";
+}
+
+<h2>Khóa học của tôi</h2>
+<hr />
+
+@if (Model == null || Model.Count == 0)
+{
+    <div class="alert alert-warning">
+        Bạn chưa được phân công khóa học nào.
+    </div>
+}
+else
+{
+    <table class="table table-bordered table-hover">
+        <thead>
+            <tr>
+                <th>Mã khóa học</th>
+                <th>Tên khóa học</th>
+                <th>Mô tả</th>
+                <th>Ngày bắt đầu</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var kh in Model)
+            {
+                <tr>
+                    <td>@kh.KhoaHocId</td>
+                    <td>@kh.TenKhoaHoc</td>
+                    <td>@kh.MoTa</td>
+                    <td>@kh.NgayBatDau?.ToString("dd/MM/yyyy")</td>
+
+                    <td>
+                        <a asp-controller="QLKhoaHocGV"
+                           asp-action="Student"
+                           asp-route-idKhoaHoc="@kh.KhoaHocId"
+                           class="btn btn-primary btn-sm">
+
+                            Học viên
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

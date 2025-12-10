@@ -1,0 +1,48 @@
+﻿@model List<dacn_dtgplx.Models.DangKyHoc>
+
+<h3>Danh sách học viên – @ViewBag.TenKhoaHoc</h3>
+
+<table class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>Mã ĐK</th>
+            <th>Họ tên</th>
+            <th>SĐT</th>
+            <th>Email</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var dk in Model)
+        {
+            <tr onclick="loadDetail(@dk.IdDangKy)" style="cursor:pointer">
+                <td>@dk.IdDangKy</td>
+                <td>@dk.HoSo.User.TenDayDu</td>
+                <td>@dk.HoSo.User.SoDienThoai</td>
+                <td>@dk.HoSo.User.Email</td>
+
+                <td>
+                    <button class="btn btn-sm btn-info"
+                            onclick="event.stopPropagation(); loadDetail(@dk.IdDangKy)">
+                        Xem
+                    </button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div id="studentModalContainer"></div>
+
+@section Scripts {
+    <script>
+        function loadDetail(id) {
+            $.get('/QLKhoaHocGV/StudentDetail', { idDangKy: id }, function (html) {
+                $('#studentModalContainer').html(html);
+                var modalEl = document.getElementById('hsModal');
+                var modal = new bootstrap.Modal(modalEl);
+                modal.show();
+            });
+        }
+    </script>
+}

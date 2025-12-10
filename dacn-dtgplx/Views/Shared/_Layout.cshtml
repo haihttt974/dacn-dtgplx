@@ -320,64 +320,58 @@
 
         /* ========================= RESPONSIVE ========================= */
         @@media (max-width: 991px) {
-            body
-
-        {
-            padding-top: 60px;
-        }
-
-        .navbar .nav-link {
-            padding: 12px 16px !important;
-        }
-
-            .navbar .nav-link.active::after {
-                display: none;
+            body {
+                padding-top: 60px;
             }
 
-        .search-box {
-            margin: 16px 0;
-        }
-
-            .search-box input {
-                width: 100%;
+            .navbar .nav-link {
+                padding: 12px 16px !important;
             }
 
-                .search-box input:focus {
+                .navbar .nav-link.active::after {
+                    display: none;
+                }
+
+            .search-box {
+                margin: 16px 0;
+            }
+
+                .search-box input {
                     width: 100%;
                 }
 
-        .user-section {
-            flex-direction: column;
-            align-items: flex-start;
-            padding: 16px;
-        }
+                    .search-box input:focus {
+                        width: 100%;
+                    }
 
+            .user-section {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 16px;
+            }
         }
 
         @@media (max-width: 576px) {
-            .navbar-brand
+            .navbar-brand {
+                font-size: 1.1rem;
+            }
 
-        {
-            font-size: 1.1rem;
-        }
+                .navbar-brand img {
+                    height: 32px;
+                    width: 32px;
+                }
 
-        .navbar-brand img {
-            height: 32px;
-            width: 32px;
-        }
+            .user-name {
+                display: none;
+            }
 
-        .user-name {
-            display: none;
-        }
+            footer {
+                text-align: center;
+            }
 
-        footer {
-            text-align: center;
-        }
-
-        .social-links {
-            justify-content: center;
-        }
-
+            .social-links {
+                justify-content: center;
+            }
         }
 
         html {
@@ -393,7 +387,7 @@
         }
 
         .navbar .container-fluid {
-            padding-right: 8px; 
+            padding-right: 8px;
             padding-left: 16px;
         }
 
@@ -418,139 +412,186 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarMain">
                 <!-- Left menu -->
+                @{
+                    int roleId = Context.Session.GetInt32("RoleId") ?? 0;
+                    bool isLogin = Context.Session.GetInt32("UserId") != null;
+                }
+
                 <ul class="navbar-nav me-auto">
-                    <!-- Trang chủ -->
+
+                    <!-- ALWAYS SHOW: TRANG CHỦ -->
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")"
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" &&
+                                                       ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")"
                            asp-controller="Home" asp-action="Index">
-                            <i class="fa-solid fa-house"></i>Trang chủ
+                            <i class="fa-solid fa-house"></i> Trang chủ
                         </a>
                     </li>
-                    <!-- Hồ sơ -->
+
+                    <!-- ========================= -->
+                    <!-- 0️⃣ USER CHƯA ĐĂNG NHẬP -->
+                    <!-- ========================= -->
+                    @if (!isLogin)
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Hoc" asp-action="Index">
+                                <i class="fa-solid fa-file-lines"></i> Tài liệu
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="KhoaHoc" asp-action="Index">
+                                <i class="fa-solid fa-list"></i> Danh sách khóa học
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="ThueXe" asp-action="Index">
+                                <i class="fa-solid fa-car-side"></i> Thuê xe
+                            </a>
+                        </li>
+                    }
+                    <!-- ========================= -->
+                    <!-- 2️⃣ ROLE: HỌC VIÊN (RoleId = 2) -->
+                    <!-- ========================= -->
+                    @if (roleId == 2)
+                    {
+                        <!-- Hồ sơ -->
+                        <li class="dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-1" href="#" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-user"></i> Hồ sơ
+                            </a>
+                            <ul class="dropdown-menu shadow border-0 rounded-4 dropdown-menu-center">
+                                <li>
+                                    <a class="dropdown-item" asp-controller="HoSoThiSinh" asp-action="MyProfile">
+                                        <i class="fa-solid fa-id-card me-2"></i> Hồ sơ của tôi
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="HoSoThiSinh" asp-action="Create">
+                                        <i class="fa-solid fa-user-plus me-2"></i> Thêm mới hồ sơ
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Học tập -->
+                        <li class="dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-1" href="#" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-graduation-cap"></i> Học tập
+                            </a>
+                            <ul class="dropdown-menu shadow border-0 rounded-4 dropdown-menu-center">
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Hoc" asp-action="Index">
+                                        <i class="fa-solid fa-file-lines me-2"></i> Tài liệu
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider" /></li>
+
+                                <li>
+                                    <a class="dropdown-item" asp-controller="KhoaHoc" asp-action="Index">
+                                        <i class="fa-solid fa-list me-2"></i> Danh sách khóa học
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a class="dropdown-item" asp-controller="KhoaHoc" asp-action="MyCourses">
+                                        <i class="fa-solid fa-book-open me-2"></i> Khóa học của tôi
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="ThueXe" asp-action="Index">
+                                <i class="fa-solid fa-car-side"></i> Thuê xe
+                            </a>
+                        </li>
+                    }
+
+                    <!-- ========================= -->
+                    <!-- 3️⃣ ROLE: GIÁO VIÊN (RoleId = 3) -->
+                    <!-- ========================= -->
+                    @if (roleId == 3)
+                    {
+                        <!-- Học tập -->
+                        <li class="dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-1" href="#" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-graduation-cap"></i> Tài liệu Học tập
+                            </a>
+                            <ul class="dropdown-menu shadow border-0 rounded-4 dropdown-menu-center">
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Hoc" asp-action="Index">
+                                        <i class="fa-solid fa-file-lines me-2"></i> Tài liệu
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider" /></li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="KhoaHoc" asp-action="Index">
+                                        <i class="fa-solid fa-list me-2"></i> Danh sách khóa học
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="QLKhoaHocGV" asp-action="Index">
+                                        <i class="fa-solid fa-book-open me-2"></i> Khóa học của tôi
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="ThueXe" asp-action="Index">
+                                <i class="fa-solid fa-car-side"></i> Thuê xe
+                            </a>
+                        </li>
+                    }
+
+                    <!-- ========================= -->
+                    <!-- TRUNG TÂM (ALL ROLES) -->
+                    <!-- ========================= -->
                     <li class="dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center gap-1"
-                           href="#" data-bs-toggle="dropdown">
-                            <i class="fa-solid fa-user"></i>
-                            <span>Hồ sơ</span>
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" data-bs-toggle="dropdown">
+                            <i class="fa-solid fa-building"></i> Trung tâm
                         </a>
                         <ul class="dropdown-menu shadow border-0 rounded-4 dropdown-menu-center">
                             <li>
-                                <a class="dropdown-item d-flex align-items-center"
-                                   href="@(User?.Identity?.IsAuthenticated == true
-                                                           ? Url.Action("MyProfile", "HoSoThiSinh")
-                                                           : Url.Action("Login", "Auth"))">
-                                    <i class="fa-solid fa-id-card me-2"></i> Hồ sơ của tôi
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center"
-                                   href="@(User?.Identity?.IsAuthenticated == true
-                                                           ? Url.Action("Create", "HoSoThiSinh")
-                                                           : Url.Action("Login", "Auth"))">
-                                    <i class="fa-solid fa-user-plus me-2"></i> Thêm mới hồ sơ
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    <!-- Khóa học -->
-                    <li class="dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center gap-1"
-                           href="#" data-bs-toggle="dropdown">
-                            <i class="fa-solid fa-book"></i>
-                            <span>Khóa học</span>
-                        </a>
-                        <ul class="dropdown-menu shadow border-0 rounded-4 dropdown-menu-center">
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center"
-                                   href="@Url.Action("Index", "KhoaHoc")">
-                                    <i class="fa-solid fa-list me-2"></i> Danh sách
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center"
-                                   href="@(User?.Identity?.IsAuthenticated == true
-                                                                   ? Url.Action("MyCourses", "KhoaHoc")
-                                                                   : Url.Action("Login", "Auth"))">
-                                    <i class="fa-solid fa-book-open me-2"></i> Khóa học của tôi
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    <!-- Học -->
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Hoc"
-                                                           && ViewContext.RouteData.Values["action"]?.ToString() == "Index"
-                                                           ? "active" : "")"
-                           href="@Url.Action("Index", "Hoc")">
-                            <i class="fa-solid fa-graduation-cap"></i> Học
-                        </a>
-                    </li>
-                    <!-- Thuê xe -->
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "ThueXe"
-                                                  && ViewContext.RouteData.Values["action"]?.ToString() == "Index"
-                                                  ? "active" : "")"
-                           href="@Url.Action("Index", "ThueXe")">
-                            <i class="fa-solid fa-car-side"></i> Thuê xe
-                        </a>
-                    </li>
-                    <!-- Hóa đơn -->
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "HoaDonThanhToan"
-                                                    && ViewContext.RouteData.Values["action"]?.ToString() == "Index"
-                                                    ? "active" : "")"
-                           href="@(User?.Identity?.IsAuthenticated == true
-                                           ? Url.Action("Index", "HoaDonThanhToan")
-                                           : Url.Action("Login", "Auth"))">
-                            <i class="fa-solid fa-file-invoice-dollar"></i> Hóa đơn
-                        </a>
-                    </li>
-                    <!-- Giới thiệu trung tâm -->
-                    <li class="dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center gap-1"
-                           href="#" data-bs-toggle="dropdown">
-                            <i class="fa-solid fa-building"></i>
-                            <span>Trung tâm</span>
-                        </a>
-                        <ul class="dropdown-menu shadow border-0 rounded-4 dropdown-menu-center">
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center"
-                                   asp-controller="Home" asp-action="About">
+                                <a class="dropdown-item" asp-controller="Home" asp-action="About">
                                     <i class="fa-solid fa-building me-2"></i> Giới thiệu
                                 </a>
                             </li>
+
                             <li>
-                                <a class="dropdown-item d-flex align-items-center"
-                                   asp-controller="Home" asp-action="Contact">
+                                <a class="dropdown-item" asp-controller="Home" asp-action="Contact">
                                     <i class="fa-solid fa-phone me-2"></i> Liên hệ
                                 </a>
                             </li>
+
                             <li>
-                                <a class="dropdown-item d-flex align-items-center"
-                                   asp-controller="Home" asp-action="FAQ">
+                                <a class="dropdown-item" asp-controller="Home" asp-action="FAQ">
                                     <i class="fa-solid fa-circle-question me-2"></i> FAQ
                                 </a>
                             </li>
                         </ul>
                     </li>
+
                 </ul>
                 <div class="d-flex align-items-center ms-auto">
-                <!-- SEARCH -->
+                    <!-- SEARCH -->
                     <form class="search-box me-4" asp-controller="Home" asp-action="Search" method="get">
                         <input type="search" name="q" placeholder="Tìm kiếm..." />
                         <button type="submit">
                             <i class="fa fa-search"></i>
                         </button>
                     </form>
-                        <!-- Notification Bell -->
+                    <!-- Notification Bell -->
                     @if (Context.Session.GetString("Username") != null)
                     {
                         <div class="nav-item dropdown me-3">
                             <a class="nav-link position-relative" href="#" data-bs-toggle="dropdown" onclick="loadNotifications()">
                                 <i class="fa-solid fa-bell fa-lg"></i>
                                 <span id="notificationBadge"
-                                    class="position-absolute badge rounded-pill bg-danger d-flex align-items-center justify-content-center"
-                                    style="top: 2px; right: 4px; min-width: 20px; height: 20px; font-size: 0.75rem;">
+                                      class="position-absolute badge rounded-pill bg-danger d-flex align-items-center justify-content-center"
+                                      style="top: 2px; right: 4px; min-width: 20px; height: 20px; font-size: 0.75rem;">
                                 </span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow" style="width: 420px; overflow-y: auto;">
@@ -571,8 +612,8 @@
                                 </div>
                                 <li>
                                     <a class="dropdown-item text-center text-primary"
-                                        asp-controller="Notification"
-                                        asp-action="Index">
+                                       asp-controller="Notification"
+                                       asp-action="Index">
                                         <i class="fa fa-list-ul me-1"></i> Xem tất cả thông báo
                                     </a>
                                 </li>
