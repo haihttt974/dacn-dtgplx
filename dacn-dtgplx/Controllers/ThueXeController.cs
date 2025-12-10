@@ -27,14 +27,153 @@ namespace dacn_dtgplx.Controllers
                 .Distinct()
                 .ToListAsync();
 
-            int total = await _context.XeTapLais.CountAsync();
-            ViewBag.TotalPages = (int)Math.Ceiling((double)total / PageSize);
+            var query = _context.XeTapLais.AsQueryable();
 
-            var xeList = await _context.XeTapLais
+            int total = await query.CountAsync();
+            ViewBag.TotalPages = (int)Math.Ceiling((double)total / PageSize);
+            ViewBag.CurrentPage = 1;
+
+            var xeList = await query
+                .OrderBy(x => x.XeTapLaiId)
                 .Take(PageSize)
                 .ToListAsync();
 
             return View(xeList);
+        }
+
+        [HttpGet("Filter")]
+        public async Task<IActionResult> Filter(
+            string? search,
+            string? type,
+            decimal? min,
+            decimal? max,
+            string? sort,
+            int page = 1)
+        {
+            var query = _context.XeTapLais.AsQueryable();
+
+            // Tên xe
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(x => x.LoaiXe.Contains(search));
+            }
+
+            // Loại xe (so sánh đúng loại)
+            if (!string.IsNullOrWhiteSpace(type))
+            {
+                query = query.Where(x => x.LoaiXe == type);
+            }
+
+            // Giá min / max
+            if (min.HasValue)
+                query = query.Where(x => x.GiaThueTheoGio >= min);
+
+            if (max.HasValue)
+                query = query.Where(x => x.GiaThueTheoGio <= max);
+
+            // Sort
+            if (sort == "asc")
+                query = query.OrderBy(x => x.GiaThueTheoGio);
+            else if (sort == "desc")
+                query = query.OrderByDescending(x => x.GiaThueTheoGio);
+            else
+                query = query.OrderBy(x => x.XeTapLaiId);
+
+            // Paging
+            int total = await query.CountAsync();
+            int totalPages = (int)Math.Ceiling((double)total / PageSize);
+            if (totalPages == 0) totalPages = 1;
+
+            page = Math.Max(1, Math.Min(page, totalPages));
+
+            var list = await query
+                .Skip((page - 1) * PageSize)
+                .Take(PageSize)
+                .ToListAsync();
+
+            ViewBag.TotalPages = totalPages;
+            ViewBag.CurrentPage = page;
+
+            return PartialView("_XeCards", list);
+        }
+
+        [HttpGet("CheckTime")]
+        public async Task<IActionResult> CheckTime(int xeId, DateTime rentStart, int durationHours)
+        {
+            if (durationHours < 1 || durationHours > 8)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "Số giờ thuê phải từ 1 đến 8."
+                });
+            }
+
+            var rentEnd = rentStart.AddHours(durationHours);
+
+            // ----- LỊCH HỌC -----
+            var date = DateOnly.FromDateTime(rentStart.Date);
+
+            var lessons = await _context.LichHocs
+                .Include(l => l.KhoaHoc)
+                .Where(l =>
+                    l.XeTapLaiId == xeId &&
+                    l.KhoaHoc.IsActive == true &&
+                    l.NgayHoc == date)
+                .Select(l => new { l.TgBatDau, l.TgKetThuc })
+                .ToListAsync();
+
+            foreach (var l in lessons)
+            {
+                var busyStart = date.ToDateTime(l.TgBatDau);
+                var busyEnd = date.ToDateTime(l.TgKetThuc);
+
+                var protectedStart = busyStart.AddHours(-1);
+                var protectedEnd = busyEnd.AddHours(1);
+
+                if (rentStart < protectedEnd && rentEnd > protectedStart)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = $"Xe đang có lịch học từ {busyStart:HH\\:mm} đến {busyEnd:HH\\:mm}. " +
+                                  "Vui lòng chọn khung giờ cách trước/sau ít nhất 1 giờ."
+                    });
+                }
+            }
+
+            // ----- CÁC PHIẾU THUÊ XE ĐÃ THANH TOÁN -----
+            var rentals = await _context.PhieuThueXe
+                .Where(p =>
+                    p.XeId == xeId &&
+                    p.TgBatDau.HasValue &&
+                    p.TgThue.HasValue &&
+                    p.HoaDonThanhToans.Any(h => h.TrangThai == true))
+                .Select(p => new { p.TgBatDau, p.TgThue })
+                .ToListAsync();
+
+            foreach (var p in rentals)
+            {
+                var busyStart = p.TgBatDau!.Value;
+                var busyEnd = busyStart.AddHours(p.TgThue!.Value);
+
+                var protectedStart = busyStart.AddHours(-1);
+                var protectedEnd = busyEnd.AddHours(1);
+
+                if (rentStart < protectedEnd && rentEnd > protectedStart)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = $"Xe đã được thuê từ {busyStart:dd/MM/yyyy HH\\:mm} " +
+                                  $"đến {busyEnd:dd/MM/yyyy HH\\:mm}. " +
+                                  "Vui lòng chọn khung giờ cách trước/sau ít nhất 1 giờ."
+                    });
+                }
+            }
+
+            // OK
+            return Json(new { success = true });
         }
 
         // ==============================
