@@ -320,64 +320,58 @@
 
         /* ========================= RESPONSIVE ========================= */
         @@media (max-width: 991px) {
-            body
-
-        {
-            padding-top: 60px;
-        }
-
-        .navbar .nav-link {
-            padding: 12px 16px !important;
-        }
-
-            .navbar .nav-link.active::after {
-                display: none;
+            body {
+                padding-top: 60px;
             }
 
-        .search-box {
-            margin: 16px 0;
-        }
-
-            .search-box input {
-                width: 100%;
+            .navbar .nav-link {
+                padding: 12px 16px !important;
             }
 
-                .search-box input:focus {
+                .navbar .nav-link.active::after {
+                    display: none;
+                }
+
+            .search-box {
+                margin: 16px 0;
+            }
+
+                .search-box input {
                     width: 100%;
                 }
 
-        .user-section {
-            flex-direction: column;
-            align-items: flex-start;
-            padding: 16px;
-        }
+                    .search-box input:focus {
+                        width: 100%;
+                    }
 
+            .user-section {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 16px;
+            }
         }
 
         @@media (max-width: 576px) {
-            .navbar-brand
+            .navbar-brand {
+                font-size: 1.1rem;
+            }
 
-        {
-            font-size: 1.1rem;
-        }
+                .navbar-brand img {
+                    height: 32px;
+                    width: 32px;
+                }
 
-        .navbar-brand img {
-            height: 32px;
-            width: 32px;
-        }
+            .user-name {
+                display: none;
+            }
 
-        .user-name {
-            display: none;
-        }
+            footer {
+                text-align: center;
+            }
 
-        footer {
-            text-align: center;
-        }
-
-        .social-links {
-            justify-content: center;
-        }
-
+            .social-links {
+                justify-content: center;
+            }
         }
 
         html {
@@ -393,7 +387,7 @@
         }
 
         .navbar .container-fluid {
-            padding-right: 8px; 
+            padding-right: 8px;
             padding-left: 16px;
         }
 
@@ -582,22 +576,22 @@
 
                 </ul>
                 <div class="d-flex align-items-center ms-auto">
-                <!-- SEARCH -->
+                    <!-- SEARCH -->
                     <form class="search-box me-4" asp-controller="Home" asp-action="Search" method="get">
                         <input type="search" name="q" placeholder="Tìm kiếm..." />
                         <button type="submit">
                             <i class="fa fa-search"></i>
                         </button>
                     </form>
-                        <!-- Notification Bell -->
+                    <!-- Notification Bell -->
                     @if (Context.Session.GetString("Username") != null)
                     {
                         <div class="nav-item dropdown me-3">
                             <a class="nav-link position-relative" href="#" data-bs-toggle="dropdown" onclick="loadNotifications()">
                                 <i class="fa-solid fa-bell fa-lg"></i>
                                 <span id="notificationBadge"
-                                    class="position-absolute badge rounded-pill bg-danger d-flex align-items-center justify-content-center"
-                                    style="top: 2px; right: 4px; min-width: 20px; height: 20px; font-size: 0.75rem;">
+                                      class="position-absolute badge rounded-pill bg-danger d-flex align-items-center justify-content-center"
+                                      style="top: 2px; right: 4px; min-width: 20px; height: 20px; font-size: 0.75rem;">
                                 </span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow" style="width: 420px; overflow-y: auto;">
@@ -618,8 +612,8 @@
                                 </div>
                                 <li>
                                     <a class="dropdown-item text-center text-primary"
-                                        asp-controller="Notification"
-                                        asp-action="Index">
+                                       asp-controller="Notification"
+                                       asp-action="Index">
                                         <i class="fa fa-list-ul me-1"></i> Xem tất cả thông báo
                                     </a>
                                 </li>

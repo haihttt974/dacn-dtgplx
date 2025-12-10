@@ -1,0 +1,21 @@
+﻿@model dacn_dtgplx.Models.User
+
+<div class="modal fade" id="hsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thông tin học viên</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+
+                <p><b>Họ tên:</b> @Model.TenDayDu</p>
+                <p><b>Số điện thoại:</b> @Model.SoDienThoai</p>
+                <p><b>Email:</b> @Model.Email</p>
+                <p><b>Ngày sinh:</b> @Model.NgaySinh?.ToString("dd/MM/yyyy")</p>
+                <p><b>Địa chỉ:</b> @Model.DiaChi</p>
+
+            </div>
+        </div>
+    </div>
+</div>
