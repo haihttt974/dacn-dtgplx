@@ -1,26 +1,44 @@
 ﻿@model IEnumerable<dacn_dtgplx.Models.XeTapLai>
 
 <div class="row g-4">
-
     @foreach (var xe in Model)
     {
         <div class="col-md-3 col-sm-6">
             <div class="xe-card">
-
-                <img class="xe-img" src="@xe.AnhXe" />
+                <img class="xe-img" src="@xe.AnhXe" alt="@xe.LoaiXe" />
 
                 <div class="card-body mt-2" style="flex: 1">
                     <h5 class="fw-bold text-primary">@xe.LoaiXe</h5>
 
-                    <p><strong>Biển số:</strong> @xe.BienSo</p>
-                    <p><strong>Giá thuê:</strong> @xe.GiaThueTheoGio?.ToString("N0") đ</p>
+                    <p class="mb-1"><strong>Biển số:</strong> @xe.BienSo</p>
+                    <p class="mb-1">
+                        <strong>Giá thuê theo giờ:</strong>
+                        @((xe.GiaThueTheoGio ?? 0).ToString("N0")) đ
+                    </p>
                 </div>
 
-                <a href="javascript:void(0)" onclick="thueXe(@xe.XeTapLaiId)" class="btn-thue">
+                <a href="javascript:void(0)"
+                   onclick="thueXe(@xe.XeTapLaiId)"
+                   class="btn-thue mb-2 text-center">
                     <i class="bi bi-truck"></i> Thuê xe
                 </a>
-
             </div>
         </div>
     }
 </div>
+
+@if (ViewBag.TotalPages != null && ViewBag.TotalPages > 1)
+{
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            @for (int i = 1; i <= (int)ViewBag.TotalPages; i++)
+            {
+                <li class="page-item @(i == (int)ViewBag.CurrentPage ? "active" : "")">
+                    <a class="page-link" href="javascript:void(0)" onclick="loadData(@i)">
+                        @i
+                    </a>
+                </li>
+            }
+        </ul>
+    </nav>
+}

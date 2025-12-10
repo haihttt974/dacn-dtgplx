@@ -114,19 +114,19 @@ else
     app.UseHsts();
 }
 // Middleware tùy chỉnh để vô hiệu hóa một số tính năng người dùng
-app.Use(async (context, next) =>
-{
-    var path = context.Request.Path.Value?.ToLower() ?? "";
+//app.Use(async (context, next) =>
+//{
+//    var path = context.Request.Path.Value?.ToLower() ?? "";
 
-    if (path.Contains("vnpayreturn") ||
-        path.Contains("momoreturn") ||
-        path.Contains("paypalreturn"))
-    {
-        context.Items["DisableUserFeatures"] = true;
-    }
+//    if (path.Contains("vnpayreturn") ||
+//        path.Contains("momoreturn") ||
+//        path.Contains("paypalreturn"))
+//    {
+//        context.Items["DisableUserFeatures"] = true;
+//    }
 
-    await next();
-});
+//    await next();
+//});
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
