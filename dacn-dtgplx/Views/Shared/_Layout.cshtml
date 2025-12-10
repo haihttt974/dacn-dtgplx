@@ -418,122 +418,168 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarMain">
                 <!-- Left menu -->
+                @{
+                    int roleId = Context.Session.GetInt32("RoleId") ?? 0;
+                    bool isLogin = Context.Session.GetInt32("UserId") != null;
+                }
+
                 <ul class="navbar-nav me-auto">
-                    <!-- Trang chủ -->
+
+                    <!-- ALWAYS SHOW: TRANG CHỦ -->
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")"
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" &&
+                                                       ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")"
                            asp-controller="Home" asp-action="Index">
-                            <i class="fa-solid fa-house"></i>Trang chủ
+                            <i class="fa-solid fa-house"></i> Trang chủ
                         </a>
                     </li>
-                    <!-- Hồ sơ -->
+
+                    <!-- ========================= -->
+                    <!-- 0️⃣ USER CHƯA ĐĂNG NHẬP -->
+                    <!-- ========================= -->
+                    @if (!isLogin)
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Hoc" asp-action="Index">
+                                <i class="fa-solid fa-file-lines"></i> Tài liệu
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="KhoaHoc" asp-action="Index">
+                                <i class="fa-solid fa-list"></i> Danh sách khóa học
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="ThueXe" asp-action="Index">
+                                <i class="fa-solid fa-car-side"></i> Thuê xe
+                            </a>
+                        </li>
+                    }
+                    <!-- ========================= -->
+                    <!-- 2️⃣ ROLE: HỌC VIÊN (RoleId = 2) -->
+                    <!-- ========================= -->
+                    @if (roleId == 2)
+                    {
+                        <!-- Hồ sơ -->
+                        <li class="dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-1" href="#" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-user"></i> Hồ sơ
+                            </a>
+                            <ul class="dropdown-menu shadow border-0 rounded-4 dropdown-menu-center">
+                                <li>
+                                    <a class="dropdown-item" asp-controller="HoSoThiSinh" asp-action="MyProfile">
+                                        <i class="fa-solid fa-id-card me-2"></i> Hồ sơ của tôi
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="HoSoThiSinh" asp-action="Create">
+                                        <i class="fa-solid fa-user-plus me-2"></i> Thêm mới hồ sơ
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Học tập -->
+                        <li class="dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-1" href="#" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-graduation-cap"></i> Học tập
+                            </a>
+                            <ul class="dropdown-menu shadow border-0 rounded-4 dropdown-menu-center">
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Hoc" asp-action="Index">
+                                        <i class="fa-solid fa-file-lines me-2"></i> Tài liệu
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider" /></li>
+
+                                <li>
+                                    <a class="dropdown-item" asp-controller="KhoaHoc" asp-action="Index">
+                                        <i class="fa-solid fa-list me-2"></i> Danh sách khóa học
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a class="dropdown-item" asp-controller="KhoaHoc" asp-action="MyCourses">
+                                        <i class="fa-solid fa-book-open me-2"></i> Khóa học của tôi
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="ThueXe" asp-action="Index">
+                                <i class="fa-solid fa-car-side"></i> Thuê xe
+                            </a>
+                        </li>
+                    }
+
+                    <!-- ========================= -->
+                    <!-- 3️⃣ ROLE: GIÁO VIÊN (RoleId = 3) -->
+                    <!-- ========================= -->
+                    @if (roleId == 3)
+                    {
+                        <!-- Học tập -->
+                        <li class="dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-1" href="#" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-graduation-cap"></i> Tài liệu Học tập
+                            </a>
+                            <ul class="dropdown-menu shadow border-0 rounded-4 dropdown-menu-center">
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Hoc" asp-action="Index">
+                                        <i class="fa-solid fa-file-lines me-2"></i> Tài liệu
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider" /></li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="KhoaHoc" asp-action="Index">
+                                        <i class="fa-solid fa-list me-2"></i> Danh sách khóa học
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="QLKhoaHocGV" asp-action="Index">
+                                        <i class="fa-solid fa-book-open me-2"></i> Khóa học của tôi
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="ThueXe" asp-action="Index">
+                                <i class="fa-solid fa-car-side"></i> Thuê xe
+                            </a>
+                        </li>
+                    }
+
+                    <!-- ========================= -->
+                    <!-- TRUNG TÂM (ALL ROLES) -->
+                    <!-- ========================= -->
                     <li class="dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center gap-1"
-                           href="#" data-bs-toggle="dropdown">
-                            <i class="fa-solid fa-user"></i>
-                            <span>Hồ sơ</span>
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" data-bs-toggle="dropdown">
+                            <i class="fa-solid fa-building"></i> Trung tâm
                         </a>
                         <ul class="dropdown-menu shadow border-0 rounded-4 dropdown-menu-center">
                             <li>
-                                <a class="dropdown-item d-flex align-items-center"
-                                   href="@(User?.Identity?.IsAuthenticated == true
-                                                           ? Url.Action("MyProfile", "HoSoThiSinh")
-                                                           : Url.Action("Login", "Auth"))">
-                                    <i class="fa-solid fa-id-card me-2"></i> Hồ sơ của tôi
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center"
-                                   href="@(User?.Identity?.IsAuthenticated == true
-                                                           ? Url.Action("Create", "HoSoThiSinh")
-                                                           : Url.Action("Login", "Auth"))">
-                                    <i class="fa-solid fa-user-plus me-2"></i> Thêm mới hồ sơ
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    <!-- Học tập -->
-                    <li class="dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center gap-1"
-                           href="#" data-bs-toggle="dropdown">
-                            <i class="fa-solid fa-graduation-cap"></i>
-                            <span>Học tập</span>
-                        </a>
-                        <ul class="dropdown-menu shadow border-0 rounded-4 dropdown-menu-center">
-                            <!-- Tài liệu -->
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center"
-                                   href="@Url.Action("Index", "Hoc")">
-                                    <i class="fa-solid fa-file-lines me-2"></i> Tài liệu
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <!-- Khóa học: Danh sách -->
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center"
-                                   href="@Url.Action("Index", "KhoaHoc")">
-                                    <i class="fa-solid fa-list me-2"></i> Danh sách khóa học
-                                </a>
-                            </li>
-                            <!-- Khóa học: Khóa học của tôi -->
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center"
-                                   href="@(User?.Identity?.IsAuthenticated == true
-                                                              ? Url.Action("MyCourses", "KhoaHoc")
-                                                              : Url.Action("Login", "Auth"))">
-                                    <i class="fa-solid fa-book-open me-2"></i> Khóa học của tôi
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    <!-- Thuê xe -->
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "ThueXe"
-                                                  && ViewContext.RouteData.Values["action"]?.ToString() == "Index"
-                                                  ? "active" : "")"
-                           href="@Url.Action("Index", "ThueXe")">
-                            <i class="fa-solid fa-car-side"></i> Thuê xe
-                        </a>
-                    </li>
-                    <!-- Hóa đơn -->
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "HoaDonThanhToan"
-                                                    && ViewContext.RouteData.Values["action"]?.ToString() == "Index"
-                                                    ? "active" : "")"
-                           href="@(User?.Identity?.IsAuthenticated == true
-                                           ? Url.Action("Index", "HoaDonThanhToan")
-                                           : Url.Action("Login", "Auth"))">
-                            <i class="fa-solid fa-file-invoice-dollar"></i> Hóa đơn
-                        </a>
-                    </li>
-                    <!-- Giới thiệu trung tâm -->
-                    <li class="dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center gap-1"
-                           href="#" data-bs-toggle="dropdown">
-                            <i class="fa-solid fa-building"></i>
-                            <span>Trung tâm</span>
-                        </a>
-                        <ul class="dropdown-menu shadow border-0 rounded-4 dropdown-menu-center">
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center"
-                                   asp-controller="Home" asp-action="About">
+                                <a class="dropdown-item" asp-controller="Home" asp-action="About">
                                     <i class="fa-solid fa-building me-2"></i> Giới thiệu
                                 </a>
                             </li>
+
                             <li>
-                                <a class="dropdown-item d-flex align-items-center"
-                                   asp-controller="Home" asp-action="Contact">
+                                <a class="dropdown-item" asp-controller="Home" asp-action="Contact">
                                     <i class="fa-solid fa-phone me-2"></i> Liên hệ
                                 </a>
                             </li>
+
                             <li>
-                                <a class="dropdown-item d-flex align-items-center"
-                                   asp-controller="Home" asp-action="FAQ">
+                                <a class="dropdown-item" asp-controller="Home" asp-action="FAQ">
                                     <i class="fa-solid fa-circle-question me-2"></i> FAQ
                                 </a>
                             </li>
                         </ul>
                     </li>
+
                 </ul>
                 <div class="d-flex align-items-center ms-auto">
                 <!-- SEARCH -->

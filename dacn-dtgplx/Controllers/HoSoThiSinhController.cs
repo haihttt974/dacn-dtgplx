@@ -36,6 +36,7 @@ namespace dacn_dtgplx.Controllers
         // ======================================================
         // CREATE (GET)
         // ======================================================
+        [Authorize(Roles = "2")]
         public async Task<IActionResult> Create()
         {
             ViewBag.Hangs = await _context.Hangs.ToListAsync();
