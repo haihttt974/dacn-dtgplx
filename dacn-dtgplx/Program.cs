@@ -27,6 +27,9 @@ builder.Services.AddHttpClient();
 builder.Services.AddScoped<IMailService, MailService>();
 builder.Services.AddScoped<IPayPalService, PayPalService>();
 builder.Services.AddScoped<IMomoService, MomoService>();
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+builder.Services.AddSingleton<IQrService, QrService>();
+
 // View Renderer (nếu bạn dùng gửi email template)
 builder.Services.AddScoped<IViewRenderService, ViewRenderService>();
 

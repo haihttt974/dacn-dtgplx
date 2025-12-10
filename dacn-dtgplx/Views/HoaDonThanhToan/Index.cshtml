@@ -5,100 +5,133 @@
     ViewData["Title"] = "Lịch sử thanh toán";
 }
 
-@functions {
-    IHtmlContent DisplayDate(DateOnly? d)
-    {
-        return d.HasValue 
-            ? new HtmlString(d.Value.ToString("dd/MM/yyyy")) 
-            : new HtmlString("<span class='text-muted'>---</span>");
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+<style>
+    .section-title {
+        font-size: 1.35rem;
+        font-weight: 700;
+        margin-top: 35px;
+        margin-bottom: 15px;
+        color: #0d6efd;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
+    .payment-table th {
+        font-weight: 600;
+        white-space: nowrap;
+        color: #444;
+    }
+
+    .payment-table tbody tr {
+        cursor: pointer;
+        transition: 0.15s;
+    }
+
+        .payment-table tbody tr:hover {
+            background: #eef5ff;
+        }
+
+    .modal-header {
+        background: #f5f9ff;
+        border-bottom: 1px solid #e1e1e1;
+    }
+
+    .modal-footer {
+        border-top: 1px solid #e1e1e1;
+    }
+
+    .download-btn {
+        background: #0d6efd;
+        border-radius: 8px;
+        color: white;
+        padding: 8px 14px;
+        font-weight: 600;
+        border: none;
+    }
+
+        .download-btn:hover {
+            background: #0b5cd6;
+        }
+
+    .qr-btn {
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        padding: 8px 12px;
+        font-weight: 600;
+        background: white;
+    }
+
+        .qr-btn:hover {
+            background: #f2f2f2;
+        }
+
+    .pay-logo {
+        height: 24px;
+        width: auto;
+        max-width: 90px;
+        object-fit: contain;
+        margin-right: 6px;
+        display: inline-block;
+    }
+</style>
+
+@functions {
     string GetLogo(string? method)
     {
-        if (string.IsNullOrWhiteSpace(method)) return null;
-
+        if (string.IsNullOrEmpty(method)) return null;
         method = method.ToLower();
+
         if (method.Contains("momo")) return "/images/logo/momo-logo.png";
         if (method.Contains("vnpay")) return "/images/logo/vnpay-logo.png";
         if (method.Contains("paypal")) return "/images/logo/paypal-logo.png";
         return null;
     }
 
-    string RenderStatus(bool? status)
+    string RenderStatus(bool? s)
     {
-        if (status == true)
-            return "<span class='badge bg-success'><i class=\"fa-solid fa-circle-check me-1\"></i>Thành công</span>";
+        if (s == true)
+            return "<span class='badge bg-success'><i class=\"fa-solid fa-check-circle me-1\"></i>Thành công</span>";
 
-        if (status == false)
-            return "<span class='badge bg-danger'><i class=\"fa-solid fa-circle-xmark me-1\"></i>Thất bại</span>";
+        if (s == false)
+            return "<span class='badge bg-danger'><i class=\"fa-solid fa-xmark-circle me-1\"></i>Thất bại</span>";
 
         return "<span class='badge bg-warning text-dark'><i class=\"fa-solid fa-clock me-1\"></i>Chưa thanh toán</span>";
     }
 }
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-
-<style>
-    .section-title {
-        font-size: 1.4rem;
-        font-weight: 700;
-        color: #0d6efd;
-        margin-top: 40px;
-        margin-bottom: 15px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .payment-table th {
-        white-space: nowrap;
-    }
-
-    .payment-card {
-        border-radius: 15px;
-        overflow: hidden;
-        border: none;
-    }
-
-    .pay-logo {
-        height: 22px;
-        width: auto;
-        object-fit: contain;
-        margin-right: 6px;
-    }
-</style>
-
 <div class="container mt-4">
 
     <h2 class="fw-bold mb-4 text-primary">
-        <i class="fa-solid fa-file-invoice-dollar me-2"></i>
-        Lịch sử thanh toán của bạn
+        <i class="fa-solid fa-file-invoice-dollar me-2"></i> Lịch sử thanh toán
     </h2>
 
-    <!-- ========================== -->
-    <!-- 1) LỊCH SỬ KHÓA HỌC -->
-    <!-- ========================== -->
+    <!-- ========================= -->
+    <!-- KHÓA HỌC -->
+    <!-- ========================= -->
     <div class="section-title">
-        <i class="fa-solid fa-graduation-cap"></i> Lịch sử thanh toán khóa học
+        <i class="fa-solid fa-graduation-cap"></i> Khóa học
     </div>
 
     @if (!Model.PaymentsKhoaHoc.Any())
     {
         <div class="alert alert-info shadow-sm">
-            <i class="fa-solid fa-circle-info me-2"></i>
-            Bạn chưa có thanh toán khóa học nào.
+            <i class="fa-solid fa-circle-info me-2"></i> Bạn chưa có thanh toán khóa học nào.
         </div>
     }
     else
     {
-        <div class="card payment-card shadow-sm mb-4">
+        <div class="card shadow-sm border-0 mb-4">
             <div class="card-body p-0">
+
                 <table class="table table-hover align-middle payment-table mb-0">
                     <thead class="table-light">
                         <tr>
                             <th>Mã</th>
                             <th>Khóa học</th>
-                            <th>Ngày thanh toán</th>
+                            <th>Thanh toán</th>
                             <th>Số tiền</th>
                             <th>Phương thức</th>
                             <th>Trạng thái</th>
@@ -107,30 +140,14 @@
                     <tbody>
                         @foreach (var hd in Model.PaymentsKhoaHoc)
                         {
-                            <tr>
+                            <tr onclick="openDetailModal('@hd.IdThanhToan')">
                                 <td class="fw-bold">@hd.IdThanhToan</td>
 
                                 <td>
-                                    @if (hd.IdDangKyNavigation?.KhoaHoc != null)
-                                    {
-                                        @hd.IdDangKyNavigation.KhoaHoc.TenKhoaHoc
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">(Không xác định)</span>
-                                    }
+                                    @(hd.IdDangKyNavigation?.KhoaHoc?.TenKhoaHoc ?? "(Không xác định)")
                                 </td>
 
-                                <td>
-                                    @if (hd.NgayThanhToan.HasValue)
-                                    {
-                                        @hd.NgayThanhToan.Value.ToString("dd/MM/yyyy")
-                                    }
-                                    else
-                                    {
-                                        @Html.Raw("<span class='text-muted'>---</span>")
-                                    }
-                                </td>
+                                <td>@(hd.NgayThanhToan?.ToString("dd/MM/yyyy HH:mm") ?? "---")</td>
 
                                 <td class="fw-bold @(hd.TrangThai == true ? "text-success" : "text-danger")">
                                     @((hd.SoTien ?? 0).ToString("N0")) đ
@@ -143,9 +160,14 @@
                                     }
                                     @if (logo != null)
                                     {
-                                        <img src="@logo" class="pay-logo" alt="logo"> <span>@name</span>
+                                        <img src="@logo" class="pay-logo" /> 
+                                        @name
                                     }
-                                    else { <span>@name</span> }
+                                    else
+                                    {
+
+                                        @name
+                                    }
                                 </td>
 
                                 <td>@Html.Raw(RenderStatus(hd.TrangThai))</td>
@@ -153,84 +175,179 @@
                         }
                     </tbody>
                 </table>
+
             </div>
         </div>
     }
 
-    <!-- ========================== -->
-    <!-- 2) LỊCH SỬ THUÊ XE -->
-    <!-- ========================== -->
+    <!-- ========================= -->
+    <!-- THUÊ XE -->
+    <!-- ========================= -->
     <div class="section-title">
-        <i class="fa-solid fa-car-side"></i> Lịch sử thanh toán thuê xe
+        <i class="fa-solid fa-car-side"></i> Thuê xe
     </div>
 
     @if (!Model.PaymentsThueXe.Any())
     {
         <div class="alert alert-info shadow-sm">
-            <i class="fa-solid fa-circle-info me-2"></i>
-            Bạn chưa có thanh toán thuê xe nào.
+            <i class="fa-solid fa-circle-info me-2"></i> Bạn chưa có thanh toán thuê xe nào.
         </div>
     }
     else
     {
-        <div class="card payment-card shadow-sm mb-4">
+        <div class="card shadow-sm border-0 mb-4">
             <div class="card-body p-0">
+
                 <table class="table table-hover align-middle payment-table mb-0">
                     <thead class="table-light">
                         <tr>
                             <th>Mã</th>
-                            <th>Xe thuê</th>
-                            <th>Ngày thanh toán</th>
+                            <th>Xe</th>
+                            <th>Ngày</th>
                             <th>Số tiền</th>
                             <th>Phương thức</th>
                             <th>Trạng thái</th>
                         </tr>
                     </thead>
+
                     <tbody>
                         @foreach (var hd in Model.PaymentsThueXe)
                         {
-                            <tr>
+                            <tr onclick="openDetailModal('@hd.IdThanhToan')">
                                 <td class="fw-bold">@hd.IdThanhToan</td>
 
                                 <td>
                                     @(hd.PhieuTx?.Xe != null
-                                        ? $"{hd.PhieuTx.Xe.LoaiXe} - {hd.PhieuTx.Xe.BienSo}"
-                                        : "<span class='text-muted'>(Không xác định)</span>")
-                                </td>
+                                                                ? $"{hd.PhieuTx.Xe.LoaiXe} - {hd.PhieuTx.Xe.BienSo}"
+                                                                : "(Không xác định)")
+                        </td>
 
-                                <td>
-                                    @(hd.NgayThanhToan?.ToString("dd/MM/yyyy") ?? "<span class='text-muted'>---</span>")
-                                </td>
+                                <td>@(hd.NgayThanhToan?.ToString("dd/MM/yyyy HH:mm") ?? "---")</td>
 
                                 <td class="fw-bold @(hd.TrangThai == true ? "text-success" : "text-danger")">
                                     @((hd.SoTien ?? 0).ToString("N0")) đ
                                 </td>
 
                                 <td>
-                                    @{
+                            @{
                                         var logo = GetLogo(hd.PhuongThucThanhToan);
                                         var name = hd.PhuongThucThanhToan ?? "Không rõ";
                                     }
                                     @if (logo != null)
                                     {
-                                        <img src="@logo" class="pay-logo"> <span>@name</span>
+                                        <img src="@logo" class="pay-logo" /> 
+                                        @name
                                     }
-                                    else { <span>@name</span> }
+                                    else
+                                    {
+
+                                        @name
+                                    }
                                 </td>
 
                                 <td>@Html.Raw(RenderStatus(hd.TrangThai))</td>
                             </tr>
                         }
                     </tbody>
+
                 </table>
+
             </div>
         </div>
     }
 
 </div>
 
-<style>
-    table tbody tr:hover {
-        background: #f8f9fa;
+<!-- ===================================== -->
+<!-- MODAL CHI TIẾT -->
+<!-- ===================================== -->
+<div class="modal fade" id="detailModal">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Chi tiết hóa đơn</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body" id="detailContainer">
+                <!-- AJAX -->
+            </div>
+
+            <div class="modal-footer">
+
+                <a id="downloadPdfBtn" class="download-btn me-2">
+                    <i class="fa-solid fa-download me-2"></i> Tải hóa đơn
+                </a>
+
+                <!-- QR DROPDOWN -->
+                <div id="qrGroup" class="dropdown d-none">
+                    <button class="qr-btn dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fa-solid fa-qrcode me-2"></i> QR
+                    </button>
+
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="previewQr()">
+                                <i class="fa-solid fa-eye me-2"></i> Xem mã QR
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" id="downloadQrBtn">
+                                <i class="fa-solid fa-download me-2"></i> Tải mã QR
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- QR PREVIEW MODAL -->
+<div class="modal fade" id="qrModal">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content p-3 text-center">
+            <img id="qrPreviewImg" src="" style="width:100%;" />
+        </div>
+    </div>
+</div>
+
+
+<script>
+    function openDetailModal(id) {
+        $("#detailContainer").html("<div class='text-center py-4'>Đang tải...</div>");
+
+        $.get("/HoaDonThanhToan/Detail/" + id, function (html) {
+
+            $("#detailContainer").html(html);
+            $("#downloadPdfBtn").attr("href", "/HoaDonThanhToan/DownloadPdf/" + id);
+
+            // Lấy wrapper trong partial
+            const wrapper = $("#detailContainer").find("[data-is-thuexe]");
+
+            const isThueXe = String(wrapper.data("is-thuexe")).toLowerCase() === "true";
+            const isPaid   = String(wrapper.data("paid")).toLowerCase() === "true";
+
+            // CHỈ show QR nếu là hóa đơn thuê xe + đã thanh toán
+            if (isThueXe && isPaid) {
+                $("#qrGroup").removeClass("d-none");
+                $("#downloadQrBtn").attr("href", "/HoaDonThanhToan/DownloadQr/" + id);
+            } else {
+                $("#qrGroup").addClass("d-none");
+            }
+        });
+
+        $("#detailModal").modal("show");
     }
-</style>
+
+    function previewQr() {
+        let id = $("#downloadPdfBtn").attr("href").split("/").pop();
+        $.get("/HoaDonThanhToan/ViewQr/" + id, function (res) {
+            $("#qrPreviewImg").attr("src", res.img);
+            $("#qrModal").modal("show");
+        });
+    }
+</script>
