@@ -3,10 +3,6 @@ GO
 USE DT_GPLX
 GO
 
-SET ANSI_NULLS ON;
-SET QUOTED_IDENTIFIER ON;
-GO
-
 -- =====================================================
 -- TẠO BẢNG
 -- =====================================================
@@ -83,7 +79,7 @@ CREATE TABLE websocketConnections (
     connectedAt DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME(),
     lastActivity DATETIME2(3) NULL,
     clientInfo NVARCHAR(400) NULL,
-	isOnline BIT,
+	isOnline BIT NOT NULL,
     userId INT NOT NULL
 );
 
@@ -171,7 +167,10 @@ CREATE TABLE hoaDonThanhToan (
     noiDung NVARCHAR(MAX),
     idDangKy INT NOT NULL
 );
-
+GO
+ALTER TABLE hoaDonThanhToan
+ALTER COLUMN ngayThanhToan DATETIME2(0) NULL;
+GO
 /* ==================== HANG GPLX – KHOA HOC – QUY DINH ==================== */
 CREATE TABLE hang (
     idHang INT IDENTITY(1,1) PRIMARY KEY,
