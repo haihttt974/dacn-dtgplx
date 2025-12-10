@@ -1,0 +1,30 @@
+﻿@model dacn_dtgplx.Models.HoaDonThanhToan
+
+<div>
+    <h5 class="fw-bold mb-3 text-primary">Hóa đơn #@Model.IdThanhToan</h5>
+
+    <p><b>Số tiền:</b> @((Model.SoTien ?? 0).ToString("N0")) đ</p>
+
+    <p>
+        <b>Trạng thái:</b>
+        @if (Model.TrangThai == true)
+        {
+            <span class="badge bg-success">Hợp lệ</span>
+        }
+        else
+        {
+            <span class="badge bg-danger">Không hợp lệ</span>
+        }
+    </p>
+
+    <hr />
+
+    @if (Model.PhieuTx != null)
+    {
+        <h6 class="fw-bold">Thông tin thuê xe</h6>
+
+        <p><b>Xe:</b> @Model.PhieuTx.Xe.LoaiXe - @Model.PhieuTx.Xe.BienSo</p>
+        <p><b>Ngày bắt đầu:</b> @Model.PhieuTx.TgBatDau?.ToString("dd/MM/yyyy HH:mm")</p>
+        <p><b>Thời lượng:</b> @Model.PhieuTx.TgThue giờ</p>
+    }
+</div>

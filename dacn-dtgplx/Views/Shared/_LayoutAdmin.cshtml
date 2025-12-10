@@ -293,13 +293,34 @@
                                 </li>
                             </ul>
                         </li>
-                        
+
                         <!-- Quản lý xe -->
-                        <li class="nav-item">
-                            <a asp-controller="AdminVehicles" asp-action="Index" class="nav-link">
+                        <li class="nav-item has-treeview">
+                            <a href="#" class="nav-link">
                                 <i class="fa fa-car nav-icon"></i>
-                                <p>Xe tập lái</p>
+                                <p>
+                                    Xe tập lái
+                                    <i class="fas fa-angle-left right ms-3"></i>
+                                </p>
                             </a>
+
+                            <ul class="nav nav-treeview ms-3">
+
+                                <li class="nav-item">
+                                    <a asp-controller="AdminVehicles" asp-action="Index" class="nav-link">
+                                        <i class="fa fa-list nav-icon"></i>
+                                        <p class="ms-2">Danh sách xe</p>
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a asp-controller="AdminVehicles" asp-action="Scan" class="nav-link">
+                                        <i class="fa fa-barcode nav-icon"></i>
+                                        <p class="ms-2">Scan phiếu thuê xe</p>
+                                    </a>
+                                </li>
+
+                            </ul>
                         </li>
 
                         <!-- Quản lý Hồ sơ -->

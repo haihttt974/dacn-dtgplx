@@ -294,5 +294,45 @@ namespace dacn_dtgplx.Controllers
 
             return list;
         }
+
+        // ======================= SCAN QR =========================
+        public IActionResult Scan()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ScanResult(string code)
+        {
+            if (string.IsNullOrWhiteSpace(code))
+                return Json(new { success = false, message = "Mã không hợp lệ!" });
+
+            // Format chuẩn: RENT-67
+            if (!code.StartsWith("RENT-"))
+                return Json(new { success = false, message = "Mã QR không hợp lệ!" });
+
+            if (!int.TryParse(code.Replace("RENT-", ""), out int id))
+                return Json(new { success = false, message = "Mã QR không hợp lệ!" });
+
+            var bill = await _context.HoaDonThanhToans
+                .Include(h => h.PhieuTx)
+                    .ThenInclude(p => p.Xe)
+                .Include(h => h.PhieuTx)
+                    .ThenInclude(p => p.User)
+                .FirstOrDefaultAsync(h => h.IdThanhToan == id);
+
+            if (bill == null)
+                return Json(new { success = false, message = "Không tìm thấy hóa đơn!" });
+
+            // Render lại partial để show lên modal
+            string html = await this.RenderViewAsync("_ScanBillDetail", bill, true);
+
+            return Json(new
+            {
+                success = true,
+                html,
+                valid = bill.TrangThai == true // thanh toán hợp lệ
+            });
+        }
     }
 }
