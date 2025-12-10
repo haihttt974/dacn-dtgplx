@@ -1,0 +1,145 @@
+﻿@{
+    ViewData["Title"] = "Quét mã QR thuê xe";
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" />
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<style>
+    .scan-page-wrapper {
+        min-height: calc(100vh - 150px); /* chừa header + footer admin */
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+    }
+
+    .scan-card {
+        width: 100%;
+        max-width: 560px;
+        border-radius: 18px;
+        box-shadow: 0 8px 30px rgba(15, 23, 42, 0.12);
+        border: 1px solid #e5e7eb;
+        background: #ffffff;
+        padding: 24px 26px 28px;
+    }
+
+    .scan-header-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: #e0f2fe;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #0d6efd;
+        font-size: 20px;
+        margin-right: 10px;
+    }
+
+    #reader {
+        width: 100% !important;
+        min-height: 360px;
+        border-radius: 14px;
+        overflow: hidden;
+    }
+
+        /* Tùy chỉnh nhẹ box của html5-qrcode */
+        #reader video {
+            border-radius: 10px;
+        }
+
+    #reader__scan_region,
+    #reader__dashboard_section {
+        background: #f9fafb;
+    }
+
+    .scan-help-text {
+        font-size: 0.9rem;
+        color: #6b7280;
+    }
+</style>
+
+<div class="container mt-4 scan-page-wrapper">
+
+    <div class="scan-card">
+
+        <!-- Tiêu đề -->
+        <div class="d-flex align-items-center mb-3">
+            <div class="scan-header-icon">
+                <i class="fa-solid fa-qrcode"></i>
+            </div>
+            <div>
+                <h4 class="mb-0 fw-bold text-primary">Quét mã QR thuê xe</h4>
+                <div class="text-muted small mt-1">
+                    Đưa mã QR (in trên hóa đơn / vé điện tử) vào giữa khung camera để kiểm tra thông tin thanh toán.
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-3" />
+
+        <!-- Khung quét -->
+        <div id="reader" class="mb-3"></div>
+
+        <div class="d-flex justify-content-between align-items-center">
+            <span class="scan-help-text">
+                <i class="fa-regular fa-lightbulb me-1"></i>
+                Gợi ý: dùng camera sau (nếu có) để quét rõ hơn.
+            </span>
+            <span class="badge bg-light text-secondary border">
+                <i class="fa-solid fa-camera me-1"></i> Webcam laptop
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL KẾT QUẢ -->
+<div class="modal fade" id="billModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid fa-receipt me-2 text-primary"></i>Kết quả quét mã
+                </h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="billDetail"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Callback khi quét thành công
+    function onScanSuccess(decodedText, decodedResult) {
+        // Gửi mã QR lên server xử lý
+        $.post("/AdminVehicles/ScanResult",
+            { code: decodedText },
+            function (res) {
+                if (!res.success) {
+                    alert(res.message);
+                    return;
+                }
+
+                $("#billDetail").html(res.html);
+
+                if (res.valid !== true) {
+                    $("#billDetail").prepend(`
+                        <div class="alert alert-warning d-flex align-items-center">
+                            <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                            <div>Hóa đơn này <strong>chưa thanh toán hoặc không hợp lệ</strong>.</div>
+                        </div>
+                    `);
+                }
+
+                $("#billModal").modal("show");
+            });
+    }
+
+    // Khởi tạo scanner – khung ~ 300px nhưng container đã to 560px
+    const scanner = new Html5QrcodeScanner("reader", {
+        fps: 10,
+        qrbox: { width: 280, height: 280 }
+    });
+
+    scanner.render(onScanSuccess);
+</script>
