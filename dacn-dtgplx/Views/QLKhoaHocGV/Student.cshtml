@@ -15,15 +15,14 @@
     <tbody>
         @foreach (var dk in Model)
         {
-            <tr onclick="loadDetail(@dk.IdDangKy)" style="cursor:pointer">
+            <tr>
                 <td>@dk.IdDangKy</td>
                 <td>@dk.HoSo.User.TenDayDu</td>
                 <td>@dk.HoSo.User.SoDienThoai</td>
                 <td>@dk.HoSo.User.Email</td>
 
                 <td>
-                    <button class="btn btn-sm btn-info"
-                            onclick="event.stopPropagation(); loadDetail(@dk.IdDangKy)">
+                    <button class="btn btn-info btn-sm view-student" data-id="@dk.IdDangKy">
                         Xem
                     </button>
                 </td>
@@ -36,13 +35,21 @@
 
 @section Scripts {
     <script>
-        function loadDetail(id) {
-            $.get('/QLKhoaHocGV/StudentDetail', { idDangKy: id }, function (html) {
-                $('#studentModalContainer').html(html);
-                var modalEl = document.getElementById('hsModal');
-                var modal = new bootstrap.Modal(modalEl);
-                modal.show();
+        $(document).on("click", ".view-student", function () {
+            let id = $(this).data("id");
+
+            $.ajax({
+                url: "/GiaoVien/StudentDetail",
+                type: "GET",
+                data: { idDangKy: id },
+                success: function (html) {
+                    $("#studentModalContainer").html(html); // Sửa đúng ID
+                    $("#hsModal").modal("show");
+                },
+                error: function () {
+                    alert("Không thể tải thông tin học viên.");
+                }
             });
-        }
+        });
     </script>
 }
