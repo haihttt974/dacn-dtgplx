@@ -368,8 +368,15 @@ namespace dacn_dtgplx.Controllers
 
         private List<CauHoiLyThuyet> BuildRandomCauHoiList(string hang)
         {
-            bool isA = hang.ToUpper() == "A" || hang.ToUpper() == "A1";
-            int soCauThi = isA ? 25 : 30;
+            var hangEntity = _context.Hangs.FirstOrDefault(h => h.MaHang == hang);
+            if (hangEntity == null)
+            {
+                hangEntity = _context.Hangs.FirstOrDefault(h => h.MaHang == "B1")
+                             ?? new Hang { SoCauHoi = 30 };
+            }
+            bool isA =  hangEntity.MaHang.Equals("A", StringComparison.OrdinalIgnoreCase)
+                        || hangEntity.MaHang.Equals("A1", StringComparison.OrdinalIgnoreCase);
+            int soCauThi = hangEntity.SoCauHoi;
 
             var percentA = new Dictionary<int, double>
             {
@@ -441,7 +448,7 @@ namespace dacn_dtgplx.Controllers
             var vm = new ExamViewModel
             {
                 IdBoDe = -1, // đề ngẫu nhiên, không phải đề thật
-                TenBoDe = "Đề thi ngẫu nhiên",
+                TenBoDe = "Đề thi ngẫu nhiên hạng " + hang,
                 Hang = hang,
                 ThoiGian = h.ThoiGianTn,
                 TongCau = list.Count,

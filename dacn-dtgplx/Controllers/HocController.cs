@@ -33,6 +33,7 @@ namespace dacn_dtgplx.Controllers
                 return View(vm);
             }
             vm.ThoiGianThi = hang.ThoiGianTn / 60;
+            vm.SoCauThiNgauNhien = hang.SoCauHoi;
             string hangDaChon = vm.SelectedHang?.Trim().ToUpper();
             bool isXeMay = hangDaChon == "A" || hangDaChon == "A1";
             vm.SelectedHang = hangDaChon;

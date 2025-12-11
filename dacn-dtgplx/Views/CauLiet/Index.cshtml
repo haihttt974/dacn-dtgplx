@@ -1,0 +1,284 @@
+﻿@model dacn_dtgplx.ViewModels.HocAllViewModel
+@{
+    ViewData["Title"] = "Ôn tập câu điểm liệt – Hạng " + Model.SelectedHang;
+}
+
+
+<style>
+    /* ================================
+               LEFT PANEL – ACCORDION CHƯƠNG
+            ================================= */
+    .chapter-box {
+        border-bottom: 1px solid #ddd;
+        background: #f7f9fc;
+    }
+
+    .chapter-header {
+        padding: 12px 14px;
+        cursor: pointer;
+        background: #e8f0fe;
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+        .chapter-header:hover {
+            background: #dbe7fd;
+        }
+
+    .question-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr); /* ⭐ chứa 7 số một hàng */
+        gap: 6px;
+        padding: 10px 10px 16px 10px;
+        background: white;
+    }
+
+    .q-btn {
+        padding: 6px 0;
+        background: #f1f3f5;
+        border: 1px solid #dcdcdc;
+        border-radius: 4px;
+        text-align: center;
+        cursor: pointer;
+        font-size: 14px;
+        transition: .15s;
+    }
+
+        .q-btn:hover {
+            background: #e1e5ea;
+        }
+
+        .q-btn.active {
+            background: #1976d2;
+            color: white;
+            border-color: #125a9c;
+        }
+
+    /* ================================
+               RIGHT PANEL – CÂU HỎI
+            ================================= */
+
+    .hocall-question-image {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+        .hocall-question-image img {
+            max-width: 100%;
+            max-height: 420px; /* ⭐ MUỐN HÌNH TO HƠN chỉnh tại đây */
+            object-fit: contain;
+            border-radius: 6px;
+        }
+
+    .answer-row {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+    }
+
+    .answer-item {
+        flex: 1;
+        padding: 14px 0;
+        text-align: center;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        background: #f8f9fa;
+        cursor: default;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+        .answer-item.correct {
+            background: #d4edda;
+            border-color: #7abf8a;
+            color: #155724;
+        }
+
+    /* Modal xem mẹo */
+    #imgModal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, .7);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+
+        #imgModal img {
+            max-width: 92%;
+            max-height: 92%;
+            border-radius: 10px;
+        }
+
+</style>
+
+
+
+<div class="container py-4">
+
+    <h2 class="fw-bold mb-4">Ôn tập câu điểm liệt – Hạng @Model.SelectedHang</h2>
+
+    <div class="row">
+
+        <!-- ================================
+             LEFT: DANH SÁCH CHƯƠNG
+        ================================= -->
+        <div class="col-3">
+            <h5 class="fw-bold mb-2">Danh sách chương</h5>
+
+            @foreach (var chap in Model.Chapters)
+            {
+                string panelId = "c" + chap.ChuongId;
+
+                <div class="chapter-box">
+                    <div class="chapter-header" data-bs-toggle="collapse" data-bs-target="#@panelId">
+                        <span>@chap.ThuTu. @chap.TenChuong</span>
+                        <span>▼</span>
+                    </div>
+
+                    <div id="@panelId" class="collapse @(chap == Model.Chapters.First() ? "show" : "")">
+                        <div class="question-grid">
+                            @foreach (var q in chap.Questions)
+                            {
+                                <div class="q-btn"
+                                     data-q-index="@q.GlobalIndex"
+                                     style="@(q.IsCauLiet ? "border:2px solid red;" : "")">
+                                    @q.GlobalIndex
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+
+        <!-- ================================
+             RIGHT: NỘI DUNG CÂU HỎI
+        ================================= -->
+        <div class="col-9">
+
+            <div id="defaultText" class="p-4 text-muted" style="font-size:20px;">
+                Chọn một câu hỏi để bắt đầu học.
+            </div>
+
+            <div id="questionContent" style="display:none;">
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <button id="btnPrev" class="btn btn-outline-primary">← Trước</button>
+                    <h4 id="qTitle" class="fw-bold"></h4>
+                    <button id="btnNext" class="btn btn-outline-primary">Sau →</button>
+                </div>
+
+                <div id="imgHolder" class="hocall-question-image" style="display:none;">
+                    <img id="qImg" src="" />
+                </div>
+
+                <h5 class="fw-bold mt-3">Đáp án:</h5>
+                <div id="answerList"></div>
+
+                <button id="btnHint" class="btn btn-warning mt-3">Xem mẹo</button>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- MODAL XEM MẸO -->
+<div id="imgModal">
+    <img id="modalImg" src="">
+</div>
+
+
+<script>
+    /* Convert toàn bộ câu hỏi sang JS array */
+    const allQuestions = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                    Model.Chapters.SelectMany(c => c.Questions)
+                ));
+
+    let currentIndex = 0;
+
+    /* ================================
+       HIỆN CÂU HỎI
+    ================================= */
+    function showQuestion(index) {
+
+        const q = allQuestions.find(x => x.GlobalIndex === index);
+        if (!q) return;
+
+        currentIndex = index;
+
+        document.getElementById("defaultText").style.display = "none";
+        document.getElementById("questionContent").style.display = "block";
+
+        document.getElementById("qTitle").innerHTML =
+            `<span style='font-weight:650;'>${q.NoiDung ?? ""}</span>`;
+
+        /* Hình câu hỏi */
+        const holder = document.getElementById("imgHolder");
+        const img = document.getElementById("qImg");
+
+        if (q.ImageUrl) {
+            img.src = q.ImageUrl.replace("~", "");
+            holder.style.display = "flex";
+        } else {
+            holder.style.display = "none";
+        }
+
+        /* Đáp án */
+        let html = `<div class='answer-row'>`;
+
+        q.DapAns.forEach(a => {
+            html += `
+                <div class="answer-item ${a.IsCorrect ? "correct" : ""}">
+                    ${a.Label}
+                </div>
+            `;
+        });
+
+        html += `</div>`;
+        document.getElementById("answerList").innerHTML = html;
+
+        /* Active nút trong danh sách */
+        document.querySelectorAll(".q-btn").forEach(b => b.classList.remove("active"));
+        let activeBtn = document.querySelector(`.q-btn[data-q-index="${index}"]`);
+        if (activeBtn) activeBtn.classList.add("active");
+    }
+
+    /* CLICK SỐ CÂU */
+    document.querySelectorAll(".q-btn").forEach(btn => {
+        btn.addEventListener("click", function () {
+            showQuestion(parseInt(this.dataset.qIndex));
+        });
+    });
+
+    /* PREV / NEXT */
+    document.getElementById("btnPrev").onclick = () => {
+        if (currentIndex > 1) showQuestion(currentIndex - 1);
+    };
+
+    document.getElementById("btnNext").onclick = () => {
+        if (currentIndex < allQuestions.length) showQuestion(currentIndex + 1);
+    };
+
+    /* XEM MẸO */
+    document.getElementById("btnHint").onclick = () => {
+        const q = allQuestions.find(x => x.GlobalIndex === currentIndex);
+        if (!q || !q.UrlAnhMeo) return alert("Không có mẹo cho câu này!");
+
+        document.getElementById("modalImg").src = q.UrlAnhMeo.replace("~", "");
+        document.getElementById("imgModal").style.display = "flex";
+    };
+
+    document.getElementById("imgModal").onclick = () =>
+        document.getElementById("imgModal").style.display = "none";
+</script>
