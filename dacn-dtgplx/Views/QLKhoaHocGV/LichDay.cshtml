@@ -1,0 +1,59 @@
+﻿@model dacn_dtgplx.ViewModels.LichDayViewModel
+@{
+    ViewData["Title"] = "Lịch dạy";
+}
+
+<h2 class="text-center mb-3">Lịch dạy của giáo viên</h2>
+
+<div class="d-flex mb-3 gap-3">
+
+    <form method="get" class="d-flex gap-2 align-items-center">
+        <input type="hidden" name="id" value="@Model.GiaoVien.TtGiaoVienId" />
+
+        <select name="mode" class="form-select">
+            <option value="day" selected="@(Model.Mode == "day")">Theo ngày</option>
+            <option value="week" selected="@(Model.Mode == "week")">Theo tuần</option>
+            <option value="month" selected="@(Model.Mode == "month")">Theo tháng</option>
+
+        </select>
+
+        <input type="date"
+               name="selectedDate"
+               value="@Model.CurrentDate.ToString("yyyy-MM-dd")"
+               class="form-control" />
+
+        <button class="btn btn-primary">Lọc</button>
+    </form>
+
+</div>
+
+@if (Model.LichDayItems.Count == 0)
+{
+    <div class="alert alert-warning text-center">Không có lịch dạy.</div>
+}
+else
+{
+    <table class="table table-bordered table-hover">
+        <thead>
+            <tr class="table-secondary">
+                <th>Ngày học</th>
+                <th>Giờ học</th>
+                <th>Khóa học</th>
+                <th>Nội dung</th>
+                <th>Địa điểm</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.LichDayItems)
+            {
+                <tr>
+                    <td>@item.NgayHoc.ToString("dd/MM/yyyy")</td>
+                    <td>@item.GioHoc</td>
+                    <td>@item.TenKhoaHoc</td>
+                    <td>@item.NoiDung</td>
+                    <td>@item.DiaDiem</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

@@ -7,6 +7,15 @@
 <h2>Khóa học của tôi</h2>
 <hr />
 
+<div class="d-flex justify-content-end mb-4">
+    <a asp-controller="QLKhoaHocGV"
+       asp-action="LichDay"
+       asp-route-id="@ViewBag.IdGiaoVien"
+       class="btn btn-success shadow-sm">
+        <i class="bi bi-calendar3"></i> Xem lịch dạy của tôi
+    </a>
+</div>
+
 @if (Model == null || Model.Count == 0)
 {
     <div class="alert alert-warning">
@@ -16,13 +25,13 @@
 else
 {
     <table class="table table-bordered table-hover">
-        <thead>
+        <thead class="table-light">
             <tr>
                 <th>Mã khóa học</th>
                 <th>Tên khóa học</th>
                 <th>Mô tả</th>
                 <th>Ngày bắt đầu</th>
-                <th></th>
+                <th class="text-center">Thao tác</th>
             </tr>
         </thead>
         <tbody>
@@ -33,14 +42,12 @@ else
                     <td>@kh.TenKhoaHoc</td>
                     <td>@kh.MoTa</td>
                     <td>@kh.NgayBatDau?.ToString("dd/MM/yyyy")</td>
-
-                    <td>
+                    <td class="text-center">
                         <a asp-controller="QLKhoaHocGV"
                            asp-action="Student"
                            asp-route-idKhoaHoc="@kh.KhoaHocId"
                            class="btn btn-primary btn-sm">
-
-                            Học viên
+                            <i class="bi bi-people"></i> Học viên
                         </a>
                     </td>
                 </tr>
