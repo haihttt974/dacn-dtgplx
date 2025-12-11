@@ -19,11 +19,7 @@
     int mpBoDeDone = Model.MpBoDeDone;
     int mpTinhHuong = Model.MpTinhHuong;
 
-    int soCauThiNgauNhien =
-        (!string.IsNullOrEmpty(selectedHang) &&
-        (selectedHang.ToUpper() == "A" || selectedHang.ToUpper() == "A1"))
-        ? 25
-        : 30;
+    int soCauThiNgauNhien = Model.SoCauThiNgauNhien;
 }
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />

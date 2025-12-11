@@ -22,5 +22,6 @@ namespace dacn_dtgplx.ViewModels
         public int MpBoDeDone { get; set; }
         public int MpTinhHuong { get; set; }
         public int ThoiGianThi { get; set; }
+        public int SoCauThiNgauNhien { get; set; }
     }
 }
