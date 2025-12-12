@@ -1,0 +1,26 @@
+﻿@model List<dacn_dtgplx.ViewModels.BoDeMoPhongViewModel>
+
+<h2>Danh sách bộ đề mô phỏng</h2>
+
+<div class="row">
+    @foreach (var boDe in Model)
+    {
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">@boDe.TenBoDe</h5>
+                    <p class="card-text">
+                        Số tình huống: @boDe.SoTinhHuong
+                    </p>
+
+                    <a asp-controller="ThiMoPhong"
+                       asp-action="LamBai"
+                       asp-route-idBoDe="@boDe.IdBoDe"
+                       class="btn btn-primary">
+                        Bắt đầu thi
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,39 @@
+﻿@model dacn_dtgplx.ViewModels.KetQuaThiViewModel
+
+<h2>KẾT QUẢ THI MÔ PHỎNG</h2>
+
+<h3>
+    Tổng điểm: <strong>@Model.TongDiem</strong> / 50
+</h3>
+
+<h3>
+    Kết quả:
+    @if (Model.KetQua)
+    {
+        <span style="color:green">ĐẬU</span>
+    }
+    else
+    {
+        <span style="color:red">RỚT</span>
+    }
+</h3>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Tình huống</th>
+            <th>Thời điểm nhấn (s)</th>
+            <th>Điểm</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.ChiTiet)
+        {
+            <tr>
+                <td>@item.TieuDe</td>
+                <td>@item.ThoiDiemNhan.ToString("0.000")</td>
+                <td>@item.Diem</td>
+            </tr>
+        }
+    </tbody>
+</table>
