@@ -138,17 +138,142 @@ public class ThiMoPhongController : Controller
     // ================================
     public async Task<IActionResult> DanhSachBoDe()
     {
+        var userId = TryGetCurrentUserId();
+
+        // 1) Danh sách bộ đề active
         var dsBoDe = await _context.BoDeMoPhongs
             .Where(b => b.IsActive == true)
+            .OrderBy(b => b.IdBoDeMoPhong)
             .Select(b => new BoDeMoPhongViewModel
             {
                 IdBoDe = b.IdBoDeMoPhong,
                 TenBoDe = b.TenBoDe,
-                SoTinhHuong = b.SoTinhHuong ?? 10
+                SoTinhHuong = b.SoTinhHuong ?? 10,
+
+                // mặc định (guest hoặc chưa có bài)
+                HasResult = false,
+                TongDiem = 0,
+                KetQua = false,
+                SoTinhHuongSai = 0,
+                IdBaiLamMoiNhat = null
             })
             .ToListAsync();
 
+        // 2) Nếu chưa login -> trả thẳng view (View sẽ hiện nút login)
+        if (userId == null)
+            return View(dsBoDe);
+
+        // 3) Lấy tất cả bài làm của user + include đủ để tính sai theo [start,end]
+        //    (cần IdThMpNavigation để lấy TgBatDau/TgKetThuc)
+        var allAttempts = await _context.BaiLamMoPhongs
+            .Where(x => x.UserId == userId.Value)
+            .Include(x => x.DiemTungTinhHuongs)
+                .ThenInclude(d => d.IdThMpNavigation)
+            .ToListAsync();
+
+        // 4) Lấy bài làm mới nhất cho mỗi bộ đề
+        var latestDict = allAttempts
+            .GroupBy(x => x.IdBoDeMoPhong)
+            .ToDictionary(
+                g => g.Key,
+                g => g.OrderByDescending(x => x.IdBaiLamTongDiem).First()
+            );
+
+        // 5) Map kết quả vào dsBoDe
+        foreach (var boDeVm in dsBoDe)
+        {
+            if (!latestDict.TryGetValue(boDeVm.IdBoDe, out var baiLam)) continue;
+
+            boDeVm.HasResult = true;
+            boDeVm.TongDiem = baiLam.TongDiem ?? 0;
+            boDeVm.KetQua = baiLam.KetQua ?? false;
+            boDeVm.IdBaiLamMoiNhat = baiLam.IdBaiLamTongDiem;
+
+            // ✅ Sai = bấm ngoài khoảng [startSec, endSec]
+            int soSai = 0;
+
+            foreach (var d in baiLam.DiemTungTinhHuongs)
+            {
+                var th = d.IdThMpNavigation;
+
+                // thiếu navigation coi như sai (an toàn)
+                if (th == null)
+                {
+                    soSai++;
+                    continue;
+                }
+
+                double startSec = FrameToSec(th.TgBatDau ?? 0);
+                double endSec = FrameToSec(th.TgKetThuc ?? 0);
+                double t = d.ThoiDiemNguoiDungNhan;
+
+                if (t < startSec || t > endSec)
+                    soSai++;
+            }
+
+            boDeVm.SoTinhHuongSai = soSai;
+        }
+
         return View(dsBoDe);
+    }
+
+    // ================================
+    // LỊCH SỬ BÀI LÀM (CHỈ XEM)
+    // ================================
+    public async Task<IActionResult> LichSuBaiLam(int idBaiLam)
+    {
+        var baiLam = await _context.BaiLamMoPhongs
+            .Include(b => b.DiemTungTinhHuongs)
+                .ThenInclude(d => d.IdThMpNavigation)
+            .Include(b => b.IdBoDeMoPhongNavigation)
+                .ThenInclude(bd => bd.ChiTietBoDeMoPhongs)
+                    .ThenInclude(ct => ct.IdThMpNavigation)
+            .FirstOrDefaultAsync(b => b.IdBaiLamTongDiem == idBaiLam);
+
+        if (baiLam == null)
+            return NotFound();
+
+        var boDe = baiLam.IdBoDeMoPhongNavigation;
+
+        var vm = new LichSuMoPhongViewModel
+        {
+            IdBoDe = boDe.IdBoDeMoPhong,
+            IdBaiLam = baiLam.IdBaiLamTongDiem,
+            TongDiem = baiLam.TongDiem ?? 0,
+            KetQua = baiLam.KetQua ?? false
+        };
+
+        // 1️⃣ Load 10 tình huống (giống LamBai)
+        foreach (var ct in boDe.ChiTietBoDeMoPhongs.OrderBy(x => x.ThuTu))
+        {
+            var th = ct.IdThMpNavigation;
+            if (th == null) continue;
+
+            double startSec = (th.TgBatDau ?? 0) / 60.0;
+            double endSec = (th.TgKetThuc ?? 0) / 60.0;
+
+            vm.TinhHuongs.Add(new TinhHuongItem2
+            {
+                IdThMp = th.IdThMp,
+                TieuDe = th.TieuDe ?? "",
+                VideoUrl = NormalizeStaticPath(th.VideoUrl),
+                ScoreStartSec = startSec,
+                ScoreEndSec = endSec,
+                HintImageUrl = NormalizeStaticPath(th.UrlAnhMeo)
+            });
+        }
+
+        // 2️⃣ Load flags đã bấm
+        vm.Flags = baiLam.DiemTungTinhHuongs
+            .Select(d => new ReviewFlagItem
+            {
+                IdThMp = d.IdThMp,
+                TimeSec = d.ThoiDiemNguoiDungNhan
+            })
+            .ToList();
+
+
+        return View(vm);
     }
 
     // ================================
