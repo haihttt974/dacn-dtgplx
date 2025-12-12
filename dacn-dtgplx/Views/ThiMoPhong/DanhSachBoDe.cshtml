@@ -1,26 +1,228 @@
 ﻿@model List<dacn_dtgplx.ViewModels.BoDeMoPhongViewModel>
 
-<h2>Danh sách bộ đề mô phỏng</h2>
+@{
+    ViewData["Title"] = "Danh sách bộ đề mô phỏng";
+    var isLoggedIn = User?.Identity?.IsAuthenticated == true;
+}
 
-<div class="row">
-    @foreach (var boDe in Model)
-    {
-        <div class="col-md-4">
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">@boDe.TenBoDe</h5>
-                    <p class="card-text">
-                        Số tình huống: @boDe.SoTinhHuong
-                    </p>
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
-                    <a asp-controller="ThiMoPhong"
-                       asp-action="LamBai"
-                       asp-route-idBoDe="@boDe.IdBoDe"
-                       class="btn btn-primary">
-                        Bắt đầu thi
-                    </a>
+<style>
+    .exam-card {
+        background: #ffffff;
+        border-radius: 18px;
+        padding: 22px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        transition: 0.25s;
+        cursor: pointer;
+        position: relative;
+        height: 100%;
+    }
+
+        .exam-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.10);
+        }
+
+    .exam-title {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 6px;
+        color: #0a5bc1;
+    }
+
+    .exam-meta {
+        font-size: 14px;
+        color: #6b7280;
+        margin-bottom: 10px;
+    }
+
+    .badge-status {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 13px;
+        color: #fff;
+        margin-bottom: 8px;
+    }
+
+    .badge-pass {
+        background: #16a34a;
+    }
+
+    .badge-fail {
+        background: #dc2626;
+    }
+
+    .badge-new {
+        background: #0ea5e9;
+    }
+
+    .result-box {
+        background: #f9fafb;
+        padding: 10px;
+        border-radius: 12px;
+        margin-top: 8px;
+        border: 1px solid #e5e7eb;
+        position: relative;
+    }
+
+        .result-box div {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+    .btn-history {
+        background: #2563eb;
+        color: white;
+        padding: 5px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        text-decoration: none;
+    }
+
+        .btn-history:hover {
+            background: #1e40af;
+            color: white;
+        }
+
+    .btn-login {
+        margin-top: 8px;
+    }
+</style>
+
+<div class="container mt-4">
+    <h2 class="fw-bold mb-4">
+        Danh sách bộ đề mô phỏng
+    </h2>
+
+    <div class="row g-4">
+        @foreach (var boDe in Model)
+        {
+            <div class="col-md-4">
+                <div class="exam-card"
+                     onclick="openConfirmModal(@boDe.IdBoDe, '@boDe.TenBoDe', @boDe.SoTinhHuong)">
+
+                    <!-- TITLE -->
+                    <div class="exam-title">
+                        <i class="fa-solid fa-video"></i>
+                        @boDe.TenBoDe
+                    </div>
+
+                    <div class="exam-meta">
+                        @boDe.SoTinhHuong tình huống
+                    </div>
+
+                    @* ================== CHƯA LOGIN ================== *@
+                    @if (!isLoggedIn)
+                    {
+                        <span class="badge-status badge-new">Chưa làm bài</span>
+
+                        <div>
+                            <a class="btn btn-primary btn-login"
+                               asp-controller="Auth"
+                               asp-action="Login">
+                                Đăng nhập để lưu kết quả
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        @* ================== ĐÃ LOGIN ================== *@
+                        if (boDe.HasResult)
+                        {
+                            <span class="badge-status @(boDe.KetQua ? "badge-pass" : "badge-fail")">
+                                @(boDe.KetQua ? "ĐẬU" : "RỚT")
+                            </span>
+
+                            <div class="result-box">
+                                <div>
+                                    <strong>Tổng điểm:</strong>
+                                    @boDe.TongDiem / 50
+                                </div>
+                                <div>
+                                    <strong>Sai:</strong>
+                                    @boDe.SoTinhHuongSai tình huống
+                                </div>
+
+                                <!-- XEM LỊCH SỬ / REVIEW -->
+                                <a asp-controller="ThiMoPhong"
+                                   asp-action="LichSuBaiLam"
+                                   asp-route-idBaiLam="@boDe.IdBaiLamMoiNhat"
+                                   class="btn-history position-absolute"
+                                   style="right:8px; bottom:8px;">
+                                    Xem lịch sử
+                                </a>
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="badge-status badge-new">Chưa làm bài</span>
+
+                            <div class="result-box">
+                                <div><strong>Tổng điểm:</strong> ---</div>
+                                <div><strong>Sai:</strong> ---</div>
+                            </div>
+                        }
+                    }
                 </div>
             </div>
-        </div>
-    }
+        }
+    </div>
 </div>
+
+<!-- ================= MODAL XÁC NHẬN BẮT ĐẦU ================= -->
+<div class="modal fade" id="confirmStartModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid fa-circle-question text-primary me-2"></i>
+                    Xác nhận bắt đầu thi mô phỏng
+                </h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <p class="mb-1">Bạn chuẩn bị làm bài:</p>
+                <h5 id="modalBoDeName" class="fw-bold text-primary"></h5>
+
+                <p id="modalInfo" class="text-secondary mt-2"></p>
+
+                <p class="mt-3 fw-semibold">
+                    Bạn có muốn bắt đầu ngay không?
+                </p>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary"
+                        data-bs-dismiss="modal">
+                    Hủy
+                </button>
+                <a id="startExamBtn"
+                   class="btn btn-primary">
+                    Bắt đầu thi
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openConfirmModal(idBoDe, tenBoDe, soTinhHuong) {
+            document.getElementById("modalBoDeName").textContent = tenBoDe;
+            document.getElementById("modalInfo").textContent =
+                `${soTinhHuong} tình huống`;
+
+            document.getElementById("startExamBtn").href =
+                `/ThiMoPhong/LamBai?idBoDe=${idBoDe}`;
+
+            new bootstrap.Modal(
+                document.getElementById("confirmStartModal")
+            ).show();
+        }
+    </script>
+}

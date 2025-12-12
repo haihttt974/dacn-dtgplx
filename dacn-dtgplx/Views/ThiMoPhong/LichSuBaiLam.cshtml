@@ -1,0 +1,235 @@
+﻿@model dacn_dtgplx.ViewModels.LichSuMoPhongViewModel
+@using System.Text.Json
+
+@{
+    ViewData["Title"] = "Lịch sử bài thi mô phỏng";
+
+    var tinhHuongsJson = JsonSerializer.Serialize(
+        Model.TinhHuongs,
+        new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }
+    );
+
+    var flagsJson = JsonSerializer.Serialize(
+        Model.Flags,
+        new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }
+    );
+}
+<style>
+    .review-wrap {
+        max-width: 1200px;
+        margin: 24px auto;
+        padding: 0 16px;
+    }
+
+    .review-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+    }
+
+    .review-title {
+        font-size: 20px;
+        font-weight: 800;
+    }
+
+    .review-result {
+        font-size: 16px;
+        font-weight: 700;
+    }
+
+        .review-result.pass {
+            color: #16a34a;
+        }
+
+        .review-result.fail {
+            color: #dc2626;
+        }
+
+    .review-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 20px;
+    }
+
+    @@media (max-width: 992px) {
+        .review-grid
+
+    {
+        grid-template-columns: 1fr;
+    }
+
+    }
+
+    .review-card {
+        background: #fff;
+        border-radius: 14px;
+        border: 1px solid #eee;
+        box-shadow: 0 8px 24px rgba(0,0,0,.06);
+        padding: 16px;
+    }
+
+    .review-video video {
+        width: 100%;
+        border-radius: 12px;
+        background: #000;
+    }
+
+    .review-summary div {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        font-size: 14px;
+        border-bottom: 1px dashed #eee;
+    }
+
+        .review-summary div:last-child {
+            border-bottom: none;
+        }
+
+    .review-table {
+        margin-top: 20px;
+    }
+
+        .review-table table {
+            width: 100%;
+            font-size: 14px;
+        }
+
+        .review-table th,
+        .review-table td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .review-table th {
+            background: #fafafa;
+            font-weight: 700;
+        }
+
+    .review-actions {
+        margin-top: 20px;
+        display: flex;
+        gap: 12px;
+    }
+
+        .review-actions .btn {
+            flex: 1;
+            padding: 12px;
+            font-weight: 700;
+            border-radius: 10px;
+        }
+</style>
+<div class="review-wrap">
+
+    <!-- HEADER -->
+    <div class="review-header">
+        <div class="review-title">
+            Lịch sử bài thi – Mã đề #@Model.IdBoDe
+        </div>
+        <div class="review-result @(Model.KetQua ? "pass" : "fail")">
+            @(Model.KetQua ? "✅ ĐẬU" : "❌ RỚT")
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="review-grid">
+
+        <!-- VIDEO -->
+        <div class="review-card review-video">
+            <video id="video" controls preload="auto"></video>
+        </div>
+
+        <!-- SUMMARY -->
+        <div class="review-card review-summary">
+            <div>
+                <span>Tổng điểm</span>
+                <strong>@Model.TongDiem / 50</strong>
+            </div>
+            <div>
+                <span>Số tình huống</span>
+                <strong>@Model.TinhHuongs.Count</strong>
+            </div>
+            <div>
+                <span>Đạt yêu cầu</span>
+                <strong>≥ 35 điểm</strong>
+            </div>
+            <div class="text-muted small">
+                Chế độ xem lại – không thể chỉnh sửa
+            </div>
+        </div>
+
+    </div>
+
+    <!-- TABLE -->
+    <div class="review-card review-table">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:60px">#</th>
+                    <th>Thời điểm</th>
+                    <th style="width:100px">Điểm</th>
+                </tr>
+            </thead>
+            <tbody id="flagTable"></tbody>
+        </table>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="review-actions">
+        <button id="btnShowResult" class="btn btn-primary">
+            📊 Xem kết quả
+        </button>
+        <a href="/ThiMoPhong/DanhSachBoDe" class="btn btn-outline-secondary">
+            ⬅ Quay lại danh sách đề
+        </a>
+    </div>
+
+</div>
+<div class="modal fade" id="resultModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Kết quả bài thi</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="display-6 fw-bold">
+                    @Model.TongDiem / 50
+                </div>
+                <div class="mt-2 fw-bold @(Model.KetQua ? "text-success" : "text-danger")">
+                    @(Model.KetQua ? "ĐẬU" : "RỚT")
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const tinhHuongs = @Html.Raw(tinhHuongsJson);
+    const flags = @Html.Raw(flagsJson);
+</script>
+
+<script>
+    (() => {
+        const video = document.getElementById("video");
+        const table = document.getElementById("flagTable");
+
+        const pad = n => String(n).padStart(2, "0");
+        const fmt = s => `${pad(s / 60 | 0)}:${pad(s % 60 | 0)}`;
+
+        table.innerHTML = flags.map((f, i) => `
+            <tr onclick="video.src='${tinhHuongs[i].videoUrl}'; video.currentTime=${f.timeSec}; video.play();">
+                <td>${i + 1}</td>
+                <td>${fmt(f.timeSec)}</td>
+                <td class="${f.timeSec > 0 ? 'text-success' : 'text-danger'}">
+                    ${f.timeSec > 0 ? '✓' : '0'}
+                </td>
+            </tr>
+        `).join("");
+
+        video.src = tinhHuongs[0]?.videoUrl;
+
+        document.getElementById("btnShowResult").onclick = () =>
+            new bootstrap.Modal(document.getElementById("resultModal")).show();
+    })();
+</script>
