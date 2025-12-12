@@ -1,57 +1,109 @@
 ﻿@model List<dacn_dtgplx.Models.KhoaHoc>
-
 @{
     ViewData["Title"] = "Khóa học của tôi";
 }
 
-<h2>Khóa học của tôi</h2>
-<hr />
-
-<div class="d-flex justify-content-end mb-4">
-    <a asp-controller="QLKhoaHocGV"
-       asp-action="LichDay"
-       asp-route-id="@ViewBag.IdGiaoVien"
-       class="btn btn-success shadow-sm">
-        <i class="bi bi-calendar3"></i> Xem lịch dạy của tôi
-    </a>
-</div>
-
-@if (Model == null || Model.Count == 0)
-{
-    <div class="alert alert-warning">
-        Bạn chưa được phân công khóa học nào.
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">Khóa học của tôi</h2>
+            <p class="text-muted mb-0">Quản lý và xem chi tiết các khóa học bạn đang giảng dạy</p>
+        </div>
+        <a asp-controller="QLKhoaHocGV"
+           asp-action="LichDay"
+           asp-route-id="@ViewBag.IdGiaoVien"
+           class="btn btn-success shadow-sm mt-3 mt-md-0">
+            <i class="bi bi-calendar3 me-2"></i>Xem lịch dạy
+        </a>
     </div>
-}
-else
-{
-    <table class="table table-bordered table-hover">
-        <thead class="table-light">
-            <tr>
-                <th>Mã khóa học</th>
-                <th>Tên khóa học</th>
-                <th>Mô tả</th>
-                <th>Ngày bắt đầu</th>
-                <th class="text-center">Thao tác</th>
-            </tr>
-        </thead>
-        <tbody>
+
+    <!-- Search Bar -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body p-4">
+            <form method="get" asp-action="Index">
+                <div class="input-group input-group-lg">
+                    <input type="text"
+                           name="search"
+                           value="@ViewBag.Search"
+                           class="form-control border-0 shadow-none"
+                           placeholder="Tìm kiếm theo mã hoặc tên khóa học..."
+                           style="font-size: 1rem;">
+                    <button class="btn btn-primary px-4" type="submit">
+                        <i class="bi bi-search me-2"></i> Tìm
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Course List -->
+    @if (Model == null || Model.Count == 0)
+    {
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="bi bi-journal-text text-muted" style="font-size: 4rem;"></i>
+            </div>
+            <h5 class="text-muted">Không tìm thấy khóa học nào</h5>
+            <p class="text-muted">Thử thay đổi từ khóa tìm kiếm hoặc xem lại bộ lọc.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-4">
             @foreach (var kh in Model)
             {
-                <tr>
-                    <td>@kh.KhoaHocId</td>
-                    <td>@kh.TenKhoaHoc</td>
-                    <td>@kh.MoTa</td>
-                    <td>@kh.NgayBatDau?.ToString("dd/MM/yyyy")</td>
-                    <td class="text-center">
-                        <a asp-controller="QLKhoaHocGV"
-                           asp-action="Student"
-                           asp-route-idKhoaHoc="@kh.KhoaHocId"
-                           class="btn btn-primary btn-sm">
-                            <i class="bi bi-people"></i> Học viên
-                        </a>
-                    </td>
-                </tr>
+                <div class="col">
+                    <div class="card h-100 shadow-sm border-0 hover-shadow transition">
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <span class="badge bg-primary fs-6">@kh.KhoaHocId</span>
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar-event me-1"></i>
+                                    @kh.NgayBatDau?.ToString("dd/MM/yyyy")
+                                </small>
+                            </div>
+
+                            <h5 class="card-title fw-semibold text-dark mb-2">@kh.TenKhoaHoc</h5>
+
+                            <p class="card-text text-muted flex-grow-1 small">
+                                @(string.IsNullOrEmpty(kh.MoTa) ? "Chưa có mô tả." : kh.MoTa.Length > 100 ? kh.MoTa.Substring(0, 100) + "..." : kh.MoTa)
+                            </p>
+
+                            <div class="mt-auto">
+                                <a asp-controller="QLKhoaHocGV"
+                                   asp-action="Student"
+                                   asp-route-idKhoaHoc="@kh.KhoaHocId"
+                                   class="btn btn-outline-primary w-100">
+                                    <i class="bi bi-people me-2"></i>Xem danh sách học viên
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             }
-        </tbody>
-    </table>
+        </div>
+    }
+</div>
+
+@section Styles {
+    <style>
+        .hover-shadow {
+            transition: all 0.3s ease;
+        }
+        .hover-shadow:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+        }
+        .transition {
+            transition: all 0.3s ease;
+        }
+        .card-body {
+            padding: 1.5rem;
+        }
+    </style>
+}
+
+@section Scripts {
+    <!-- Nếu cần thêm JS (ví dụ: tooltip, etc.) -->
 }

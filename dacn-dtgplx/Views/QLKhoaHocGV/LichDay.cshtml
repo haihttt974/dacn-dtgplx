@@ -3,39 +3,93 @@
     ViewData["Title"] = "Lịch dạy";
 }
 
-<h2 class="text-center mb-3">Lịch dạy của giáo viên</h2>
+<h2 class="text-center mb-4">Lịch dạy của giáo viên</h2>
 
-<div class="d-flex mb-3 gap-3">
+<div class="card shadow-sm p-3">
+    <form method="get" class="row gy-3 align-items-end">
 
-    <form method="get" class="d-flex gap-2 align-items-center">
         <input type="hidden" name="id" value="@Model.GiaoVien.TtGiaoVienId" />
 
-        <select name="mode" class="form-select">
-            <option value="day" selected="@(Model.Mode == "day")">Theo ngày</option>
-            <option value="week" selected="@(Model.Mode == "week")">Theo tuần</option>
-            <option value="month" selected="@(Model.Mode == "month")">Theo tháng</option>
+        <!-- Mode -->
+        <div class="col-md-3">
+            <label class="form-label fw-bold">Chế độ xem</label>
+            <select name="mode" id="modeSelect" class="form-select">
+                <option value="day" selected="@(Model.Mode == "day")">Theo ngày</option>
+                <option value="week" selected="@(Model.Mode == "week")">Theo tuần</option>
+                <option value="month" selected="@(Model.Mode == "month")">Theo tháng</option>
+            </select>
+        </div>
 
-        </select>
+        <!-- Day picker -->
+        <div id="dayPicker" class="col-md-3 mode-field @(Model.Mode == "day" ? "" : "d-none")">
+            <label class="form-label fw-bold">Chọn ngày</label>
+            <input type="date"
+                   name="selectedDate"
+                   value="@Model.CurrentDate.ToString("yyyy-MM-dd")"
+                   class="form-control" />
+        </div>
 
-        <input type="date"
-               name="selectedDate"
-               value="@Model.CurrentDate.ToString("yyyy-MM-dd")"
-               class="form-control" />
+        <!-- Week picker -->
+        <div id="weekPicker" class="col-md-4 mode-field @(Model.Mode == "week" ? "" : "d-none")">
+            <label class="form-label fw-bold">Chọn tuần</label>
+            <select name="selectedWeek" class="form-select">
+                <option value="">-- Chọn tuần --</option>
 
-        <button class="btn btn-primary">Lọc</button>
+                @foreach (var w in Model.Weeks)
+                {
+                    <option value="@w.WeekIndex" selected="@(Model.SelectedWeek == w.WeekIndex)">
+                        @w.Label
+                    </option>
+                }
+            </select>
+        </div>
+
+        <!-- Month + Year picker -->
+        <div id="monthPicker" class="col-md-6 mode-field @(Model.Mode == "month" ? "" : "d-none")">
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Tháng</label>
+                    <select name="selectedMonth" class="form-select">
+                        @for (int m = 1; m <= 12; m++)
+                        {
+                            <option value="@m" selected="@(Model.SelectedMonth == m)">
+                                Tháng @m
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Năm</label>
+                    <select name="selectedYear" class="form-select">
+                        @for (int y = DateTime.Now.Year - 2; y <= DateTime.Now.Year + 2; y++)
+                        {
+                            <option value="@y" selected="@(Model.SelectedYear == y)">
+                                @y
+                            </option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-12 text-end">
+            <button class="btn btn-primary px-4">Lọc</button>
+        </div>
+
     </form>
-
 </div>
 
-@if (Model.LichDayItems.Count == 0)
+<br />
+
+@if (Model.LichDayItems == null || Model.LichDayItems.Count == 0)
 {
     <div class="alert alert-warning text-center">Không có lịch dạy.</div>
 }
 else
 {
     <table class="table table-bordered table-hover">
-        <thead>
-            <tr class="table-secondary">
+        <thead class="table-secondary">
+            <tr>
                 <th>Ngày học</th>
                 <th>Giờ học</th>
                 <th>Khóa học</th>
@@ -57,3 +111,17 @@ else
         </tbody>
     </table>
 }
+
+<script>
+    document.getElementById("modeSelect").addEventListener("change", function () {
+        const mode = this.value;
+
+        ["dayPicker", "weekPicker", "monthPicker"].forEach(id =>
+            document.getElementById(id).classList.add("d-none")
+        );
+
+        if (mode === "day") document.getElementById("dayPicker").classList.remove("d-none");
+        if (mode === "week") document.getElementById("weekPicker").classList.remove("d-none");
+        if (mode === "month") document.getElementById("monthPicker").classList.remove("d-none");
+    });
+</script>

@@ -2,6 +2,19 @@
 
 <h3>Danh sách học viên – @ViewBag.TenKhoaHoc</h3>
 
+<form method="get" class="mb-3">
+    <input type="hidden" name="idKhoaHoc" value="@Context.Request.Query["idKhoaHoc"]" />
+
+    <div class="input-group">
+        <input type="text" name="search" value="@ViewBag.Search"
+               class="form-control" placeholder="Tìm theo Mã ĐK, Tên, SĐT, Email" />
+
+        <button class="btn btn-primary" type="submit">
+            <i class="bi bi-search"></i> Tìm
+        </button>
+    </div>
+</form>
+
 <table class="table table-bordered table-hover">
     <thead>
         <tr>
@@ -43,7 +56,7 @@
                 type: "GET",
                 data: { idDangKy: id },
                 success: function (html) {
-                    $("#studentModalContainer").html(html); // Sửa đúng ID
+                    $("#studentModalContainer").html(html);
                     $("#hsModal").modal("show");
                 },
                 error: function () {
