@@ -367,8 +367,12 @@
             <div class="mp-card">
                 <div class="mp-cardHeader">
                     @* <h5 id="txtTinhHuong">Đang tải tình huống...</h5> *@
-                    <div class="mp-title">
+                    @* <div class="mp-title">
                         Bài thi mô phỏng – Mã đề #@Model.IdBoDe
+                    </div> *@
+                    <div class="mp-title">
+                        Bài thi mô phỏng –
+                        @(Model.IdBoDe > 0 ? $"Mã đề #{Model.IdBoDe}" : "Đề ngẫu nhiên")
                     </div>
                     @* <div class="mp-sub">Bấm <span class="mp-kbd">SPACE</span> để đặt cờ đúng thời điểm.</div> *@
                 </div>
@@ -538,11 +542,24 @@
 
             <div class="modal-footer justify-content-center gap-2">
                 <!-- 🔁 Thi lại -->
-                <a href="/ThiMoPhong/LamBai?idBoDe=@Model.IdBoDe"
+                @* <a href="/ThiMoPhong/LamBai?idBoDe=@Model.IdBoDe"
                    class="btn btn-outline-primary px-4">
                     🔁 Thi lại
-                </a>
-
+                </a> *@
+                @if (Model.IdBoDe > 0)
+                {
+                    <a href="/ThiMoPhong/LamBai?idBoDe=@Model.IdBoDe"
+                       class="btn btn-outline-primary px-4">
+                        🔁 Thi lại
+                    </a>
+                }
+                else
+                {
+                    <a href="/ThiMoPhong/LamBaiNgauNhien"
+                       class="btn btn-outline-primary px-4">
+                        🔁 Thi lại
+                    </a>
+                }
                 <!-- 📋 Về danh sách -->
                 <a href="/ThiMoPhong/DanhSachBoDe"
                    class="btn btn-primary px-4">

@@ -258,6 +258,7 @@
     };
 
     /* ===================== SUBMIT ===================== */
+    // ===================== SUBMIT =====================
     async function submitExam() {
         if (submitted) return;
 
@@ -266,16 +267,33 @@
         isPlaying = false;
         video.pause();
 
-        const res = await fetch("/ThiMoPhong/LuuKetQua", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+        // 🔑 PHÂN BIỆT ĐỀ THƯỜNG / ĐỀ NGẪU NHIÊN
+        const isRandomExam = !idBoDe || idBoDe <= 0;
+
+        const url = isRandomExam
+            ? "/ThiMoPhong/LuuKetQuaNgauNhien"
+            : "/ThiMoPhong/LuuKetQua";
+
+        const payload = isRandomExam
+            ? {
+                selectedThIds: tinhHuongs.map(x => x.idThMp),
+                flags: flags.map(f => ({
+                    idThMp: f.idThMp,
+                    timeSec: f.timeSec
+                }))
+            }
+            : {
                 idBoDe,
                 flags: flags.map(f => ({
                     idThMp: f.idThMp,
                     timeSec: f.timeSec
                 }))
-            })
+            };
+
+        const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
         });
 
         const data = await res.json();
