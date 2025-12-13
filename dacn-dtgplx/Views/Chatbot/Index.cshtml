@@ -1,0 +1,169 @@
+﻿@{
+    ViewData["Title"] = "Chatbot AI";
+}
+
+<style>
+    body {
+        background: #f5f7fb;
+    }
+
+    .chat-container {
+        max-width: 900px;
+        margin: 30px auto;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,.1);
+        display: flex;
+        flex-direction: column;
+        height: 75vh;
+    }
+
+    .chat-header {
+        padding: 15px 20px;
+        border-bottom: 1px solid #eee;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+        .chat-header i {
+            color: #2563eb;
+        }
+
+    .chat-body {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        background: #f9fafb;
+    }
+
+    .message {
+        display: flex;
+        margin-bottom: 15px;
+    }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+    .bubble {
+        max-width: 70%;
+        padding: 12px 15px;
+        border-radius: 15px;
+        line-height: 1.4;
+        font-size: 15px;
+    }
+
+    .user .bubble {
+        background: #2563eb;
+        color: #fff;
+        border-bottom-right-radius: 5px;
+    }
+
+    .bot .bubble {
+        background: #e5e7eb;
+        color: #111;
+        border-bottom-left-radius: 5px;
+    }
+
+    .chat-footer {
+        display: flex;
+        padding: 15px;
+        border-top: 1px solid #eee;
+        gap: 10px;
+    }
+
+        .chat-footer input {
+            flex: 1;
+            padding: 12px 15px;
+            border-radius: 25px;
+            border: 1px solid #ddd;
+            outline: none;
+        }
+
+        .chat-footer button {
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            padding: 0 25px;
+            border-radius: 25px;
+            cursor: pointer;
+        }
+
+            .chat-footer button:hover {
+                background: #1e40af;
+            }
+
+    .typing {
+        font-style: italic;
+        color: #666;
+        margin-bottom: 10px;
+    }
+</style>
+
+<div class="chat-container">
+    <div class="chat-header">
+        <i class="fa-solid fa-robot"></i>
+        Chatbot AI GPLX
+    </div>
+
+    <div id="chatBody" class="chat-body">
+        <div class="message bot">
+            <div class="bubble">
+                👋 Xin chào! Tôi là AI hỗ trợ. Bạn muốn hỏi điều gì?
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-footer">
+        <input id="messageInput" placeholder="Nhập câu hỏi và nhấn Enter..." />
+        <button onclick="sendMessage()">Gửi</button>
+    </div>
+</div>
+
+<script>
+    const chatBody = document.getElementById("chatBody");
+    const input = document.getElementById("messageInput");
+
+    input.addEventListener("keypress", function (e) {
+        if (e.key === "Enter") sendMessage();
+    });
+
+    function addMessage(text, type) {
+        const msg = document.createElement("div");
+        msg.className = `message ${type}`;
+        msg.innerHTML = `<div class="bubble">${text}</div>`;
+        chatBody.appendChild(msg);
+        chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    function sendMessage() {
+        const text = input.value.trim();
+        if (!text) return;
+
+        addMessage(text, "user");
+        input.value = "";
+
+        const typing = document.createElement("div");
+        typing.className = "typing";
+        typing.innerText = "AI đang trả lời...";
+        chatBody.appendChild(typing);
+        chatBody.scrollTop = chatBody.scrollHeight;
+
+        fetch("/Chatbot/SendMessage", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: text })
+        })
+        .then(res => res.json())
+        .then(data => {
+            typing.remove();
+            addMessage(data.reply, "bot");
+        })
+        .catch(() => {
+            typing.remove();
+            addMessage("❌ Không kết nối được AI.", "bot");
+        });
+    }
+</script>
