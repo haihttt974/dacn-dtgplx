@@ -37,7 +37,9 @@ namespace dacn_dtgplx.Controllers
 
                     SoTien = h.SoTien,
                     PhuongThucThanhToan = h.PhuongThucThanhToan,
-                    NgayThanhToan = h.NgayThanhToan,
+                    NgayThanhToan = h.NgayThanhToan.HasValue
+                        ? DateOnly.FromDateTime(h.NgayThanhToan.Value)
+                        : (DateOnly?)null,
                     TrangThai = h.TrangThai
                 })
                 .OrderByDescending(x => x.IdThanhToan)
