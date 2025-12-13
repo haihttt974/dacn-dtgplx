@@ -13,7 +13,59 @@ public class QLKhoaHocGVController : Controller
         _context = context;
     }
 
-    c
+    // =====================================================
+    // 1. INDEX - Danh sách khóa học của GV
+    // =====================================================
+    public async Task<IActionResult> Index(string search)
+    {
+        int? userId = HttpContext.Session.GetInt32("UserId");
+
+        if (userId == null)
+            return RedirectToAction("Login", "Auth");
+
+        var gv = await _context.TtGiaoViens
+            .FirstOrDefaultAsync(x => x.UserId == userId);
+
+        if (gv == null)
+            return NotFound("Không tìm thấy giáo viên");
+
+        ViewBag.IdGiaoVien = gv.TtGiaoVienId;
+
+        // Parse JSON lichDay
+        List<int> khoaHocIds;
+
+        if (gv.LichDay.Trim().StartsWith("["))
+        {
+            khoaHocIds = JsonConvert.DeserializeObject<List<int>>(gv.LichDay);
+        }
+        else
+        {
+            khoaHocIds = new List<int> { JsonConvert.DeserializeObject<int>(gv.LichDay) };
+        }
+
+        var query = _context.KhoaHocs
+            .Where(k => khoaHocIds.Contains(k.KhoaHocId))
+            .AsQueryable();
+
+        // ==========================
+        // TÌM KIẾM
+        // ==========================
+        if (!string.IsNullOrEmpty(search))
+        {
+            query = query.Where(k =>
+                k.KhoaHocId.ToString().Contains(search) ||
+                k.TenKhoaHoc.Contains(search)
+            );
+        }
+
+        ViewBag.Search = search;
+
+        var khoaHocs = await query.ToListAsync();
+
+        return View(khoaHocs);
+        
+}
+
 
     // =====================================================
     // 2. STUDENT (Hồ sơ học viên của khóa học)
