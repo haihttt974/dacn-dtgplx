@@ -31,5 +31,6 @@
         /// </summary>
         public List<MocDiemItem> Mocs { get; set; } = new();
         public string? HintImageUrl { get; set; }
+        public bool Kho { get; set; }
     }
 }

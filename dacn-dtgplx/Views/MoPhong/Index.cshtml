@@ -1,0 +1,412 @@
+﻿@model dacn_dtgplx.ViewModels.OnTapMoPhongViewModel
+@using System.Text.Json
+
+@{
+    ViewData["Title"] = "Ôn tập mô phỏng";
+    var chuongsJson = JsonSerializer.Serialize(
+        Model.Chuongs,
+        new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }
+    );
+}
+
+<style>
+    /* ===== layout ===== */
+    .mp-wrap {
+        max-width: 1280px;
+        margin: 16px auto;
+        padding: 0 12px
+    }
+
+    .mp-grid {
+        display: grid;
+        grid-template-columns: 2.2fr 1fr;
+        gap: 18px
+    }
+    @@media(max - width:992px) {
+        .mp-grid
+
+    {
+        grid-template-columns: 1fr
+    }
+
+    }
+
+    /* ===== video ===== */
+    .mp-videoCard {
+        background: #0b0b0b;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 12px 30px rgba(0,0,0,.18)
+    }
+
+    .mp-videoTopBar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 12px;
+        background: #111;
+        color: #fff
+    }
+
+    .mp-title {
+        font-weight: 900;
+        font-size: 14px
+    }
+
+    .mp-badge {
+        background: rgba(255,255,255,.15);
+        color: #fff;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 700
+    }
+
+    video {
+        width: 100%;
+        background: #000;
+        pointer-events: none
+    }
+
+    /* ===== timeline ===== */
+    .mp-progressWrap {
+        background: #fff;
+        padding: 10px 12px;
+        border-radius: 0 0 14px 14px
+    }
+
+    .mp-progressBar {
+        position: relative;
+        height: 10px;
+        background: #e9ecef;
+        border-radius: 999px
+    }
+
+    /* Thanh progress màu xanh – DƯỚI */
+    .mp-progress {
+        position: absolute;
+        inset: 0;
+        width: 0%;
+        background: #0d6efd;
+        z-index: 1;
+    }
+
+    /* VÙNG ĐIỂM – TRÊN THANH XANH */
+    .mp-scoreZoneLayer {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    /* CỜ 🚩 – TRÊN CÙNG */
+    .mp-flagLayer {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 3;
+    }
+
+    .mp-flagPin {
+        position: absolute;
+        top: -18px;
+        transform: translateX(calc(-50% + 6px));
+        font-size: 18px
+    }
+
+    /* ===== score zone ===== */
+    .score-5 {
+        background: #22c55e
+    }
+
+    .score-4 {
+        background: #84cc16
+    }
+
+    .score-3 {
+        background: #facc15
+    }
+
+    .score-2 {
+        background: #fb923c
+    }
+
+    .score-1 {
+        background: #ef4444
+    }
+
+    .mp-scoreZone {
+        position: absolute;
+        top: 0;
+        height: 100%;
+        opacity: .85
+    }
+
+    /* ===== side ===== */
+    .mp-side {
+        position: sticky;
+        top: 16px
+    }
+
+    .mp-th-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill,minmax(44px,1fr));
+        gap: 8px
+    }
+
+    .mp-th-btn {
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 8px;
+        font-weight: 800;
+        background: #f8f9fa
+    }
+
+        .mp-th-btn:hover {
+            background: #0d6efd;
+            color: #fff
+        }
+
+        /* ===== câu khó (CHỈ VIỀN ĐỎ) ===== */
+        .mp-th-btn.kho {
+            border: 2px solid #dc3545;
+            color: #dc3545;
+            background: #fff;
+        }
+</style>
+
+<div class="mp-wrap">
+    <div class="mp-grid">
+
+        <!-- LEFT -->
+        <div>
+            <div class="mp-videoCard">
+                <div class="mp-videoTopBar">
+                    <div class="mp-title" id="txtTitle">Chọn tình huống để ôn tập</div>
+
+                    <div class="d-flex gap-2 align-items-center">
+                        <div class="mp-badge" id="scoreBadge" style="display:none">
+                            ⭐ <strong id="txtScoreTop">0</strong> điểm
+                        </div>
+                        <div class="mp-badge">⏱ <span id="txtTime">00:00</span></div>
+                        <button id="btnReset" class="mp-badge">🔁</button>
+                        <button id="btnHint" class="mp-badge" style="display:none">💡 Mẹo</button>
+                    </div>
+                </div>
+
+                <video id="video" playsinline muted></video>
+            </div>
+
+            <div class="mp-progressWrap">
+                <div class="mp-progressBar">
+                    <div id="scoreZoneLayer" class="mp-scoreZoneLayer"></div>
+                    <div id="timelineProgress" class="mp-progress"></div>
+                    <div id="flagLayer" class="mp-flagLayer"></div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <div class="small text-muted">⌨ Nhấn <b>SPACE</b> để đặt cờ (1 lần)</div>
+                    <div class="d-flex gap-2">
+                        <button id="btnPrev" class="btn btn-sm btn-outline-secondary">⏮</button>
+                        <button id="btnNext" class="btn btn-sm btn-outline-secondary">⏭</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="mp-side">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <strong>Chương mô phỏng</strong>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="chkKho">
+                    <label class="form-check-label">Chỉ câu khó</label>
+                </div>
+            </div>
+            <div class="accordion" id="chuongAccordion"></div>
+        </div>
+
+    </div>
+</div>
+
+<!-- HINT -->
+<div class="modal fade" id="hintModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content bg-dark">
+            <div class="modal-body text-center p-0">
+                <img id="hintImage" class="img-fluid" style="max-height:80vh">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const chuongs = @Html.Raw(chuongsJson);
+
+    const video = document.getElementById("video");
+    const txtTitle = document.getElementById("txtTitle");
+    const txtTime = document.getElementById("txtTime");
+    const timelineProgress = document.getElementById("timelineProgress");
+    const flagLayer = document.getElementById("flagLayer");
+    const scoreZoneLayer = document.getElementById("scoreZoneLayer");
+    const btnHint = document.getElementById("btnHint");
+    const hintImage = document.getElementById("hintImage");
+    const scoreBadge = document.getElementById("scoreBadge");
+    const txtScoreTop = document.getElementById("txtScoreTop");
+    const btnPrev = document.getElementById("btnPrev");
+    const btnNext = document.getElementById("btnNext");
+    const btnReset = document.getElementById("btnReset");
+
+    let curChuong = 0, curIdx = 0, curList = [];
+    let hasPlacedFlag = false;
+    let lastTime = 0;
+    let showOnlyKho = false;
+
+    /* ===================== UTILS ===================== */
+    const pad2 = n => String(n).padStart(2, "0");
+    const fmt = s => `${pad2(s / 60 | 0)}:${pad2(s % 60 | 0)}`;
+
+    function tinhDiem(t, th) {
+        if (t < th.scoreStartSec || t > th.scoreEndSec) return 0;
+        const step = (th.scoreEndSec - th.scoreStartSec) / 5;
+        return 5 - Math.min(4, Math.floor((t - th.scoreStartSec) / step));
+    }
+
+    /* ===================== CHƯƠNG ===================== */
+    function renderChuongs() {
+        const acc = document.getElementById("chuongAccordion");
+        acc.innerHTML = chuongs.map((c, ci) => {
+            const list = showOnlyKho ? c.tinhHuongs.filter(t => t.kho) : c.tinhHuongs;
+            if (!list.length) return "";
+
+            return `
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button ${ci ? "collapsed" : ""}"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#c${ci}">
+                            ${c.tenChuong}
+                        </button>
+                    </h2>
+                    <div id="c${ci}" class="accordion-collapse collapse ${ci === 0 ? "show" : ""}">
+                        <div class="accordion-body">
+                            <div class="mp-th-grid">
+                                ${list.map(t => {
+                                    const i = c.tinhHuongs.indexOf(t);
+                                        return `<button class="mp-th-btn ${t.kho ? "kho" : ""}"
+                                                        onclick="selectTinhHuong(${ci},${i})">
+                                                    ${i + 1}
+                                                </button>
+                                                `;
+                                }).join("")}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        }).join("");
+    }
+
+    /* ===================== LOAD VIDEO ===================== */
+    function selectTinhHuong(cIdx, tIdx) {
+        curChuong = cIdx;
+        curIdx = tIdx;
+        curList = chuongs[cIdx].tinhHuongs;
+        const th = curList[tIdx];
+
+        // reset state
+        hasPlacedFlag = false;
+        lastTime = 0;
+        flagLayer.innerHTML = "";
+        scoreZoneLayer.innerHTML = "";
+        scoreBadge.style.display = "none";
+        timelineProgress.style.width = "0%";
+        txtTime.textContent = "00:00";
+
+        txtTitle.textContent = th.tieuDe;
+        btnHint.style.display = th.hintImageUrl ? "inline-flex" : "none";
+
+        video.muted = true;
+        video.pause();
+
+        video.src = th.videoUrl;
+
+        video.currentTime = 0;
+
+        const p = video.play();
+        if (p) {
+            p.catch(err => console.warn("Play blocked:", err));
+        }
+    }
+
+    /* ===================== VIDEO ===================== */
+    video.addEventListener("timeupdate", () => {
+        lastTime = video.currentTime;
+        txtTime.textContent = fmt(video.currentTime);
+        timelineProgress.style.width =
+            (video.currentTime / video.duration * 100 || 0) + "%";
+    });
+
+    /* ❌ KHÔNG CHO TUA */
+    video.addEventListener("seeking", () => {
+        video.currentTime = lastTime;
+    });
+
+    /* ===================== SPACE – ĐẶT CỜ ===================== */
+    window.addEventListener("keydown", e => {
+        if (e.code !== "Space") return;
+        e.preventDefault();
+        if (hasPlacedFlag || !video.duration) return;
+
+        hasPlacedFlag = true;
+        const th = curList[curIdx];
+        const t = video.currentTime;
+        const d = tinhDiem(t, th);
+
+        const pin = document.createElement("div");
+        pin.className = "mp-flagPin";
+        pin.textContent = "🚩";
+        pin.style.left = (t / video.duration * 100) + "%";
+        flagLayer.appendChild(pin);
+
+        txtScoreTop.textContent = d;
+        scoreBadge.style.display = "inline-flex";
+
+        renderScoreZones(th); // ✅ CHỈ HIỆN SAU KHI SPACE
+    }, true);
+
+    /* ===================== SCORE ZONES ===================== */
+    function renderScoreZones(th) {
+        scoreZoneLayer.innerHTML = "";
+        const step = (th.scoreEndSec - th.scoreStartSec) / 5;
+
+        for (let i = 0; i < 5; i++) {
+            const div = document.createElement("div");
+            div.className = `mp-scoreZone score-${5 - i}`;
+            div.style.left =
+                ((th.scoreStartSec + step * i) / video.duration * 100) + "%";
+            div.style.width = (step / video.duration * 100) + "%";
+            scoreZoneLayer.appendChild(div);
+        }
+    }
+
+    /* ===================== NAV ===================== */
+    btnReset.onclick = () => selectTinhHuong(curChuong, curIdx);
+    btnPrev.onclick = () => curIdx > 0 && selectTinhHuong(curChuong, curIdx - 1);
+    btnNext.onclick = () =>
+        curIdx < curList.length - 1 && selectTinhHuong(curChuong, curIdx + 1);
+
+    /* ===================== HINT ===================== */
+    btnHint.onclick = () => {
+        hintImage.src = curList[curIdx].hintImageUrl;
+        new bootstrap.Modal(document.getElementById("hintModal")).show();
+    };
+
+    /* ===================== FILTER ===================== */
+    document.getElementById("chkKho").onchange = e => {
+        showOnlyKho = e.target.checked;
+        renderChuongs();
+    };
+
+    /* ===================== INIT ===================== */
+    renderChuongs();
+</script>
