@@ -465,4 +465,220 @@ public class ThiMoPhongController : Controller
 
         return path.Replace("\\", "/");
     }
+
+    // ================================
+    // LÀM BÀI NGẪU NHIÊN (10 tình huống)
+    // - Tỷ lệ chương: 2-1-2-1-2-2 (tổng 10) theo bảng % bạn gửi
+    // - Có 1 hoặc 2 câu khó (Kho = true)
+    // - Dùng lại View LamBai
+    // ================================
+    public async Task<IActionResult> LamBaiNgauNhien()
+    {
+        // Tỷ lệ cho 10 câu theo %: 20-10-20-10-20-20 => 2-1-2-1-2-2
+        // Nếu IdChuongMp của bạn không phải 1..6 theo thứ tự, thì đổi sang map theo ThuTu/OrderBy
+        var quotaByChuong = new Dictionary<int, int>
+        {
+            { 1, 2 },
+            { 2, 1 },
+            { 3, 2 },
+            { 4, 1 },
+            { 5, 2 },
+            { 6, 2 }
+        };
+
+        var rng = new Random();
+
+        // Load 6 chương + danh sách tình huống
+        var chuongs = await _context.ChuongMoPhongs
+            .Include(c => c.TinhHuongMoPhongs)
+            .OrderBy(c => c.ThuTu)
+            .ToListAsync();
+
+        // Lấy hardCount = 1 hoặc 2
+        int hardCount = rng.Next(1, 3);
+
+        // Gom ứng viên theo chương
+        // Lưu ý: bạn đang có property th.Kho (bool?) ở TinhHuongMoPhong
+        // Và TgBatDau/TgKetThuc frame -> giây
+        var picked = new List<TinhHuongMoPhong>();
+
+        // 1) Pick câu khó trước (1-2 câu) từ toàn bộ, ưu tiên rải đều theo chương
+        var allHard = chuongs
+            .SelectMany(c => c.TinhHuongMoPhongs)
+            .Where(t => t.Kho == true)
+            .OrderBy(_ => rng.Next())
+            .ToList();
+
+        // Nếu DB thiếu câu khó thì fallback: lấy tối đa có thể
+        hardCount = Math.Min(hardCount, allHard.Count);
+
+        // Chọn hard theo kiểu “ưu tiên chương còn quota”
+        foreach (var hard in allHard)
+        {
+            if (picked.Count(x => x.Kho == true) >= hardCount) break;
+
+            // tìm chương của hard
+            var chuongOfHard = chuongs.FirstOrDefault(c => c.TinhHuongMoPhongs.Any(x => x.IdThMp == hard.IdThMp));
+            if (chuongOfHard == null) continue;
+
+            int chuongId = chuongOfHard.IdChuongMp;
+
+            // nếu chương này còn quota thì lấy luôn để không phá cơ cấu
+            if (quotaByChuong.TryGetValue(chuongId, out var q) && q > 0)
+            {
+                picked.Add(hard);
+                quotaByChuong[chuongId] = q - 1;
+            }
+
+            // nếu quota chương đã hết, vẫn có thể lấy hard (nhưng sẽ làm lệch cơ cấu)
+            // -> ở đây mình KHÔNG lấy để giữ đúng tỷ lệ.
+        }
+
+        // Nếu chưa đủ hardCount (do quota), thì cho phép lấy hard ở chương khác còn quota
+        if (picked.Count(x => x.Kho == true) < hardCount)
+        {
+            foreach (var c in chuongs)
+            {
+                if (!quotaByChuong.TryGetValue(c.IdChuongMp, out var q) || q <= 0) continue;
+
+                var hardInChuong = c.TinhHuongMoPhongs
+                    .Where(t => t.Kho == true && picked.All(p => p.IdThMp != t.IdThMp))
+                    .OrderBy(_ => rng.Next())
+                    .ToList();
+
+                foreach (var h in hardInChuong)
+                {
+                    if (picked.Count(x => x.Kho == true) >= hardCount) break;
+                    picked.Add(h);
+                    quotaByChuong[c.IdChuongMp] = quotaByChuong[c.IdChuongMp] - 1;
+                }
+
+                if (picked.Count(x => x.Kho == true) >= hardCount) break;
+            }
+        }
+
+        // 2) Fill các câu còn lại theo quota từng chương (ưu tiên câu không khó trước)
+        foreach (var c in chuongs)
+        {
+            if (!quotaByChuong.TryGetValue(c.IdChuongMp, out var need) || need <= 0) continue;
+
+            // ưu tiên câu thường trước, rồi mới đến câu khó nếu thiếu
+            var normals = c.TinhHuongMoPhongs
+                .Where(t => t.Kho != true && picked.All(p => p.IdThMp != t.IdThMp))
+                .OrderBy(_ => rng.Next())
+                .Take(need)
+                .ToList();
+
+            picked.AddRange(normals);
+            need -= normals.Count;
+
+            if (need > 0)
+            {
+                var more = c.TinhHuongMoPhongs
+                    .Where(t => picked.All(p => p.IdThMp != t.IdThMp))
+                    .OrderBy(_ => rng.Next())
+                    .Take(need)
+                    .ToList();
+
+                picked.AddRange(more);
+            }
+        }
+
+        // 3) Nếu vì lý do nào đó vẫn thiếu (DB thiếu câu ở chương),
+        //    fill random từ tất cả tình huống còn lại để đủ 10
+        if (picked.Count < 10)
+        {
+            var pool = chuongs.SelectMany(c => c.TinhHuongMoPhongs)
+                .Where(t => picked.All(p => p.IdThMp != t.IdThMp))
+                .OrderBy(_ => rng.Next())
+                .Take(10 - picked.Count)
+                .ToList();
+
+            picked.AddRange(pool);
+        }
+
+        // 4) Shuffle lại thứ tự 10 tình huống (đề random)
+        picked = picked.OrderBy(_ => rng.Next()).Take(10).ToList();
+
+        // Build VM giống LamBai
+        var vm = new ThiTrialViewModel
+        {
+            IdBoDe = 0 // ✅ 0 = đề ngẫu nhiên (để JS biết submit sang endpoint khác)
+        };
+
+        foreach (var th in picked)
+        {
+            double startSec = FrameToSec(th.TgBatDau ?? 0);
+            double endSec = FrameToSec(th.TgKetThuc ?? 0);
+
+            vm.TinhHuongs.Add(new TinhHuongItem2
+            {
+                IdThMp = th.IdThMp,
+                TieuDe = th.TieuDe ?? "",
+                VideoUrl = NormalizeStaticPath(th.VideoUrl),
+                ScoreStartSec = startSec,
+                ScoreEndSec = endSec,
+                HintImageUrl = NormalizeStaticPath(th.UrlAnhMeo),
+                Kho = th.Kho ?? false
+            });
+        }
+
+        return View("LamBai", vm);
+    }
+
+    // ================================
+    // CHẤM ĐIỂM ĐỀ NGẪU NHIÊN
+    // - Không lưu DB
+    // - Client gửi lên: selectedThIds + flags (idThMp,timeSec)
+    // ================================
+    public class RandomKetQuaRequest
+    {
+        public List<int> SelectedThIds { get; set; } = new();
+        public List<FlagItem> Flags { get; set; } = new();
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> LuuKetQuaNgauNhien([FromBody] RandomKetQuaRequest request)
+    {
+        if (request == null) return BadRequest("Request null.");
+        if (request.SelectedThIds == null || request.SelectedThIds.Count == 0)
+            return BadRequest("Thiếu SelectedThIds.");
+
+        // Load các tình huống theo ids
+        var ths = await _context.TinhHuongMoPhongs
+            .Where(t => request.SelectedThIds.Contains(t.IdThMp))
+            .ToListAsync();
+
+        var thMap = ths.ToDictionary(t => t.IdThMp, t => t);
+
+        // Normalize flags: mỗi IdThMp chỉ lấy 1 cái (lấy cái đầu tiên theo time)
+        var flags = NormalizeFlags(request.Flags ?? new List<FlagItem>());
+
+        int tongDiem = 0;
+
+        // Chỉ chấm trên danh sách 10 câu random
+        foreach (var idTh in request.SelectedThIds.Distinct())
+        {
+            if (!thMap.TryGetValue(idTh, out var th)) continue;
+
+            double startSec = FrameToSec(th.TgBatDau ?? 0);
+            double endSec = FrameToSec(th.TgKetThuc ?? 0);
+
+            // Nếu user không bấm thì 0 điểm
+            var f = flags.FirstOrDefault(x => x.IdThMp == idTh);
+            double timePress = f?.TimeSec ?? 0;
+
+            tongDiem += TinhDiemTheoThoiDiem(timePress, startSec, endSec);
+        }
+
+        bool dat = tongDiem >= 35;
+
+        return Ok(new
+        {
+            success = true,
+            tongDiem,
+            dat,
+            isRandom = true
+        });
+    }
 }
