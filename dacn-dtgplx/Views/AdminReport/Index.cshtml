@@ -1,0 +1,309 @@
+﻿@model dacn_dtgplx.ViewModels.Reports.AdminReportIndexVM
+@{
+    ViewData["Title"] = "Báo cáo & Thống kê";
+}
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<style>
+    /* ===== KPI ===== */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .kpi-card {
+        background: #fff;
+        border-radius: 14px;
+        padding: 16px 18px;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 6px 18px rgba(0,0,0,.06);
+        min-height: 88px;
+        overflow: hidden;
+    }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(0,0,0,.08);
+        }
+
+    .kpi-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        color: #fff;
+        margin-right: 14px;
+    }
+
+    .bg-revenue {
+        background: linear-gradient(135deg,#0d6efd,#4dabf7);
+    }
+
+    .bg-invoice {
+        background: linear-gradient(135deg,#198754,#51cf66);
+    }
+
+    .bg-student {
+        background: linear-gradient(135deg,#0dcaf0,#66d9e8);
+    }
+
+    .bg-course {
+        background: linear-gradient(135deg,#ffc107,#ffd43b);
+    }
+
+    .kpi-value {
+        font-size: 20px;
+        font-weight: 700;
+        color: #212529;
+    }
+
+    .kpi-label {
+        font-size: 13px;
+        color: #6c757d;
+    }
+
+    /* ===== CHART ===== */
+    .chart-card {
+        background: #fff;
+        border-radius: 14px;
+        padding: 12px 14px;
+        box-shadow: 0 4px 14px rgba(0,0,0,.05);
+        height: 260px; /* QUAN TRỌNG */
+        overflow: hidden; /* QUAN TRỌNG */
+        position: relative;
+    }
+
+        .chart-card canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+    .chart-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: #495057;
+    }
+</style>
+
+<div id="reportArea">
+
+    <h5 class="mb-3">
+        <i class="fas fa-chart-line text-primary"></i>
+        Báo cáo & Thống kê hệ thống
+    </h5>
+
+    <!-- ================= KPI ================= -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-icon bg-revenue">
+                <i class="fas fa-coins"></i>
+            </div>
+            <div>
+                <div class="kpi-value">@Model.TongDoanhThu.ToString("N0") đ</div>
+                <div class="kpi-label">Tổng doanh thu</div>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon bg-invoice">
+                <i class="fas fa-file-invoice"></i>
+            </div>
+            <div>
+                <div class="kpi-value">@Model.TongHoaDon</div>
+                <div class="kpi-label">Hóa đơn đã thanh toán</div>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon bg-student">
+                <i class="fas fa-user-graduate"></i>
+            </div>
+            <div>
+                <div class="kpi-value">@Model.TongHocVien</div>
+                <div class="kpi-label">Học viên</div>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-icon bg-course">
+                <i class="fas fa-book-open"></i>
+            </div>
+            <div>
+                <div class="kpi-value">@Model.TongKhoaHoc</div>
+                <div class="kpi-label">Khóa học đang mở</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= CHARTS ================= -->
+    <div class="row g-3">
+        <div class="col-lg-4 col-md-6">
+            <div class="chart-card">
+                <div class="chart-title">Doanh thu theo ngày</div>
+                <canvas id="chartNgay"></canvas>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6">
+            <div class="chart-card">
+                <div class="chart-title">Doanh thu theo tuần</div>
+                <canvas id="chartTuan"></canvas>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6">
+            <div class="chart-card">
+                <div class="chart-title">Doanh thu theo tháng</div>
+                <canvas id="chartThang"></canvas>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="chart-card">
+                <div class="chart-title">Doanh thu theo quý</div>
+                <canvas id="chartQuy"></canvas>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="chart-card">
+                <div class="chart-title">Doanh thu theo hạng GPLX</div>
+                <canvas id="chartHang"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= EXPORT ================= -->
+<div class="mt-3 text-end">
+    <button class="btn btn-sm btn-outline-danger me-2" onclick="exportPDF()">
+        <i class="fas fa-file-pdf"></i> Xuất PDF
+    </button>
+    <button class="btn btn-sm btn-outline-success" onclick="exportExcel()">
+        <i class="fas fa-file-excel"></i> Xuất Excel
+    </button>
+</div>
+
+@section Scripts {
+    <script>
+                function renderChart(id, type, labels, data) {
+            new Chart(document.getElementById(id), {
+                type: type,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: 'rgba(13,110,253,.65)',
+                        borderColor: '#0d6efd',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: type === 'line'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+
+                    layout: {
+                        padding: {
+                            top: 8,
+                            right: 8,
+                            bottom: 4,
+                            left: 4
+                        }
+                    },
+
+                    scales: {
+                        x: {
+                            ticks: {
+                                font: { size: 11 },
+                                maxRotation: 0,
+                                autoSkip: true
+                            },
+                            grid: { display: false }
+                        },
+                        y: {
+                            ticks: {
+                                font: { size: 11 },
+                                callback: v => v.toLocaleString()
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,.05)'
+                            }
+                        }
+                    },
+
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx =>
+                                    ctx.raw.toLocaleString() + " đ"
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        renderChart("chartNgay","line",
+            @Html.Raw(Json.Serialize(Model.DoanhThuNgay.Select(x => x.Label))),
+            @Html.Raw(Json.Serialize(Model.DoanhThuNgay.Select(x => x.Value)))
+        );
+
+        renderChart("chartTuan","bar",
+            @Html.Raw(Json.Serialize(Model.DoanhThuTuan.Select(x => x.Label))),
+            @Html.Raw(Json.Serialize(Model.DoanhThuTuan.Select(x => x.Value)))
+        );
+
+        renderChart("chartThang","bar",
+            @Html.Raw(Json.Serialize(Model.DoanhThuThang.Select(x => x.Label))),
+            @Html.Raw(Json.Serialize(Model.DoanhThuThang.Select(x => x.Value)))
+        );
+
+        renderChart("chartQuy","line",
+            @Html.Raw(Json.Serialize(Model.DoanhThuQuy.Select(x => x.Label))),
+            @Html.Raw(Json.Serialize(Model.DoanhThuQuy.Select(x => x.Value)))
+        );
+
+        renderChart("chartHang","doughnut",
+            @Html.Raw(Json.Serialize(Model.DoanhThuTheoHang.Select(x => x.Ten))),
+            @Html.Raw(Json.Serialize(Model.DoanhThuTheoHang.Select(x => x.Value)))
+        );
+
+        function exportPDF() {
+            html2canvas(document.getElementById("reportArea")).then(c => {
+                const pdf = new jspdf.jsPDF("l", "mm", "a4");
+                pdf.addImage(c.toDataURL("image/png"), "PNG", 10, 10, 277, 190);
+                pdf.save("BaoCaoThongKe.pdf");
+            });
+        }
+
+        function exportExcel() {
+            const ws = XLSX.utils.aoa_to_sheet([
+                ["Chỉ số", "Giá trị"],
+                ["Tổng doanh thu", "@Model.TongDoanhThu"],
+                ["Hóa đơn", "@Model.TongHoaDon"],
+                ["Học viên", "@Model.TongHocVien"],
+                ["Khóa học", "@Model.TongKhoaHoc"]
+            ]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Report");
+            XLSX.writeFile(wb, "BaoCaoThongKe.xlsx");
+        }
+    </script>
+}
