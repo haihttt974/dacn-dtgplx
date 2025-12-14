@@ -1,4 +1,5 @@
-﻿using dacn_dtgplx.Models;
+﻿using dacn_dtgplx.DTOs;
+using dacn_dtgplx.Models;
 using dacn_dtgplx.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -274,6 +275,87 @@ namespace dacn_dtgplx.Controllers
                 HttpContext.Session.SetString("Hang", maHang);
 
             return RedirectToAction("Index");
+        }
+
+        public IActionResult FlashCardBienBao()
+        {
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            bool isLoggedIn = userId.HasValue && userId.Value > 0;
+
+            // 1️⃣ Query SQL THUẦN (KHÔNG gọi method)
+            var cards = _context.BienBaos
+                .Select(b => new BienBaoFlashCardVM
+                {
+                    IdBienBao = b.IdBienBao,
+                    TenBienBao = b.TenBienBao,
+                    YNghia = b.Ynghia,
+                    HinhAnh = b.HinhAnh, // CHỈ LẤY RAW
+
+                    IdFlashcard = isLoggedIn
+                        ? b.FlashCards
+                            .Where(f => f.UserId == userId.Value)
+                            .Select(f => (int?)f.IdFlashcard)
+                            .FirstOrDefault()
+                        : null,
+
+                    DanhGia = isLoggedIn
+                        ? b.FlashCards
+                            .Where(f => f.UserId == userId.Value)
+                            .Select(f => f.DanhGia)
+                            .FirstOrDefault()
+                        : null
+                })
+                .ToList(); // 🔥 RA KHỎI EF
+
+            // 2️⃣ XỬ LÝ C# THUẦN
+            foreach (var c in cards)
+            {
+                c.HinhAnh = NormalizeImage(c.HinhAnh);
+            }
+
+            var vm = new BienBaoFlashStudyPageVM
+            {
+                IsLoggedIn = isLoggedIn,
+                LoginUrl = "/Auth/Login",
+                Cards = cards
+            };
+
+            return View(vm);
+        }
+
+        [HttpPost]
+        public IActionResult Save([FromBody] SaveFlashcardDto dto)
+        {
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (!userId.HasValue || userId.Value <= 0)
+                return Unauthorized(new { message = "Bạn cần đăng nhập để lưu tiến trình." });
+
+            var fc = _context.FlashCards
+                .FirstOrDefault(x => x.UserId == userId.Value && x.IdBienBao == dto.IdBienBao);
+
+            if (fc == null)
+            {
+                fc = new FlashCard
+                {
+                    UserId = userId.Value,
+                    IdBienBao = dto.IdBienBao,
+                    DanhGia = dto.DanhGia
+                };
+                _context.FlashCards.Add(fc);
+            }
+            else
+            {
+                fc.DanhGia = dto.DanhGia;
+            }
+
+            _context.SaveChanges();
+
+            return Ok(new
+            {
+                ok = true,
+                idBienBao = dto.IdBienBao,
+                danhGia = dto.DanhGia
+            });
         }
     }
 }

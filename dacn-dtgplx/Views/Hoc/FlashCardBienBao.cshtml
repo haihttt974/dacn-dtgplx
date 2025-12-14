@@ -1,0 +1,345 @@
+﻿@model dacn_dtgplx.ViewModels.BienBaoFlashStudyPageVM
+@{
+    ViewData["Title"] = "Ôn tập biển báo – Flashcard";
+}
+
+<style>
+    /* ===== LAYOUT ===== */
+    .study-container {
+        max-width: 1100px;
+        margin: auto;
+    }
+
+    .study-card {
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 12px 28px rgba(0,0,0,.12);
+        padding: 26px;
+    }
+
+    /* ===== FLASHCARD ===== */
+    .flashcard-wrapper {
+        perspective: 1400px;
+    }
+
+    .flashcard {
+        width: 100%;
+        height: 460px;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform .7s cubic-bezier(.4,.2,.2,1);
+        cursor: pointer;
+        border-radius: 16px;
+    }
+
+        /* Khi hover */
+        .flashcard:hover {
+            box-shadow: 0 18px 40px rgba(0,0,0,.18);
+        }
+
+        /* Khi đang lật */
+        .flashcard.flip {
+            transform: rotateY(180deg) scale(1.01);
+        }
+
+    .card-face {
+        position: absolute;
+        inset: 0;
+        backface-visibility: hidden;
+        border-radius: 16px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    }
+
+    .card-front img {
+        max-width: 100%;
+        max-height: 390px;
+        object-fit: contain;
+    }
+
+    /* ===== BACK – Ý NGHĨA ===== */
+    .card-back {
+        background: linear-gradient(145deg, #fffdf5, #fff2cc);
+        transform: rotateY(180deg);
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0;
+        box-shadow: inset 0 0 0 1px rgba(0,0,0,.04);
+    }
+
+    /* Header */
+    .card-back-header {
+        padding: 18px 22px;
+        background: #ffb703;
+        color: #1f1f1f;
+        font-weight: 900;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-radius: 16px 16px 0 0;
+    }
+
+    /* Body */
+    .card-back-body {
+        padding: 26px 28px;
+        font-size: 17px;
+        line-height: 1.7;
+        color: #3e2723;
+        text-align: left;
+        flex: 1;
+    }
+
+        /* Nhấn mạnh mã biển */
+        .card-back-body strong {
+            color: #d84315;
+            font-weight: 900;
+        }
+
+    /* Hint footer */
+    .card-back-footer {
+        padding: 14px 22px;
+        font-size: 14px;
+        color: #6c757d;
+        border-top: 1px dashed rgba(0,0,0,.15);
+    }
+
+    /* ===== STATUS ===== */
+    .flashcard.status-nho {
+        box-shadow: 0 0 0 4px #28a745 inset;
+    }
+
+    .flashcard.status-chuanho {
+        box-shadow: 0 0 0 4px #dc3545 inset;
+    }
+
+    .status-badge {
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-weight: 800;
+        margin-bottom: 12px;
+    }
+
+    .status-nho-badge {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-chuanho-badge {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .status-none-badge {
+        background: #e2e3e5;
+        color: #383d41;
+    }
+
+    /* ===== RIGHT ===== */
+    .side-title {
+        font-size: 26px;
+        font-weight: 900;
+    }
+
+    .side-hint {
+        color: #6c757d;
+        font-weight: 600;
+    }
+
+    .progress-text {
+        font-weight: 800;
+        color: #6c757d;
+    }
+
+    .btn-stack .btn {
+        width: 100%;
+        padding: 12px;
+        font-weight: 800;
+        border-radius: 12px;
+    }
+
+    /* ===== FILTER SWITCH ===== */
+    .filter-box {
+        border: 2px dashed #ffc107;
+        border-radius: 12px;
+        padding: 10px 12px;
+        margin-bottom: 14px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+        .filter-box.active {
+            background: #fff3cd;
+            border-color: #ff9800;
+        }
+</style>
+
+<div class="container py-4 study-container">
+
+    <h2 class="fw-bold text-center text-warning mb-1">🎴 Ôn tập biển báo giao thông</h2>
+    <p class="text-muted text-center mb-4">Nhấn vào thẻ để lật – đánh giá mức độ nhớ</p>
+
+    @if (!Model.IsLoggedIn)
+    {
+        <div class="alert alert-warning d-flex justify-content-between align-items-center">
+            <div>⚠️ Bạn đang học ở chế độ khách. Đăng nhập để lưu tiến trình.</div>
+            <a class="btn btn-warning fw-bold" href="@Model.LoginUrl">Đăng nhập</a>
+        </div>
+    }
+
+    <div class="study-card">
+        <div class="row g-4">
+
+            <!-- LEFT -->
+            <div class="col-md-7">
+                <div class="flashcard-wrapper">
+                    <div id="flashcard" class="flashcard">
+                        <div class="card-face card-front">
+                            <img id="imgBienBao" />
+                        </div>
+                        <div class="card-face card-back">
+                            <div class="card-back-header">
+                                📘 Ý nghĩa biển báo
+                            </div>
+
+                            <div class="card-back-body">
+                                <span id="yNghiaBack"></span>
+                            </div>
+
+                            <div class="card-back-footer">
+                                👆 Nhấn lại vào thẻ để quay về hình ảnh
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT -->
+            <div class="col-md-5 d-flex flex-column">
+
+                <!-- FILTER -->
+                <div id="filterToggle" class="filter-box">
+                    🔄 Chỉ những biển báo <b>chưa nhớ</b>
+                </div>
+
+                <div id="statusBadge" class="status-badge status-none-badge">CHƯA ĐÁNH GIÁ</div>
+                <div id="tenBienBao" class="side-title"></div>
+                <div class="side-hint">👉 Nhấn vào thẻ để xem ý nghĩa</div>
+
+                <div class="btn-stack d-flex flex-column gap-3 mt-3">
+                    <button id="btnNho" class="btn btn-success">✅ Đã nhớ</button>
+                    <button id="btnChuaNho" class="btn btn-outline-danger">❌ Chưa nhớ</button>
+
+                    <div class="d-flex gap-2">
+                        <button id="btnPrev" class="btn btn-outline-secondary w-50">⬅ Trước</button>
+                        <button id="btnNext" class="btn btn-outline-secondary w-50">Sau ➡</button>
+                    </div>
+                </div>
+
+                <div class="mt-auto pt-4">
+                    <div id="progress" class="progress-text"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    const cards = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Cards));
+    const isLoggedIn = @Html.Raw(Model.IsLoggedIn.ToString().ToLower());
+    let index = 0;
+    let onlyChuaNho = false;
+    const flashcard = document.getElementById("flashcard");
+
+    /* ===== FILTER TOGGLE ===== */
+    document.getElementById("filterToggle").onclick = () => {
+        onlyChuaNho = !onlyChuaNho;
+        document.getElementById("filterToggle").classList.toggle("active", onlyChuaNho);
+    };
+
+    /* ===== HELPERS ===== */
+    function isValid(i) {
+        if (!onlyChuaNho) return true;
+        return cards[i].DanhGia !== "Nho";
+    }
+
+    function findNext(dir) {
+        let i = index + dir;
+        while (i >= 0 && i < cards.length) {
+            if (isValid(i)) return i;
+            i += dir;
+        }
+        return -1;
+    }
+
+    /* ===== RENDER ===== */
+    function renderStatus(c) {
+        const badge = document.getElementById("statusBadge");
+        flashcard.classList.remove("status-nho", "status-chuanho");
+
+        if (c.DanhGia === "Nho") {
+            badge.textContent = "ĐÃ NHỚ";
+            badge.className = "status-badge status-nho-badge";
+            flashcard.classList.add("status-nho");
+        }
+        else if (c.DanhGia === "ChuaNho") {
+            badge.textContent = "CHƯA NHỚ";
+            badge.className = "status-badge status-chuanho-badge";
+            flashcard.classList.add("status-chuanho");
+        }
+        else {
+            badge.textContent = "CHƯA ĐÁNH GIÁ";
+            badge.className = "status-badge status-none-badge";
+        }
+    }
+
+    function loadCard() {
+        const c = cards[index];
+        document.getElementById("imgBienBao").src = c.HinhAnh || "/images/bien_bao/no-image.png";
+        document.getElementById("tenBienBao").innerText = c.TenBienBao || "";
+        document.getElementById("yNghiaBack").innerText = c.YNghia || "";
+        document.getElementById("progress").innerText = `Biển ${index + 1} / ${cards.length}`;
+        flashcard.classList.remove("flip");
+        renderStatus(c);
+    }
+
+    /* ===== ACTIONS ===== */
+    flashcard.onclick = () => flashcard.classList.toggle("flip");
+
+    async function saveDanhGia(val) {
+        if (!isLoggedIn) return alert("Bạn cần đăng nhập để lưu.");
+
+        const c = cards[index];
+        const res = await fetch("/Hoc/Save", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ idBienBao: c.IdBienBao, danhGia: val })
+        });
+
+        if (!res.ok) return alert("Không lưu được!");
+
+        c.DanhGia = val;
+        renderStatus(c);
+    }
+
+    btnNho.onclick = () => saveDanhGia("Nho");
+    btnChuaNho.onclick = () => saveDanhGia("ChuaNho");
+
+    btnNext.onclick = () => {
+        const next = findNext(1);
+        if (next === -1) return alert("🎉 Không còn biển chưa nhớ!");
+        index = next; loadCard();
+    };
+
+    btnPrev.onclick = () => {
+        const prev = findNext(-1);
+        if (prev === -1) return;
+        index = prev; loadCard();
+    };
+
+    loadCard();
+</script>
