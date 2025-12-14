@@ -1,0 +1,119 @@
+﻿@model List<dacn_dtgplx.Models.Hang>
+
+@{
+    ViewData["Title"] = "Quản lý hạng GPLX";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="m-0">Quản lý hạng GPLX</h1>
+            <a class="btn btn-primary" asp-action="Create">
+                <i class="fas fa-plus"></i> Thêm hạng
+            </a>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i> @TempData["Error"]
+            </div>
+        }
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> @TempData["Success"]
+            </div>
+        }
+
+        <div class="card card-outline card-secondary">
+            <div class="card-header">
+                <h3 class="card-title">Danh sách hạng</h3>
+            </div>
+
+            <div class="card-body p-0">
+                <table class="table table-striped table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width:120px;">Mã hạng</th>
+                            <th>Tên đầy đủ</th>
+                            <th style="width:120px;">Điểm đạt</th>
+                            <th style="width:140px;">Thời gian TN</th>
+                            <th style="width:120px;">Số câu hỏi</th>
+                            <th style="width:160px;">Chi phí</th>
+                            <th style="width:140px;">Quy định</th>
+                            <th style="width:220px;" class="text-right">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center text-muted p-4">
+                                    Chưa có dữ liệu hạng.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var h in Model)
+                            {
+                                var hasRule = h.QuyDinhHangs != null && h.QuyDinhHangs.Any();
+
+                                <tr>
+                                    <td><strong>@h.MaHang</strong></td>
+                                    <td>@(h.TenDayDu ?? "-")</td>
+                                    <td>@h.DiemDat</td>
+                                    <td>@h.ThoiGianTn phút</td>
+                                    <td>@h.SoCauHoi</td>
+                                    <td>@(h.ChiPhi.HasValue? h.ChiPhi.Value.ToString("n0") + " đ" : "-")</td>
+                                    <td>
+                                        @if (hasRule)
+                                        {
+                                            <span class="badge badge-success">Đã cấu hình</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-warning">Chưa có</span>
+                                        }
+                                    </td>
+                                    <td class="text-right">
+                                        <a class="btn btn-sm btn-info"
+                                           asp-action="Edit" asp-route-id="@h.IdHang">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+
+                                        <a class="btn btn-sm btn-warning"
+                                           asp-action="QuyDinh" asp-route-hangId="@h.IdHang">
+                                            <i class="fas fa-cogs"></i>
+                                        </a>
+
+                                        <form class="d-inline"
+                                              asp-action="Delete"
+                                              asp-route-id="@h.IdHang"
+                                              method="post"
+                                              onsubmit="return confirm('Bạn chắc chắn muốn xóa hạng @h.MaHang?');">
+                                            @Html.AntiForgeryToken()
+                                            <button class="btn btn-sm btn-danger" type="submit">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card-footer text-muted">
+                Tổng: <strong>@Model.Count</strong> hạng
+            </div>
+        </div>
+    </div>
+</section>

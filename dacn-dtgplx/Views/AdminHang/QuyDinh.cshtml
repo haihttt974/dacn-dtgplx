@@ -1,0 +1,204 @@
+﻿@model dacn_dtgplx.Models.QuyDinhHang
+@using dacn_dtgplx.Models
+
+@{
+    var hang = ViewBag.Hang as Hang;
+    ViewData["Title"] = "Quy định hạng";
+}
+
+<style>
+    .readonly-box {
+        background-color: #f1f3f5;
+        cursor: not-allowed;
+    }
+
+    .view-only {
+        pointer-events: none;
+        opacity: 0.65;
+    }
+
+    .rule-section-title {
+        font-weight: 600;
+        font-size: 1rem;
+        color: #495057;
+        border-left: 4px solid #ffc107;
+        padding-left: 10px;
+        margin-bottom: 15px;
+    }
+</style>
+
+<section class="content pt-3">
+    <div class="container-fluid">
+
+        <div class="card card-outline card-warning shadow-sm">
+
+            <!-- ================= HEADER ================= -->
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        Quy định hạng
+                        <span class="text-warning fw-bold">@hang?.MaHang</span>
+                        <small class="text-muted ms-2">
+                            (@(hang?.TenDayDu ?? "Chưa có tên"))
+                        </small>
+                    </h3>
+
+                    <a class="btn btn-outline-secondary btn-sm" asp-action="Index">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                </div>
+            </div>
+
+            <!-- ================= FORM ================= -->
+            <form asp-action="QuyDinh"
+                  asp-route-hangId="@Model.IdHang"
+                  method="post"
+                  id="ruleForm">
+
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="IdHang" />
+
+                <div class="card-body">
+
+                    <!-- ================= THÔNG SỐ ================= -->
+                    <div class="rule-section-title">
+                        <i class="fas fa-sliders-h"></i> Thông số yêu cầu
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label>Km tối thiểu (đường trường)</label>
+                            <input asp-for="KmToiThieu"
+                                   type="number"
+                                   class="form-control editable readonly-box"
+                                   readonly />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label>Số giờ ban đêm</label>
+                            <input asp-for="SoGioBanDem"
+                                   type="number"
+                                   class="form-control editable readonly-box"
+                                   readonly />
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <!-- ================= HẠNG MỤC ================= -->
+                    <div class="rule-section-title">
+                        <i class="fas fa-check-circle"></i> Hạng mục đào tạo
+                    </div>
+
+                    <!-- hidden fallback -->
+                    <input type="hidden" name="LyThuyet" value="false" />
+                    <input type="hidden" name="SaHinh" value="false" />
+                    <input type="hidden" name="MoPhong" value="false" />
+                    <input type="hidden" name="DuongTruong" value="false" />
+
+                    <div class="row view-only editable">
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input type="checkbox"
+                                       name="LyThuyet"
+                                       value="true"
+                                       class="form-check-input"
+                                       @(Model.LyThuyet == true ? "checked" : "") />
+                                <label class="form-check-label fw-semibold">
+                                    Lý thuyết
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input type="checkbox"
+                                       name="SaHinh"
+                                       value="true"
+                                       class="form-check-input"
+                                       @(Model.SaHinh == true ? "checked" : "") />
+                                <label class="form-check-label fw-semibold">
+                                    Sa hình
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input type="checkbox"
+                                       name="MoPhong"
+                                       value="true"
+                                       class="form-check-input"
+                                       @(Model.MoPhong == true ? "checked" : "") />
+                                <label class="form-check-label fw-semibold">
+                                    Mô phỏng
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input type="checkbox"
+                                       name="DuongTruong"
+                                       value="true"
+                                       class="form-check-input"
+                                       @(Model.DuongTruong == true ? "checked" : "") />
+                                <label class="form-check-label fw-semibold">
+                                    Đường trường
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <!-- ================= GHI CHÚ ================= -->
+                    <div class="rule-section-title">
+                        <i class="fas fa-sticky-note"></i> Ghi chú
+                    </div>
+
+                    <textarea asp-for="GhiChu"
+                              rows="3"
+                              class="form-control editable readonly-box"
+                              readonly></textarea>
+
+                    <div class="alert alert-warning mt-3 mb-0">
+                        <i class="fas fa-info-circle"></i>
+                        Quy định này áp dụng cho <strong>toàn bộ khóa học</strong> thuộc hạng.
+                    </div>
+                </div>
+
+                <!-- ================= FOOTER ================= -->
+                <div class="card-footer d-flex justify-content-end gap-2">
+                    <button type="button"
+                            id="btnEdit"
+                            class="btn btn-info">
+                        <i class="fas fa-edit"></i> Chỉnh sửa
+                    </button>
+
+                    <button type="submit"
+                            id="btnSave"
+                            class="btn btn-warning d-none">
+                        <i class="fas fa-save"></i> Lưu thay đổi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        document.getElementById("btnEdit").addEventListener("click", function () {
+
+            document.querySelectorAll(".editable").forEach(el => {
+                el.classList.remove("view-only");
+                el.removeAttribute("readonly");
+                el.classList.remove("readonly-box");
+            });
+
+            document.getElementById("btnEdit").classList.add("d-none");
+            document.getElementById("btnSave").classList.remove("d-none");
+        });
+    </script>
+}

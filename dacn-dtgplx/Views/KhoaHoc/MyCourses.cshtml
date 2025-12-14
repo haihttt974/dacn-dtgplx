@@ -137,19 +137,28 @@
         <div class="modal-content">
 
             <div class="modal-header bg-warning">
-                <h5 class="modal-title fw-bold">Liên hệ giáo viên</h5>
+                <h5 class="modal-title fw-bold">Xác nhận liên hệ</h5>
                 <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
             <div class="modal-body">
-                <p><strong>Giáo viên:</strong> <span id="modalGvName"></span></p>
+                <p>
+                    Bạn đang chuẩn bị mở cuộc trò chuyện với
+                    <strong class="text-success" id="modalGvName"></strong>,
+                    giáo viên phụ trách khóa học
+                    <strong id="modalKhName"></strong>.
+                </p>
 
-                <textarea id="modalMessage" class="form-control" rows="4"></textarea>
+                <p class="text-muted mb-0">
+                    Sau khi xác nhận, bạn sẽ được chuyển đến trang nhắn tin để trao đổi trực tiếp với giáo viên.
+                </p>
             </div>
 
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button class="btn btn-primary" id="btnSendMessage">Gửi</button>
+                <button class="btn btn-primary" id="btnConfirmContact">
+                    Xác nhận
+                </button>
             </div>
         </div>
     </div>
@@ -161,37 +170,28 @@
     document.querySelectorAll(".btnContact").forEach(btn => {
         btn.addEventListener("click", function () {
 
-            let gvId = this.dataset.gv;
-            let gvName = this.dataset.gvten;
-            let khName = this.dataset.kh;
+            selectedGv = this.dataset.gv;
 
-            selectedGv = gvId;
-
-            document.getElementById("modalGvName").innerText = gvName;
-            document.getElementById("modalMessage").value =
-                `Em chào thầy/cô ${gvName} ạ,\nEm đang học khóa "${khName}" ạ.`;
+            document.getElementById("modalGvName").innerText = this.dataset.gvten;
+            document.getElementById("modalKhName").innerText = this.dataset.kh;
 
             new bootstrap.Modal(document.getElementById("contactModal")).show();
         });
     });
 
-    // gửi tin nhắn
-    document.getElementById("btnSendMessage").addEventListener("click", () => {
-        let text = document.getElementById("modalMessage").value.trim();
-        if (!text) return;
+    document.getElementById("btnConfirmContact").addEventListener("click", () => {
 
-    fetch("/KhoaHoc/api/contact-teacher", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            userId2: selectedGv,
-            text: text
+        fetch("/KhoaHoc/api/create-conversation", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                userId2: selectedGv
+            })
         })
-    })
-    .then(res => {
+        .then(res => {
             if (res.ok) {
-                alert("Gửi tin nhắn thành công!");
-                location.reload();
+                // chuyển sang trang danh sách cuộc trò chuyện
+                window.location.href = "/Message/Conversations/Index";
             }
         });
     });

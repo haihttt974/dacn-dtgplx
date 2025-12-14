@@ -337,45 +337,33 @@ namespace dacn_dtgplx.Controllers
             return View(result);
         }
 
-        [HttpPost("api/contact-teacher")]
-        public async Task<IActionResult> CreateConversationAndMessage([FromBody] ChatDTO dto)
+        [HttpPost("api/create-conversation")]
+        [Authorize]
+        public async Task<IActionResult> CreateConversation([FromBody] ChatDTO dto)
         {
             int userId = GetUserId();
             if (userId == 0) return Unauthorized();
-            // tìm conversation cũ
-            var old = await _context.Conversations
+
+            var conversation = await _context.Conversations
                 .FirstOrDefaultAsync(c =>
                     (c.UserId == userId && c.UserId2 == dto.UserId2) ||
                     (c.UserId == dto.UserId2 && c.UserId2 == userId));
 
-            if (old == null)
+            if (conversation == null)
             {
-                old = new Conversation
+                conversation = new Conversation
                 {
                     UserId = userId,
                     UserId2 = dto.UserId2,
                     CreatedAt = DateTime.Now,
                     LastMessageAt = DateTime.Now
                 };
-                _context.Conversations.Add(old);
+
+                _context.Conversations.Add(conversation);
                 await _context.SaveChangesAsync();
             }
 
-            var msg = new Message
-            {
-                ConversationsId = old.ConversationsId,
-                UserId = userId,
-                MessageText = dto.Text,
-                SentAt = DateTime.Now,
-                IsRead = false
-            };
-
-            _context.Messages.Add(msg);
-            old.LastMessageAt = DateTime.Now;
-
-            await _context.SaveChangesAsync();
-
-            return Ok();
+            return Ok(new { conversationId = conversation.ConversationsId });
         }
 
         [HttpGet("schedule/{khoaHocId}")]
