@@ -45,6 +45,7 @@ namespace dacn_dtgplx.Controllers
 
             /* ==================== 5 USER MỚI NHẤT ==================== */
             vm.RecentUsers = await _context.Users
+                .Where(u => u.Username != "guest_rent" && u.RoleId != 1)
                 .OrderByDescending(u => u.TaoLuc)
                 .Take(5)
                 .ToListAsync();

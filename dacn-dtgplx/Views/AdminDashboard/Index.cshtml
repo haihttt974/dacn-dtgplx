@@ -18,6 +18,42 @@
         transform: scale(1.03);
         transition: transform 0.2s ease;
     }
+
+    .role-indicator {
+        width: 4px; /* mỏng thôi */
+        padding: 0 !important;
+        border: 0 !important;
+    }
+
+    /* Tránh table border làm hiện vạch đen */
+    table.table td.role-indicator,
+    table.table th.role-indicator {
+        border-left: 0 !important;
+        border-right: 0 !important;
+    }
+
+    /* Legend ở header */
+    .role-legend {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .legend-dot {
+        width: 26px;
+        height: 10px;
+        border-radius: 2px;
+        display: inline-block;
+    }
 </style>
 
 <section class="content">
@@ -34,7 +70,7 @@
                         <p>Người dùng</p>
                     </div>
                     <div class="icon"><i class="fas fa-users"></i></div>
-                    <a href="/admin/NguoiDungsAdmin/Index" class="small-box-footer">
+                    <a href="/admin/users" class="small-box-footer">
                         Xem chi tiết <i class="fas fa-arrow-circle-right"></i>
                     </a>
                 </div>
@@ -62,7 +98,7 @@
                         <p>Bộ đề trắc nghiệm</p>
                     </div>
                     <div class="icon"><i class="fas fa-book"></i></div>
-                    <a href="/admin/BoDeTnAdmin/Index" class="small-box-footer text-dark">
+                    <a href="/AdminExamSets" class="small-box-footer text-dark">
                         Xem chi tiết <i class="fas fa-arrow-circle-right"></i>
                     </a>
                 </div>
@@ -76,7 +112,7 @@
                         <p>Bài làm</p>
                     </div>
                     <div class="icon"><i class="fas fa-file-alt"></i></div>
-                    <a href="/admin/BaiLamsAdmin/Index" class="small-box-footer">
+                    <a href="/AdminResults" class="small-box-footer">
                         Xem chi tiết <i class="fas fa-arrow-circle-right"></i>
                     </a>
                 </div>
@@ -141,13 +177,25 @@
         <div class="row">
             <div class="col-md-12">
                 <div class="card card-outline card-secondary">
-                    <div class="card-header">
-                        <h3 class="card-title">5 người dùng mới nhất</h3>
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <h3 class="card-title m-0">5 người dùng mới nhất</h3>
+
+                        <div class="role-legend">
+                            <div class="legend-item">
+                                <span class="legend-dot bg-primary"></span>
+                                <span>Giáo viên</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot bg-success"></span>
+                                <span>Học viên</span>
+                            </div>
+                        </div>
                     </div>
                     <div class="card-body p-0">
-                        <table class="table table-striped">
+                        <table class="table table-striped mb-0">
                             <thead>
                                 <tr>
+                                    <th class="role-indicator"></th>
                                     <th>Email</th>
                                     <th>Họ tên</th>
                                     <th>Điện thoại</th>
@@ -157,14 +205,18 @@
                             <tbody>
                                 @foreach (var u in Model.RecentUsers)
                                 {
+                                    var colorClass = u.LaGiaoVien ? "bg-primary" : "bg-success";
+
                                     <tr>
+                                        <td class="role-indicator @colorClass"></td>
                                         <td>@u.Email</td>
                                         <td>@u.TenDayDu</td>
                                         <td>@u.SoDienThoai</td>
-                                        <td>@(u.TrangThai
-                                            ? Html.Raw("<span class='badge badge-success'>Active</span>")
-                                            : Html.Raw("<span class='badge badge-secondary'>Inactive</span>")
-                                            )
+                                        <td>
+                                            @(u.TrangThai
+                                                                                    ? Html.Raw("<span class='badge badge-success'>Active</span>")
+                                                                                    : Html.Raw("<span class='badge badge-secondary'>Inactive</span>")
+                                                                                    )
                                     </td>
                                 </tr>
                                                                 }
@@ -174,8 +226,6 @@
                 </div>
             </div>
         </div>
-
-
     </div>
 </section>
 

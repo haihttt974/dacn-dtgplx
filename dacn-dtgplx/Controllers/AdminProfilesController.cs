@@ -73,7 +73,9 @@ namespace dacn_dtgplx.Controllers.Admin
         {
             var hoSo = await _context.HoSoThiSinhs
                 .Include(h => h.User)
-                .Include(h => h.DangKyHocs).ThenInclude(d => d.KhoaHoc)
+                .Include(h => h.DangKyHocs
+                    .Where(d => d.TrangThai == true))
+                    .ThenInclude(d => d.KhoaHoc)
                 .Include(h => h.KetQuaHocTaps)
                 .FirstOrDefaultAsync(h => h.HoSoId == id);
 

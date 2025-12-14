@@ -3,6 +3,5 @@
     public class ChatDTO
     {
         public int UserId2 { get; set; }
-        public string Text { get; set; } = "";
     }
 }
