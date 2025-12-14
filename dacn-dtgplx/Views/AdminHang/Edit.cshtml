@@ -1,0 +1,128 @@
+﻿@model dacn_dtgplx.Models.Hang
+
+@{
+    ViewData["Title"] = "Sửa hạng";
+}
+
+<section class="content pt-3">
+    <div class="container-fluid">
+
+        <div class="card card-outline card-info">
+            <div class="card-header">
+                <h3 class="card-title">Cập nhật hạng: <strong>@Model.MaHang</strong></h3>
+            </div>
+
+            <form asp-action="Edit" asp-route-id="@Model.IdHang" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="IdHang" />
+
+                <div class="card-body">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Mã hạng</label>
+                                <input asp-for="MaHang" class="form-control" />
+                                <span asp-validation-for="MaHang" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label>Tên đầy đủ</label>
+                                <input asp-for="TenDayDu" class="form-control" />
+                                <span asp-validation-for="TenDayDu" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Mô tả</label>
+                        <textarea asp-for="MoTa" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="MoTa" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Điểm đạt</label>
+                                <input asp-for="DiemDat" type="number" class="form-control" />
+                                <span asp-validation-for="DiemDat" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Thời gian thi (phút)</label>
+                                <input asp-for="ThoiGianTn" type="number" class="form-control" />
+                                <span asp-validation-for="ThoiGianTn" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Số câu hỏi</label>
+                                <input asp-for="SoCauHoi" type="number" class="form-control" />
+                                <span asp-validation-for="SoCauHoi" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Tuổi tối thiểu</label>
+                                <input asp-for="TuoiToiThieu" type="number" class="form-control" />
+                                <span asp-validation-for="TuoiToiThieu" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Tuổi tối đa</label>
+                                <input asp-for="TuoiToiDa" type="number" class="form-control" />
+                                <span asp-validation-for="TuoiToiDa" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Chi phí</label>
+                                <input asp-for="ChiPhi" type="number" step="0.01" class="form-control" />
+                                <span asp-validation-for="ChiPhi" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Sức khỏe</label>
+                        <input asp-for="SucKhoe" class="form-control" />
+                        <span asp-validation-for="SucKhoe" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Ghi chú</label>
+                        <textarea asp-for="GhiChu" class="form-control" rows="2"></textarea>
+                        <span asp-validation-for="GhiChu" class="text-danger"></span>
+                    </div>
+
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle"></i>
+                        Bạn có thể cấu hình quy định của hạng tại:
+                        <a asp-action="QuyDinh" asp-route-hangId="@Model.IdHang"><strong>Trang Quy định</strong></a>.
+                    </div>
+                </div>
+
+                <div class="card-footer d-flex justify-content-between">
+                    <a class="btn btn-secondary" asp-action="Index">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                    <button class="btn btn-info" type="submit">
+                        <i class="fas fa-save"></i> Cập nhật
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
