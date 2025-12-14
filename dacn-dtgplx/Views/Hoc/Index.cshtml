@@ -252,7 +252,7 @@
 
             <!-- 4. Câu điểm liệt -->
             <div class="col-md-4">
-                <a asp-controller="CauLiet" asp-action="Index" class="feature-card feature-card-link">
+                <a asp-controller="Hoc" asp-action="CauLiet" class="feature-card feature-card-link">
                     <span class="badge-on-card badge-orange">@totalCauLiet</span>
                     <div class="icon-wrapper">
                         <i class="fa-solid fa-star icon-box" style="color:#ff7d00"></i>
@@ -264,7 +264,7 @@
 
             <!-- 5. Câu hỏi bị sai nhiều -->
             <div class="col-md-4">
-                <a asp-controller="Hoc" asp-action="Hoc" class="feature-card feature-card-link">
+                <a asp-controller="Hoc" asp-action="ChuY" class="feature-card feature-card-link">
                     <span class="badge-on-card badge-red">@totalCauChuY</span>
                     <div class="icon-wrapper">
                         <i class="fa-solid fa-xmark icon-box" style="color:#d9534f"></i>
@@ -276,7 +276,7 @@
 
             <!-- 6. Biển báo -->
             <div class="col-md-4">
-                <a asp-controller="Hoc" asp-action="Hoc" class="feature-card feature-card-link">
+                <a asp-controller="Hoc" asp-action="FlashCardBienBao" class="feature-card feature-card-link">
                     <span class="badge-on-card">@totalBienBao</span>
                     <div class="icon-wrapper">
                         <i class="fa-solid fa-traffic-light icon-box" style="color:#f4b400"></i>
