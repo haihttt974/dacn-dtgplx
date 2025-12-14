@@ -15,31 +15,72 @@ namespace dacn_dtgplx.Controllers
         }
 
         // ===================================================
-        // INDEX – Danh sách thanh toán
+        // INDEX – Danh sách thanh toán (Khóa học + Thuê xe)
         // ===================================================
         public async Task<IActionResult> Index()
         {
             var data = await _context.HoaDonThanhToans
+                // Đăng ký học
                 .Include(h => h.IdDangKyNavigation)
                     .ThenInclude(dk => dk.HoSo)
                         .ThenInclude(hs => hs.User)
                 .Include(h => h.IdDangKyNavigation)
                     .ThenInclude(dk => dk.KhoaHoc)
+
+                // Phiếu thuê xe
+                .Include(h => h.PhieuTx)
+                    .ThenInclude(p => p.User)
+                .Include(h => h.PhieuTx)
+                    .ThenInclude(p => p.Xe)
+
                 .Select(h => new AdminPaymentViewModel
                 {
                     IdThanhToan = h.IdThanhToan,
 
-                    TenHocVien = h.IdDangKyNavigation!.HoSo.User.TenDayDu,
-                    Email = h.IdDangKyNavigation.HoSo.User.Email,
-                    SoDienThoai = h.IdDangKyNavigation.HoSo.User.SoDienThoai,
+                    // ========================
+                    // XÁC ĐỊNH NGƯỜI THANH TOÁN
+                    // ========================
+                    TenNguoiThanhToan =
+                        h.IdDangKyNavigation != null
+                            ? h.IdDangKyNavigation.HoSo.User.TenDayDu
+                            : h.PhieuTx!.User.TenDayDu,
 
-                    TenKhoaHoc = h.IdDangKyNavigation.KhoaHoc.TenKhoaHoc,
+                    Email =
+                        h.IdDangKyNavigation != null
+                            ? h.IdDangKyNavigation.HoSo.User.Email
+                            : h.PhieuTx!.User.Email,
+
+                    SoDienThoai =
+                        h.IdDangKyNavigation != null
+                            ? h.IdDangKyNavigation.HoSo.User.SoDienThoai
+                            : h.PhieuTx!.User.SoDienThoai,
+
+                    // ========================
+                    // LOẠI THANH TOÁN
+                    // ========================
+                    LoaiThanhToan =
+                        h.IdDangKyNavigation != null
+                            ? "Khóa học"
+                            : "Thuê xe",
+
+                    // ========================
+                    // CHI TIẾT
+                    // ========================
+                    TenKhoaHoc =
+                        h.IdDangKyNavigation != null
+                            ? h.IdDangKyNavigation.KhoaHoc.TenKhoaHoc
+                            : null,
+
+                    XeTapLai =
+                        h.PhieuTx != null
+                            ? h.PhieuTx.Xe.LoaiXe
+                            : null,
 
                     SoTien = h.SoTien,
                     PhuongThucThanhToan = h.PhuongThucThanhToan,
                     NgayThanhToan = h.NgayThanhToan.HasValue
-                        ? DateOnly.FromDateTime(h.NgayThanhToan.Value)
-                        : (DateOnly?)null,
+                         ? DateOnly.FromDateTime(h.NgayThanhToan.Value)
+                         : null,
                     TrangThai = h.TrangThai
                 })
                 .OrderByDescending(x => x.IdThanhToan)
@@ -60,8 +101,9 @@ namespace dacn_dtgplx.Controllers
                 return NotFound();
 
             hd.TrangThai = true;
+            hd.TrangThai = true;
+            hd.NgayThanhToan = DateTime.Now; 
             await _context.SaveChangesAsync();
-
             return RedirectToAction(nameof(Index));
         }
     }
