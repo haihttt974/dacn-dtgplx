@@ -48,6 +48,7 @@ builder.Services.AddAuthentication("Cookies")
     {
         options.LoginPath = "/auth/login";
         options.LogoutPath = "/auth/logout";
+        options.AccessDeniedPath = "/Error/403";
     });
 //
 builder.Services.Configure<SteganographyOptions>(
@@ -113,7 +114,7 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    //app.UseExceptionHandler("/Home/Error");
+    app.UseExceptionHandler("/Error/500");
     app.UseHsts();
 }
 // Middleware tùy chỉnh để vô hiệu hóa một số tính năng người dùng
@@ -137,7 +138,7 @@ app.UseStaticFiles();
 //app.UseStatusCodePagesWithReExecute("/Error/{0}");
 
 app.UseRouting();
-
+app.UseStatusCodePagesWithReExecute("/Error/{0}");
 app.UseSession();
 
 // ---- THỨ TỰ BẮT BUỘC ----
