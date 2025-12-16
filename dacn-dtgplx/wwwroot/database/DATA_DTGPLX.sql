@@ -37,6 +37,40 @@ VALUES
 ('phan.thanh.tung',  @password, N'Phan Thanh Tùng',  'phan.thanh.tung@example.com', '0937001122', N'Bắc Ninh',    '095678901234', N'Nam', '2000-10-05', 0, 1, 'wwwroot/images/avatar/thanhtung.png', 2),
 ('ngo.mai.phuong',   @password, N'Ngô Mai Phương',   'ngo.mai.phuong@example.com',  '0394455667', N'Nam Định',    '013579246802', N'Nữ',  '2003-08-27', 0, 1, 'wwwroot/images/avatar/maiphuong.png', 2);
 GO
+-- Insert khách vãng lai
+INSERT INTO [user] (
+    username,
+    [password],
+    tenDayDu,
+    email,
+    soDienThoai,
+    diaChi,
+    cccd,
+    gioiTinh,
+    ngaySinh,
+    laGiaoVien,
+    trangThai,
+    avatar,
+    lanDangNhapGanNhat,
+    roleId
+)
+VALUES (
+    'guest_rent',
+    'guest_rent_pwd',
+    N'Khách vãng lai thuê xe',
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    0,
+    1,
+    NULL,
+    NULL,
+    NULL
+);
+GO
 
 INSERT INTO hang (maHang, tenDayDu, moTa, diemDat, thoiGianTn, soCauHoi, tuoiToiThieu, tuoiToiDa, sucKhoe, chiPhi, ghiChu)
 VALUES
