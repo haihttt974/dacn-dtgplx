@@ -1,4 +1,4 @@
-﻿USE DT_GPLX
+﻿USE TEST
 GO
 
 INSERT INTO role (roleName, description)
@@ -156,11 +156,11 @@ VALUES
 (3, (SELECT userId FROM [user] WHERE username = 'admin.master'), N'Dự kiến đầu tháng sau nhé, khi có lịch chính thức trung tâm sẽ thông báo trên hệ thống.', 0),
 (3, (SELECT userId FROM [user] WHERE username = 'nguyen.minh.anh'), N'Dạ vâng, em cảm ơn.', 1);
 GO
-INSERT INTO websocketConnections (userId, clientInfo)
+INSERT INTO websocketConnections (userId, clientInfo, isOnline)
 VALUES
-((SELECT userId FROM [user] WHERE username = 'nguyen.minh.anh'), N'Chrome - Windows'),
-((SELECT userId FROM [user] WHERE username = 'nguyen.van.dung'), N'Mobile App - Android'),
-((SELECT userId FROM [user] WHERE username = 'admin.master'), N'Chrome - MacOS');
+((SELECT userId FROM [user] WHERE username = 'nguyen.minh.anh'), N'Chrome - Windows', 0),
+((SELECT userId FROM [user] WHERE username = 'nguyen.van.dung'), N'Mobile App - Android', 0),
+((SELECT userId FROM [user] WHERE username = 'admin.master'), N'Chrome - MacOS', 0);
 GO
 
 INSERT INTO dbo.BienBao(TenBienBao, YNghia, HinhAnh) VALUES
