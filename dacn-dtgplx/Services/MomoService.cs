@@ -45,7 +45,19 @@ namespace dacn_dtgplx.Services
 
             string orderId = "ORDER" + DateTime.Now.Ticks;
             string requestId = Guid.NewGuid().ToString();
-            string orderInfo = $"Thanh toán khóa học {hoaDon.IdDangKyNavigation.KhoaHoc.TenKhoaHoc}";
+            string orderInfo;
+            if (hoaDon.PhieuTx != null)
+            {
+                orderInfo = $"Thanh toán thuê xe {hoaDon.PhieuTx.Xe?.LoaiXe}";
+            }
+            else if (hoaDon.IdDangKyNavigation != null)
+            {
+                orderInfo = $"Thanh toán khóa học {hoaDon.IdDangKyNavigation.KhoaHoc?.TenKhoaHoc}";
+            }
+            else
+            {
+                orderInfo = "Thanh toán dịch vụ";
+            }
             string extraData = hoaDon.IdThanhToan.ToString();
 
             string requestType = "captureWallet";
