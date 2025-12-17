@@ -1,6 +1,6 @@
-﻿namespace dacn_dtgplx.ViewModels.Reports
+﻿namespace dacn_dtgplx.ViewModels.Report
 {
-    public class TimeValueVM
+    public class ChartPointVM
     {
         public string Label { get; set; } = "";
         public decimal Value { get; set; }

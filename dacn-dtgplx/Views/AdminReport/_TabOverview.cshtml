@@ -1,0 +1,237 @@
+﻿@model dacn_dtgplx.ViewModels.Reports.DashboardReportVM
+@using System.Text.Json
+
+@{
+    var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = null };
+
+    var labels = Model.Overview.RevenueByMonth_Multi?.Labels ?? new List<string>();
+    var s1 = Model.Overview.RevenueByMonth_Multi?.Series?.FirstOrDefault()?.Data ?? new List<decimal>();
+    var s2 = Model.Overview.RevenueByMonth_Multi?.Series?.Skip(1).FirstOrDefault()?.Data ?? new List<decimal>();
+
+    var pie = Model.Overview.RevenueSharePie ?? new();
+    var topCourses = Model.Overview.TopCoursesByRevenue ?? new();
+
+    var jsonLabels = JsonSerializer.Serialize(labels, jsonOptions);
+    var jsonCourse = JsonSerializer.Serialize(s1, jsonOptions);
+    var jsonVehicle = JsonSerializer.Serialize(s2, jsonOptions);
+
+    var jsonPieLabels = JsonSerializer.Serialize(pie.Select(x => x.Label), jsonOptions);
+    var jsonPieValues = JsonSerializer.Serialize(pie.Select(x => x.Value), jsonOptions);
+
+    var jsonTopLabels = JsonSerializer.Serialize(topCourses.Select(x => x.Label), jsonOptions);
+    var jsonTopValues = JsonSerializer.Serialize(topCourses.Select(x => x.Value), jsonOptions);
+}
+
+<!-- ===================== KPI ===================== -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="small-box bg-primary">
+            <div class="inner">
+                <h4>@Model.Overview.TongDoanhThu.ToString("N0")</h4>
+                <p>Tổng doanh thu (VND)</p>
+            </div>
+            <div class="icon"><i class="fas fa-coins"></i></div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h4>@Model.Overview.SoGiaoDich</h4>
+                <p>Số giao dịch</p>
+            </div>
+            <div class="icon"><i class="fas fa-receipt"></i></div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="small-box bg-warning">
+            <div class="inner">
+                <h4>@Model.Users.SoNguoiMoi</h4>
+                <p>Người mới</p>
+            </div>
+            <div class="icon"><i class="fas fa-user-plus"></i></div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="small-box bg-danger">
+            <div class="inner">
+                <h4>@Model.Overview.DoanhThuTrungBinhThang.ToString("N0")</h4>
+                <p>Doanh thu TB / tháng</p>
+            </div>
+            <div class="icon"><i class="fas fa-chart-line"></i></div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== INFO ===================== -->
+<div class="row">
+    <div class="col-md-4">
+        <div class="info-box bg-info">
+            <span class="info-box-icon"><i class="fas fa-book"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">Doanh thu khóa học</span>
+                <span class="info-box-number">@Model.Overview.DoanhThuKhoaHoc.ToString("N0")</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="info-box bg-teal">
+            <span class="info-box-icon"><i class="fas fa-car"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">Doanh thu thuê xe</span>
+                <span class="info-box-number">@Model.Overview.DoanhThuThueXe.ToString("N0")</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="info-box bg-secondary">
+            <span class="info-box-icon"><i class="fas fa-calendar-day"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">TB / ngày</span>
+                <span class="info-box-number">@Model.Overview.DoanhThuTrungBinhNgay.ToString("N0")</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== CHARTS ===================== -->
+<div class="row">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header"><strong>Doanh thu theo tháng</strong></div>
+            <div class="card-body">
+                <canvas id="chart_overview_bar" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header"><strong>Cơ cấu doanh thu</strong></div>
+            <div class="card-body">
+                <canvas id="chart_overview_donut" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header"><strong>Xu hướng doanh thu</strong></div>
+            <div class="card-body">
+                <canvas id="chart_overview_line" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header"><strong>Top khóa học theo doanh thu</strong></div>
+            <div class="card-body">
+                <canvas id="chart_overview_top_courses" height="160"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== TABLE ===================== -->
+<div class="card">
+    <div class="card-header"><strong>Bảng chi tiết doanh thu theo tháng</strong></div>
+    <div class="card-body table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="thead-light">
+                <tr>
+                    <th>Tháng</th>
+                    <th class="text-right">Tổng</th>
+                    <th class="text-right">Khóa học</th>
+                    <th class="text-right">Thuê xe</th>
+                    <th class="text-right">Giao dịch</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Overview.RevenueByMonthTable.Take(24))
+                {
+                    <tr>
+                        <td>@r.MonthLabel</td>
+                        <td class="text-right">@r.RevenueTotal.ToString("N0")</td>
+                        <td class="text-right">@r.RevenueCourses.ToString("N0")</td>
+                        <td class="text-right">@r.RevenueVehicles.ToString("N0")</td>
+                        <td class="text-right">@r.Transactions</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    window.__renderTabCharts = function () {
+
+        const labels = @Html.Raw(jsonLabels);
+        if (!labels || labels.length === 0) return;
+
+        destroyChart("overview_bar");
+        destroyChart("overview_line");
+        destroyChart("overview_donut");
+        destroyChart("overview_top_courses");
+
+        const course = @Html.Raw(jsonCourse);
+        const vehicle = @Html.Raw(jsonVehicle);
+
+        window.__charts["overview_bar"] = new Chart(
+            document.getElementById("chart_overview_bar").getContext("2d"),
+            {
+                type: "bar",
+                data: {
+                    labels,
+                    datasets: [
+                        { label: "Khóa học", data: course },
+                        { label: "Thuê xe", data: vehicle }
+                    ]
+                },
+                options: { responsive: true }
+            }
+        );
+
+        window.__charts["overview_line"] = new Chart(
+            document.getElementById("chart_overview_line"),
+            {
+                type: "line",
+                data: {
+                    labels,
+                    datasets: [{ label: "Tổng doanh thu", data: labels.map((_, i) => (course[i] || 0) + (vehicle[i] || 0)) }]
+                },
+                options: { responsive: true }
+            }
+        );
+
+        window.__charts["overview_donut"] = new Chart(
+            document.getElementById("chart_overview_donut"),
+            {
+                type: "doughnut",
+                data: {
+                    labels: @Html.Raw(jsonPieLabels),
+                    datasets: [{ data: @Html.Raw(jsonPieValues) }]
+                },
+                options: { responsive: true }
+            }
+        );
+
+        window.__charts["overview_top_courses"] = new Chart(
+            document.getElementById("chart_overview_top_courses"),
+            {
+                type: "bar",
+                data: {
+                    labels: @Html.Raw(jsonTopLabels),
+                    datasets: [{ label: "Doanh thu", data: @Html.Raw(jsonTopValues) }]
+                },
+                options: { indexAxis: "y", responsive: true }
+            }
+        );
+    }
+</script>

@@ -1,0 +1,175 @@
+﻿@model dacn_dtgplx.ViewModels.Reports.DashboardReportVM
+@using System.Text.Json
+
+@{
+    var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = null };
+
+    var rows = Model.Users.UsersByMonthTable ?? new List<dacn_dtgplx.ViewModels.Reports.UserMonthRowVM>();
+
+    var labels = rows.Select(x => x.MonthLabel).ToList();
+    var users = rows.Select(x => (decimal)x.NewUsers).ToList();
+    var profiles = rows.Select(x => (decimal)x.NewProfiles).ToList();
+
+    var jsonLabels = JsonSerializer.Serialize(labels, jsonOptions);
+    var jsonUsers = JsonSerializer.Serialize(users, jsonOptions);
+    var jsonProfiles = JsonSerializer.Serialize(profiles, jsonOptions);
+}
+
+<!-- ================= KPI ================= -->
+<div class="row">
+    <div class="col-md-4">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h4>@Model.Users.SoNguoiMoi</h4>
+                <p>Người mới</p>
+            </div>
+            <div class="icon"><i class="fas fa-user-plus"></i></div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="small-box bg-secondary">
+            <div class="inner">
+                <h4>@Model.Users.SoHoSoMoi</h4>
+                <p>Hồ sơ mới</p>
+            </div>
+            <div class="icon"><i class="fas fa-folder-open"></i></div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h4>@Model.Users.TongNguoiDung</h4>
+                <p>Tổng người dùng</p>
+            </div>
+            <div class="icon"><i class="fas fa-users"></i></div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= CHARTS ================= -->
+<div class="row">
+    <!-- Line chart -->
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header">
+                <strong>Người mới theo tháng</strong>
+            </div>
+            <div class="card-body">
+                <canvas id="chart_users_line" width="600" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bar chart -->
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header">
+                <strong>So sánh: Người mới vs Hồ sơ mới</strong>
+            </div>
+            <div class="card-body">
+                <canvas id="chart_users_bar" width="600" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= TABLE ================= -->
+<div class="card">
+    <div class="card-header">
+        <strong>Bảng chi tiết người dùng theo tháng</strong>
+    </div>
+
+    <div class="card-body table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="thead-light">
+                <tr>
+                    <th>Tháng</th>
+                    <th class="text-right">Người mới</th>
+                    <th class="text-right">Hồ sơ mới</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!rows.Any())
+                {
+                    <tr>
+                        <td colspan="3" class="text-center text-muted">
+                            Không có dữ liệu
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var r in rows.Take(24))
+                    {
+                        <tr>
+                            <td>@r.MonthLabel</td>
+                            <td class="text-right">@r.NewUsers</td>
+                            <td class="text-right">@r.NewProfiles</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ================= SCRIPT ================= -->
+<script>
+        window.__renderTabCharts = function () {
+
+        setTimeout(() => {
+
+            const labels = @Html.Raw(jsonLabels);
+            if (!labels || labels.length === 0) return;
+
+            destroyChart("users_line");
+            destroyChart("users_bar");
+
+            const users = @Html.Raw(jsonUsers);
+            const profiles = @Html.Raw(jsonProfiles);
+
+            window.__charts["users_line"] = new Chart(
+                document.getElementById("chart_users_line").getContext("2d"),
+                {
+                    type: "line",
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: "Người mới",
+                            data: users,
+                            tension: 0.35,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: true } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                }
+            );
+
+            window.__charts["users_bar"] = new Chart(
+                document.getElementById("chart_users_bar").getContext("2d"),
+                {
+                    type: "bar",
+                    data: {
+                        labels,
+                        datasets: [
+                            { label: "Người mới", data: users },
+                            { label: "Hồ sơ mới", data: profiles }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: true } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                }
+            );
+
+        }, 50);
+    };
+</script>

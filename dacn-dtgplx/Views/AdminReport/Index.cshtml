@@ -1,309 +1,280 @@
-﻿@model dacn_dtgplx.ViewModels.Reports.AdminReportIndexVM
+﻿@model dacn_dtgplx.ViewModels.Reports.DashboardReportVM
 @{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
     ViewData["Title"] = "Báo cáo & Thống kê";
 }
 
-<link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<div class="content">
+    <div class="container-fluid">
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+        <!-- ================================================= -->
+        <!-- ================= FILTER + EXPORT =============== -->
+        <!-- ================================================= -->
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <div class="d-flex align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-filter mr-1"></i> Bộ lọc báo cáo
+                    </h3>
 
-<style>
-    /* ===== KPI ===== */
-    .kpi-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 16px;
-        margin-bottom: 24px;
-    }
-
-    .kpi-card {
-        background: #fff;
-        border-radius: 14px;
-        padding: 16px 18px;
-        display: flex;
-        align-items: center;
-        box-shadow: 0 6px 18px rgba(0,0,0,.06);
-        min-height: 88px;
-        overflow: hidden;
-    }
-
-        .kpi-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 24px rgba(0,0,0,.08);
-        }
-
-    .kpi-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 22px;
-        color: #fff;
-        margin-right: 14px;
-    }
-
-    .bg-revenue {
-        background: linear-gradient(135deg,#0d6efd,#4dabf7);
-    }
-
-    .bg-invoice {
-        background: linear-gradient(135deg,#198754,#51cf66);
-    }
-
-    .bg-student {
-        background: linear-gradient(135deg,#0dcaf0,#66d9e8);
-    }
-
-    .bg-course {
-        background: linear-gradient(135deg,#ffc107,#ffd43b);
-    }
-
-    .kpi-value {
-        font-size: 20px;
-        font-weight: 700;
-        color: #212529;
-    }
-
-    .kpi-label {
-        font-size: 13px;
-        color: #6c757d;
-    }
-
-    /* ===== CHART ===== */
-    .chart-card {
-        background: #fff;
-        border-radius: 14px;
-        padding: 12px 14px;
-        box-shadow: 0 4px 14px rgba(0,0,0,.05);
-        height: 260px; /* QUAN TRỌNG */
-        overflow: hidden; /* QUAN TRỌNG */
-        position: relative;
-    }
-
-        .chart-card canvas {
-            width: 100% !important;
-            height: 100% !important;
-        }
-
-    .chart-title {
-        font-size: 14px;
-        font-weight: 600;
-        margin-bottom: 6px;
-        color: #495057;
-    }
-</style>
-
-<div id="reportArea">
-
-    <h5 class="mb-3">
-        <i class="fas fa-chart-line text-primary"></i>
-        Báo cáo & Thống kê hệ thống
-    </h5>
-
-    <!-- ================= KPI ================= -->
-    <div class="kpi-grid">
-        <div class="kpi-card">
-            <div class="kpi-icon bg-revenue">
-                <i class="fas fa-coins"></i>
+                    <div class="ml-auto">
+                        <button id="btnOpenExportModal"
+                                class="btn btn-danger btn-sm">
+                            <i class="fas fa-file-pdf mr-1"></i> Xuất báo cáo PDF
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div>
-                <div class="kpi-value">@Model.TongDoanhThu.ToString("N0") đ</div>
-                <div class="kpi-label">Tổng doanh thu</div>
+
+            <div class="card-body">
+                <form id="filterForm">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="font-weight-bold">Từ ngày</label>
+                            <input type="date"
+                                   class="form-control"
+                                   name="fromDate"
+                                   value="@(Model.Filter.FromDate?.ToString("yyyy-MM-dd") ?? "")" />
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="font-weight-bold">Đến ngày</label>
+                            <input type="date"
+                                   class="form-control"
+                                   name="toDate"
+                                   value="@(Model.Filter.ToDate?.ToString("yyyy-MM-dd") ?? "")" />
+                        </div>
+
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button class="btn btn-primary w-100" type="submit">
+                                <i class="fas fa-search mr-1"></i> Tìm kiếm
+                            </button>
+                        </div>
+
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button class="btn btn-outline-secondary w-100"
+                                    id="btnReset"
+                                    type="button">
+                                <i class="fas fa-undo mr-1"></i> Reset
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
 
-        <div class="kpi-card">
-            <div class="kpi-icon bg-invoice">
-                <i class="fas fa-file-invoice"></i>
+        <!-- ================================================= -->
+        <!-- ====================== TABS ===================== -->
+        <!-- ================================================= -->
+        <div class="card mt-3 shadow-sm">
+            <div class="card-header p-0">
+                <ul class="nav nav-tabs" id="reportTabs">
+                    <li class="nav-item">
+                        <a class="nav-link active"
+                           href="javascript:void(0)"
+                           data-tab="overview">
+                            <i class="fas fa-chart-line mr-1"></i> Tổng quan
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           href="javascript:void(0)"
+                           data-tab="users">
+                            <i class="fas fa-users mr-1"></i> Người dùng
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           href="javascript:void(0)"
+                           data-tab="courses">
+                            <i class="fas fa-book mr-1"></i> Khóa học
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           href="javascript:void(0)"
+                           data-tab="tests">
+                            <i class="fas fa-clipboard-check mr-1"></i> Bài thi
+                        </a>
+                    </li>
+                </ul>
             </div>
-            <div>
-                <div class="kpi-value">@Model.TongHoaDon</div>
-                <div class="kpi-label">Hóa đơn đã thanh toán</div>
+
+            <div class="card-body">
+                <div id="tabContent">
+                    @await Html.PartialAsync("~/Views/AdminReport/_TabOverview.cshtml", Model)
+                </div>
             </div>
         </div>
 
-        <div class="kpi-card">
-            <div class="kpi-icon bg-student">
-                <i class="fas fa-user-graduate"></i>
-            </div>
-            <div>
-                <div class="kpi-value">@Model.TongHocVien</div>
-                <div class="kpi-label">Học viên</div>
-            </div>
-        </div>
-
-        <div class="kpi-card">
-            <div class="kpi-icon bg-course">
-                <i class="fas fa-book-open"></i>
-            </div>
-            <div>
-                <div class="kpi-value">@Model.TongKhoaHoc</div>
-                <div class="kpi-label">Khóa học đang mở</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ================= CHARTS ================= -->
-    <div class="row g-3">
-        <div class="col-lg-4 col-md-6">
-            <div class="chart-card">
-                <div class="chart-title">Doanh thu theo ngày</div>
-                <canvas id="chartNgay"></canvas>
-            </div>
-        </div>
-
-        <div class="col-lg-4 col-md-6">
-            <div class="chart-card">
-                <div class="chart-title">Doanh thu theo tuần</div>
-                <canvas id="chartTuan"></canvas>
-            </div>
-        </div>
-
-        <div class="col-lg-4 col-md-6">
-            <div class="chart-card">
-                <div class="chart-title">Doanh thu theo tháng</div>
-                <canvas id="chartThang"></canvas>
-            </div>
-        </div>
-
-        <div class="col-lg-6">
-            <div class="chart-card">
-                <div class="chart-title">Doanh thu theo quý</div>
-                <canvas id="chartQuy"></canvas>
-            </div>
-        </div>
-
-        <div class="col-lg-6">
-            <div class="chart-card">
-                <div class="chart-title">Doanh thu theo hạng GPLX</div>
-                <canvas id="chartHang"></canvas>
-            </div>
-        </div>
     </div>
 </div>
 
-<!-- ================= EXPORT ================= -->
-<div class="mt-3 text-end">
-    <button class="btn btn-sm btn-outline-danger me-2" onclick="exportPDF()">
-        <i class="fas fa-file-pdf"></i> Xuất PDF
-    </button>
-    <button class="btn btn-sm btn-outline-success" onclick="exportExcel()">
-        <i class="fas fa-file-excel"></i> Xuất Excel
-    </button>
-</div>
+<!-- ================================================= -->
+<!-- ================== EXPORT MODAL ================= -->
+<!-- ================================================= -->
+@await Html.PartialAsync("~/Views/AdminReport/_ExportPdfModal.cshtml")
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script>
-                function renderChart(id, type, labels, data) {
-            new Chart(document.getElementById(id), {
-                type: type,
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: 'rgba(13,110,253,.65)',
-                        borderColor: '#0d6efd',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: type === 'line'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
+        // =====================================================
+        // ================= TAB & FILTER ======================
+        // =====================================================
 
-                    layout: {
-                        padding: {
-                            top: 8,
-                            right: 8,
-                            bottom: 4,
-                            left: 4
-                        }
-                    },
+        let currentTab = "overview";
 
-                    scales: {
-                        x: {
-                            ticks: {
-                                font: { size: 11 },
-                                maxRotation: 0,
-                                autoSkip: true
-                            },
-                            grid: { display: false }
-                        },
-                        y: {
-                            ticks: {
-                                font: { size: 11 },
-                                callback: v => v.toLocaleString()
-                            },
-                            grid: {
-                                color: 'rgba(0,0,0,.05)'
-                            }
-                        }
-                    },
+        // Global chart registry (for PDF export)
+        window.__charts = window.__charts || {};
 
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: ctx =>
-                                    ctx.raw.toLocaleString() + " đ"
-                            }
-                        }
-                    }
+        function showLoading() {
+            $("#tabContent").html(`
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                    <div class="mt-2 text-muted">Đang tải dữ liệu...</div>
+                </div>
+            `);
+        }
+
+        function loadTab(tab) {
+            currentTab = tab;
+
+            $("#reportTabs .nav-link").removeClass("active");
+            $(`#reportTabs .nav-link[data-tab='${tab}']`).addClass("active");
+
+            showLoading();
+
+            const query = $("#filterForm").serialize();
+
+            $.get(`/AdminReport/Tab/${tab}?${query}`, function (html) {
+                $("#tabContent").html(html);
+
+                // re-render chart after ajax
+                if (window.__renderTabCharts) {
+                    window.__renderTabCharts();
                 }
             });
         }
 
-        renderChart("chartNgay","line",
-            @Html.Raw(Json.Serialize(Model.DoanhThuNgay.Select(x => x.Label))),
-            @Html.Raw(Json.Serialize(Model.DoanhThuNgay.Select(x => x.Value)))
-        );
-
-        renderChart("chartTuan","bar",
-            @Html.Raw(Json.Serialize(Model.DoanhThuTuan.Select(x => x.Label))),
-            @Html.Raw(Json.Serialize(Model.DoanhThuTuan.Select(x => x.Value)))
-        );
-
-        renderChart("chartThang","bar",
-            @Html.Raw(Json.Serialize(Model.DoanhThuThang.Select(x => x.Label))),
-            @Html.Raw(Json.Serialize(Model.DoanhThuThang.Select(x => x.Value)))
-        );
-
-        renderChart("chartQuy","line",
-            @Html.Raw(Json.Serialize(Model.DoanhThuQuy.Select(x => x.Label))),
-            @Html.Raw(Json.Serialize(Model.DoanhThuQuy.Select(x => x.Value)))
-        );
-
-        renderChart("chartHang","doughnut",
-            @Html.Raw(Json.Serialize(Model.DoanhThuTheoHang.Select(x => x.Ten))),
-            @Html.Raw(Json.Serialize(Model.DoanhThuTheoHang.Select(x => x.Value)))
-        );
-
-        function exportPDF() {
-            html2canvas(document.getElementById("reportArea")).then(c => {
-                const pdf = new jspdf.jsPDF("l", "mm", "a4");
-                pdf.addImage(c.toDataURL("image/png"), "PNG", 10, 10, 277, 190);
-                pdf.save("BaoCaoThongKe.pdf");
-            });
+        function destroyChart(key) {
+            if (window.__charts[key]) {
+                window.__charts[key].destroy();
+                window.__charts[key] = null;
+            }
         }
 
-        function exportExcel() {
-            const ws = XLSX.utils.aoa_to_sheet([
-                ["Chỉ số", "Giá trị"],
-                ["Tổng doanh thu", "@Model.TongDoanhThu"],
-                ["Hóa đơn", "@Model.TongHoaDon"],
-                ["Học viên", "@Model.TongHocVien"],
-                ["Khóa học", "@Model.TongKhoaHoc"]
-            ]);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Report");
-            XLSX.writeFile(wb, "BaoCaoThongKe.xlsx");
+        $("#reportTabs .nav-link").click(function () {
+            loadTab($(this).data("tab"));
+        });
+
+        $("#filterForm").submit(function (e) {
+            e.preventDefault();
+            loadTab(currentTab);
+        });
+
+        $("#btnReset").click(function () {
+            $("#filterForm")[0].reset();
+            loadTab(currentTab);
+        });
+
+        $(document).ready(function () {
+            if (window.__renderTabCharts) {
+                window.__renderTabCharts();
+            }
+        });
+
+        // =====================================================
+        // ================= PDF EXPORT ========================
+        // =====================================================
+
+        function buildTimeRangeText() {
+            const fromDate = $("input[name='fromDate']").val();
+            const toDate = $("input[name='toDate']").val();
+
+            if (!fromDate && !toDate) return "Tất cả";
+            return `${fromDate || "Tất cả"} → ${toDate || "Tất cả"}`;
         }
+
+        $("#btnOpenExportModal").click(function () {
+            $("#exportTimeRange").text(buildTimeRangeText());
+            $("#exportTabName").text($(".nav-link.active").text().trim());
+            $("#exportPdfModal").modal("show");
+        });
+
+        $(document).on("click", "#btnConfirmExportPdf", function () {
+
+        const $btn = $(this);
+        $btn.prop("disabled", true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Đang xuất...');
+
+        const charts = [];
+
+        try {
+            if (window.__charts) {
+                for (const key in window.__charts) {
+                    const chart = window.__charts[key];
+                    if (!chart || typeof chart.toBase64Image !== "function") continue;
+
+                    // ✅ 1) Skip canvas lỗi / chưa render
+                    if (!chart.canvas || chart.canvas.width === 0 || chart.canvas.height === 0) {
+                        console.warn("Skip empty canvas:", key, chart?.canvas);
+                        continue;
+                    }
+
+                    // ✅ 2) Xuất base64 ổn định hơn
+                    const img64 = chart.toBase64Image("image/png", 0.92);
+
+                    // ✅ 3) Bảo hiểm: base64 phải có "data:image"
+                    if (!img64 || !img64.startsWith("data:image")) {
+                        console.warn("Skip invalid base64:", key, img64?.substring?.(0, 30));
+                        continue;
+                    }
+
+                    charts.push({
+                        name: key,
+                        imageBase64: img64
+                    });
+                }
+            }
+        } catch (err) {
+            console.error("Chart export error:", err);
+        }
+
+        const payload = {
+            fromDate: $("input[name='fromDate']").val() || null,
+            toDate: $("input[name='toDate']").val() || null,
+            tab: $(".nav-link.active").data("tab") || "overview",
+            confirmText: $("#txtConfirmText").val(),
+            watermarkText: $("#chkEnableWatermark").is(":checked")
+                ? $("#txtWatermarkText").val()
+                : "",
+            charts: charts
+        };
+
+        console.log("Export payload:", payload); // 🔍 debug
+
+        $.ajax({
+            url: "/AdminReport/ExportPdf",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify(payload),
+            xhrFields: { responseType: 'blob' },
+            success: function (blob) {
+                const url = window.URL.createObjectURL(blob);
+                window.open(url);
+                $("#exportPdfModal").modal("hide");
+            },
+            error: function (err) {
+                alert("Xuất PDF thất bại. Vui lòng kiểm tra console.");
+                console.error(err);
+            },
+            complete: function () {
+                $btn.prop("disabled", false).html('<i class="fas fa-file-export mr-1"></i> Xuất PDF');
+            }
+        });
+    });
     </script>
 }
