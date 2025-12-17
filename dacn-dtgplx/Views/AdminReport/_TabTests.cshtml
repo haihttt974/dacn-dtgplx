@@ -1,0 +1,263 @@
+﻿@model dacn_dtgplx.ViewModels.Reports.DashboardReportVM
+@using System.Text.Json
+
+@{
+    var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = null };
+
+    // ====== DATA AN TOÀN ======
+    var theoryPie = Model.Tests.TheoryByHangPie ?? new();
+    var simPie = Model.Tests.SimulationByBoDePie ?? new();
+
+    var jsonTheoryLabels = JsonSerializer.Serialize(theoryPie.Select(x => x.Label), jsonOptions);
+    var jsonTheoryValues = JsonSerializer.Serialize(theoryPie.Select(x => x.Value), jsonOptions);
+
+    var jsonSimLabels = JsonSerializer.Serialize(simPie.Select(x => x.Label), jsonOptions);
+    var jsonSimValues = JsonSerializer.Serialize(simPie.Select(x => x.Value), jsonOptions);
+
+    var compareLabels = new[] { "Lý thuyết", "Mô phỏng" };
+    var compareAttempts = new[] { Model.Tests.TongLuotThiLyThuyet, Model.Tests.TongLuotThiMoPhong };
+    var compareUsers = new[] { Model.Tests.HocVienThiLyThuyet, Model.Tests.HocVienThiMoPhong };
+
+    var jsonCompareLabels = JsonSerializer.Serialize(compareLabels, jsonOptions);
+    var jsonCompareAttempts = JsonSerializer.Serialize(compareAttempts, jsonOptions);
+    var jsonCompareUsers = JsonSerializer.Serialize(compareUsers, jsonOptions);
+}
+<style>
+    .chart-box-small {
+        width: 240px;
+        height: 240px;
+        margin: 0 auto;
+    }
+
+    .chart-box-small canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
+</style>
+
+<!-- ================= KPI ================= -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h4>@Model.Tests.TongLuotThiLyThuyet</h4>
+                <p>Lượt thi lý thuyết</p>
+            </div>
+            <div class="icon"><i class="fas fa-file-alt"></i></div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h4>@Model.Tests.HocVienThiLyThuyet</h4>
+                <p>HV thi lý thuyết</p>
+            </div>
+            <div class="icon"><i class="fas fa-user-check"></i></div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="small-box bg-warning">
+            <div class="inner">
+                <h4>@Model.Tests.TongLuotThiMoPhong</h4>
+                <p>Lượt thi mô phỏng</p>
+            </div>
+            <div class="icon"><i class="fas fa-vr-cardboard"></i></div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="small-box bg-danger">
+            <div class="inner">
+                <h4>@Model.Tests.HocVienThiMoPhong</h4>
+                <p>HV thi mô phỏng</p>
+            </div>
+            <div class="icon"><i class="fas fa-users"></i></div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= CHARTS ================= -->
+<div class="row">
+    <!-- Compare -->
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header">
+                <strong>So sánh tổng quan</strong>
+            </div>
+            <div class="card-body">
+                <canvas id="chart_tests_compare" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ratio -->
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header">
+                <strong>Tỷ lệ lượt thi</strong>
+            </div>
+            <div class="card-body">
+                <div class="chart-box-small">
+                    <canvas id="chart_tests_ratio"></canvas>
+                </div>
+                <small class="text-muted d-block mt-2">
+                    * So sánh tổng lượt thi lý thuyết & mô phỏng
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Theory -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <strong>Lý thuyết theo hạng</strong>
+            </div>
+            <div class="card-body">
+                <div class="chart-box-small">
+                    <canvas id="chart_tests_theory_pie"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simulation -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <strong>Mô phỏng theo bộ đề</strong>
+            </div>
+            <div class="card-body">
+                <div class="chart-box-small">
+                    <canvas id="chart_tests_sim_pie"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Top simulation -->
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <strong>Top bộ đề mô phỏng</strong>
+            </div>
+            <div class="card-body">
+                <canvas id="chart_tests_sim_top" height="140"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= SCRIPT ================= -->
+<script>
+    window.__renderTabCharts = function () {
+
+        destroyChart("tests_compare");
+        destroyChart("tests_ratio");
+        destroyChart("tests_theory_pie");
+        destroyChart("tests_sim_pie");
+        destroyChart("tests_sim_top");
+
+        const labelsCompare = @Html.Raw(jsonCompareLabels);
+        if (!labelsCompare || labelsCompare.length === 0) return;
+
+        // Compare bar
+        window.__charts["tests_compare"] = new Chart(
+            document.getElementById("chart_tests_compare"),
+            {
+                type: "bar",
+                data: {
+                    labels: labelsCompare,
+                    datasets: [
+                        { label: "Lượt thi", data: @Html.Raw(jsonCompareAttempts) },
+                        { label: "Học viên", data: @Html.Raw(jsonCompareUsers) }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: { y: { beginAtZero: true } }
+                }
+            }
+        );
+
+        // Ratio donut
+        window.__charts["tests_ratio"] = new Chart(
+            document.getElementById("chart_tests_ratio"),
+            {
+                type: "doughnut",
+                data: {
+                    labels: labelsCompare,
+                    datasets: [{ data: @Html.Raw(jsonCompareAttempts) }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: "bottom" } },
+                    cutout: "60%"
+                }
+            }
+        );
+
+        // Theory pie
+        const theoryLabels = @Html.Raw(jsonTheoryLabels);
+        if (theoryLabels.length > 0) {
+            window.__charts["tests_theory_pie"] = new Chart(
+                document.getElementById("chart_tests_theory_pie"),
+                {
+                    type: "pie",
+                    data: {
+                        labels: theoryLabels,
+                        datasets: [{ data: @Html.Raw(jsonTheoryValues) }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { position: "bottom" } }
+                    }
+                }
+            );
+        }
+
+        // Simulation pie
+        const simLabels = @Html.Raw(jsonSimLabels);
+        if (simLabels.length > 0) {
+            window.__charts["tests_sim_pie"] = new Chart(
+                document.getElementById("chart_tests_sim_pie"),
+                {
+                    type: "pie",
+                    data: {
+                        labels: simLabels,
+                        datasets: [{ data: @Html.Raw(jsonSimValues) }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { position: "bottom" } }
+                    }
+                }
+            );
+
+            // Top simulation (horizontal bar)
+            window.__charts["tests_sim_top"] = new Chart(
+                document.getElementById("chart_tests_sim_top"),
+                {
+                    type: "bar",
+                    data: {
+                        labels: simLabels,
+                        datasets: [{ label: "Số lượt", data: @Html.Raw(jsonSimValues) }]
+                    },
+                    options: {
+                        indexAxis: "y",
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: { x: { beginAtZero: true } }
+                    }
+                }
+            );
+        }
+    };
+</script>

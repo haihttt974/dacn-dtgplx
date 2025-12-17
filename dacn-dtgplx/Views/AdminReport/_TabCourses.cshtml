@@ -1,0 +1,219 @@
+﻿@model dacn_dtgplx.ViewModels.Reports.DashboardReportVM
+@using System.Text.Json
+
+@{
+    var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = null };
+
+    var rows = Model.Courses.CoursesByMonthTable
+               ?? new List<dacn_dtgplx.ViewModels.Reports.CourseMonthRowVM>();
+
+    var labels = rows.Select(x => x.MonthLabel).ToList();
+    var newCourses = rows.Select(x => (decimal)x.NewCourses).ToList();
+    var newEnroll = rows.Select(x => (decimal)x.NewEnrollments).ToList();
+
+    var jsonLabels = JsonSerializer.Serialize(labels, jsonOptions);
+    var jsonCourses = JsonSerializer.Serialize(newCourses, jsonOptions);
+    var jsonEnroll = JsonSerializer.Serialize(newEnroll, jsonOptions);
+
+    var pie = Model.Courses.CoursesByHangPie ?? new();
+    var jsonPieLabels = JsonSerializer.Serialize(pie.Select(x => x.Label), jsonOptions);
+    var jsonPieValues = JsonSerializer.Serialize(pie.Select(x => x.Value), jsonOptions);
+
+    var top = Model.Courses.TopCoursesByEnrollments ?? new();
+    var jsonTopLabels = JsonSerializer.Serialize(top.Select(x => x.Label), jsonOptions);
+    var jsonTopValues = JsonSerializer.Serialize(top.Select(x => x.Value), jsonOptions);
+}
+
+<!-- ================= KPI ================= -->
+<div class="row">
+    <div class="col-md-4">
+        <div class="small-box bg-secondary">
+            <div class="inner">
+                <h4>@Model.Courses.SoKhoaHocMoi</h4>
+                <p>Khóa học mới</p>
+            </div>
+            <div class="icon"><i class="fas fa-book"></i></div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h4>@Model.Courses.SoDangKyMoi</h4>
+                <p>Đăng ký mới</p>
+            </div>
+            <div class="icon"><i class="fas fa-clipboard-check"></i></div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h4>@Model.Courses.TongDangKy</h4>
+                <p>Tổng đăng ký</p>
+            </div>
+            <div class="icon"><i class="fas fa-layer-group"></i></div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= CHARTS ================= -->
+<div class="row">
+    <!-- Mix chart -->
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header">
+                <strong>Khóa học & Đăng ký theo tháng</strong>
+            </div>
+            <div class="card-body">
+                <canvas id="chart_courses_mix" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pie -->
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header">
+                <strong>Phân bố khóa học theo hạng</strong>
+            </div>
+            <div class="card-body">
+                <canvas id="chart_courses_pie" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Top -->
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <strong>Top khóa học theo số đăng ký</strong>
+            </div>
+            <div class="card-body">
+                <canvas id="chart_courses_top" height="140"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= TABLE ================= -->
+<div class="card">
+    <div class="card-header">
+        <strong>Bảng chi tiết khóa học theo tháng</strong>
+    </div>
+
+    <div class="card-body table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="thead-light">
+                <tr>
+                    <th>Tháng</th>
+                    <th class="text-right">Khóa học mới</th>
+                    <th class="text-right">Đăng ký mới</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!rows.Any())
+                {
+                    <tr>
+                        <td colspan="3" class="text-center text-muted">
+                            Không có dữ liệu
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var r in rows.Take(24))
+                    {
+                        <tr>
+                            <td>@r.MonthLabel</td>
+                            <td class="text-right">@r.NewCourses</td>
+                            <td class="text-right">@r.NewEnrollments</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ================= SCRIPT ================= -->
+<script>
+    window.__renderTabCharts = function () {
+
+        const labels = @Html.Raw(jsonLabels);
+        if (!labels || labels.length === 0) return;
+
+        destroyChart("courses_mix");
+        destroyChart("courses_pie");
+        destroyChart("courses_top");
+
+        const courses = @Html.Raw(jsonCourses);
+        const enroll = @Html.Raw(jsonEnroll);
+
+        // Mix chart
+        window.__charts["courses_mix"] = new Chart(
+            document.getElementById("chart_courses_mix"),
+            {
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            type: "bar",
+                            label: "Khóa học mới",
+                            data: courses
+                        },
+                        {
+                            type: "line",
+                            label: "Đăng ký mới",
+                            data: enroll,
+                            tension: 0.35,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: true } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            }
+        );
+
+        // Pie
+        window.__charts["courses_pie"] = new Chart(
+            document.getElementById("chart_courses_pie"),
+            {
+                type: "doughnut",
+                data: {
+                    labels: @Html.Raw(jsonPieLabels),
+                    datasets: [{ data: @Html.Raw(jsonPieValues) }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: "bottom" } },
+                    cutout: "60%"
+                }
+            }
+        );
+
+        // Top courses
+        window.__charts["courses_top"] = new Chart(
+            document.getElementById("chart_courses_top"),
+            {
+                type: "bar",
+                data: {
+                    labels: @Html.Raw(jsonTopLabels),
+                    datasets: [{ label: "Đăng ký", data: @Html.Raw(jsonTopValues) }]
+                },
+                options: {
+                    indexAxis: "y",
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { beginAtZero: true } }
+                }
+            }
+        );
+    };
+</script>

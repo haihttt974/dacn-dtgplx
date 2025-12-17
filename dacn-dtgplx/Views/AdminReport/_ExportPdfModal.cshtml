@@ -1,0 +1,133 @@
+﻿@* ================= EXPORT PDF MODAL ================= *@
+<div class="modal fade"
+     id="exportPdfModal"
+     tabindex="-1"
+     role="dialog"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content shadow-lg border-0"
+             style="border-radius:12px; overflow:hidden;">
+
+            <!-- HEADER -->
+            <div class="modal-header bg-danger text-white">
+                <div class="d-flex align-items-center">
+                    <div class="mr-3"
+                         style="width:44px;height:44px;border-radius:10px;
+                                background:rgba(255,255,255,.15);
+                                display:flex;align-items:center;justify-content:center;">
+                        <i class="fas fa-file-pdf fa-lg"></i>
+                    </div>
+
+                    <div>
+                        <h5 class="modal-title mb-0">
+                            Xác nhận xuất báo cáo
+                        </h5>
+                        <small class="text-white-50">
+                            Xuất PDF đúng dữ liệu & biểu đồ đang hiển thị
+                        </small>
+                    </div>
+                </div>
+
+                <button class="btn-close"
+                        data-bs-dismiss="modal"
+                        style="filter: invert(1); opacity: 1;"></button>
+            </div>
+
+            <!-- BODY -->
+            <div class="modal-body" style="background:#f7f8fa;">
+
+                <!-- SUMMARY -->
+                <div class="card border-0 shadow-sm mb-3" style="border-radius:12px;">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="text-muted small">Thời gian</div>
+                                <div class="font-weight-bold" id="exportTimeRange">
+                                    Tất cả
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="text-muted small">Loại báo cáo</div>
+                                <div class="font-weight-bold" id="exportTabName">
+                                    Tổng quan
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info mt-3 mb-0">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            PDF sẽ bao gồm <b>biểu đồ + bảng dữ liệu</b>
+                            theo bộ lọc hiện tại.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CONFIRM TEXT -->
+                <div class="card border-0 shadow-sm mb-3" style="border-radius:12px;">
+                    <div class="card-body">
+                        <label class="font-weight-bold">
+                            Nội dung xác nhận (footer PDF)
+                        </label>
+                        <input type="text"
+                               id="txtConfirmText"
+                               class="form-control"
+                               value="ĐÀO TẠO GIẤY PHÉP LÁI XE HAILOC"
+                               placeholder="Ví dụ: Phòng đào tạo - HAILOC" />
+                    </div>
+                </div>
+
+                <!-- WATERMARK -->
+                <div class="card border-0 shadow-sm" style="border-radius:12px;">
+                    <div class="card-body">
+                        <div class="custom-control custom-switch mb-3">
+                            <input type="checkbox"
+                                   class="custom-control-input"
+                                   id="chkEnableWatermark"
+                                   checked>
+                            <label class="custom-control-label font-weight-bold"
+                                   for="chkEnableWatermark">
+                                Bật watermark bản quyền
+                            </label>
+                        </div>
+
+                        <div id="watermarkSettings">
+                            <label class="font-weight-bold">
+                                Nội dung watermark
+                            </label>
+                            <input type="text"
+                                   id="txtWatermarkText"
+                                   class="form-control"
+                                   value="CONFIDENTIAL - HAILOC" />
+
+                            <small class="text-muted">
+                                Watermark sẽ hiển thị mờ, chéo trong toàn bộ PDF.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- FOOTER -->
+            <div class="modal-footer bg-white">
+                <button class="btn btn-outline-secondary"
+                        data-bs-dismiss="modal">
+                    Hủy
+                </button>
+
+                <button id="btnConfirmExportPdf"
+                        class="btn btn-danger px-4">
+                    <i class="fas fa-file-export mr-1"></i> Xuất PDF
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+<script>
+    $(document).on("click", "[data-dismiss='modal']", function () {
+        $("#exportPdfModal").modal("hide");
+    });
+</script>
