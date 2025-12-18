@@ -1,30 +1,65 @@
-﻿@model dacn_dtgplx.Models.HoaDonThanhToan
+﻿@model HoaDonThanhToan
 
-<div>
-    <h5 class="fw-bold mb-3 text-primary">Hóa đơn #@Model.IdThanhToan</h5>
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
 
-    <p><b>Số tiền:</b> @((Model.SoTien ?? 0).ToString("N0")) đ</p>
+        <h5 class="fw-bold text-primary mb-3">
+            <i class="fa-solid fa-motorcycle me-2"></i>Thông tin thuê xe
+        </h5>
 
-    <p>
-        <b>Trạng thái:</b>
-        @if (Model.TrangThai == true)
-        {
-            <span class="badge bg-success">Hợp lệ</span>
-        }
-        else
-        {
-            <span class="badge bg-danger">Không hợp lệ</span>
-        }
-    </p>
+        <table class="table table-sm table-borderless mb-3">
+            <tr>
+                <th width="160">Người thuê</th>
+                <td>@Model.PhieuTx.User.Username</td>
+            </tr>
+            <tr>
+                <th>Loại xe</th>
+                <td>@Model.PhieuTx.Xe.LoaiXe</td>
+            </tr>
+            <tr>
+                <th>Thời gian thuê</th>
+                <td>
+                    @Model.PhieuTx.TgBatDau?.ToString("dd/MM/yyyy HH:mm") –
+                    @(Model.PhieuTx.TgBatDau?.AddHours(Model.PhieuTx.TgThue ?? 0).ToString("HH:mm"))
+                </td>
+            </tr>
+            <tr>
+                <th>Thanh toán</th>
+                <td>
+                    @if (Model.TrangThai == true)
+                    {
+                        <span class="badge bg-success">Đã thanh toán</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">Chưa thanh toán</span>
+                    }
+                </td>
+            </tr>
+        </table>
 
-    <hr />
+        <hr />
 
-    @if (Model.PhieuTx != null)
-    {
-        <h6 class="fw-bold">Thông tin thuê xe</h6>
+        <div class="d-flex gap-2 justify-content-end">
+            @if (Model.PhieuTx.DaLayXe)
+            {
+                <button class="btn btn-secondary" disabled>
+                    <i class="fa-solid fa-check me-1"></i>Đã lấy xe
+                </button>
+            }
+            else
+            {
+                <button class="btn btn-success"
+                        onclick="confirmTakeVehicle(@Model.PhieuTx.PhieuTxId)">
+                    <i class="fa-solid fa-key me-1"></i>Xác nhận lấy xe
+                </button>
 
-        <p><b>Xe:</b> @Model.PhieuTx.Xe.LoaiXe - @Model.PhieuTx.Xe.BienSo</p>
-        <p><b>Ngày bắt đầu:</b> @Model.PhieuTx.TgBatDau?.ToString("dd/MM/yyyy HH:mm")</p>
-        <p><b>Thời lượng:</b> @Model.PhieuTx.TgThue giờ</p>
-    }
+                <button class="btn btn-outline-danger"
+                        data-bs-dismiss="modal">
+                    <i class="fa-solid fa-xmark me-1"></i>Hủy
+                </button>
+            }
+        </div>
+
+    </div>
 </div>

@@ -16,11 +16,16 @@ public partial class PhieuThueXe
     public int XeId { get; set; }
 
     [Column("tg_BatDau")]
+    [Display(Name = "Thời gian bắt đầu")]
     public DateTime? TgBatDau { get; set; }
 
     [Column("tg_Thue")]
+    [Display(Name = "Số giờ thuê")]
     public int? TgThue { get; set; }
 
+    [Column("daLayXe")]
+    [Display(Name = "Đã lấy xe")]
+    public bool DaLayXe { get; set; } = false;
     // Navigation properties
     public virtual User User { get; set; } = null!;
 

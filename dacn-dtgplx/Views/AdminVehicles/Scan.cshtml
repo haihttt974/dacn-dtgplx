@@ -94,6 +94,7 @@
 </div>
 
 <!-- MODAL KẾT QUẢ -->
+<!-- MODAL KẾT QUẢ -->
 <div class="modal fade" id="billModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
@@ -140,6 +141,24 @@
         fps: 10,
         qrbox: { width: 280, height: 280 }
     });
+    function confirmTakeVehicle(phieuId) {
+        if (!confirm("Xác nhận khách đã lấy xe?")) return;
 
+        $.post("/AdminVehicles/ConfirmTakeVehicle",
+            { phieuId: phieuId },
+            function (res) {
+                if (!res.success) {
+                    alert(res.message);
+                    return;
+                }
+
+                $("#billModal").modal("hide");
+                alert("✔️ Đã xác nhận lấy xe");
+            });
+    }
+
+    function cancelScan() {
+        $("#billModal").modal("hide");
+    }
     scanner.render(onScanSuccess);
 </script>
