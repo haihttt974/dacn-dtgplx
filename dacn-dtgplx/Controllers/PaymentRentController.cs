@@ -24,6 +24,7 @@ namespace dacn_dtgplx.Controllers
         private readonly IPayPalService _payPal;
         private readonly IMomoService _momo;
         private readonly QrCryptoService _qrCryptoService;
+        private readonly IWebHostEnvironment _env;
 
         public PaymentRentController(
             DtGplxContext context,
@@ -31,7 +32,8 @@ namespace dacn_dtgplx.Controllers
             IMailService mail,
             IPayPalService payPal,
             IMomoService momo,
-            QrCryptoService qrCryptoService)
+            QrCryptoService qrCryptoService,
+            IWebHostEnvironment env)
         {
             _context = context;
             _config = config;
@@ -39,6 +41,7 @@ namespace dacn_dtgplx.Controllers
             _payPal = payPal;
             _momo = momo;
             _qrCryptoService = qrCryptoService;
+            _env = env;
         }
 
         private int? GetUserId()
@@ -435,6 +438,8 @@ namespace dacn_dtgplx.Controllers
             string soTien = (hd.SoTien ?? 0).ToString("N0");
             string thoiLuong = phieu.TgThue.ToString();
             string fullName = phieu.User?.TenDayDu ?? "Khách hàng";
+            var logoPath = Path.Combine(_env.WebRootPath, "images", "Logo", "logo.jpg");
+            byte[] logoBytes = System.IO.File.ReadAllBytes(logoPath);
 
             var model = new
             {
@@ -464,7 +469,11 @@ namespace dacn_dtgplx.Controllers
                                 .FontSize(16).Bold().FontColor("#444");
                         });
 
-                        row.ConstantItem(120).Height(60).Placeholder(); // logo sau
+                        row.ConstantItem(120).Height(60)
+                            .AlignRight()
+                            .AlignMiddle()
+                            .Image(logoBytes)
+                            .FitArea();
                     });
 
                     page.Content().PaddingVertical(10).Column(col =>
