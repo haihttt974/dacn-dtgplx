@@ -112,14 +112,14 @@ namespace dacn_dtgplx.Controllers
                 return RedirectToAction("Index", "ThueXe");
             }
 
-            decimal soTien = hd.SoTien ?? 0;
+            var soTien = hd.SoTien ?? 0;
             if (soTien <= 0)
             {
                 TempData["Error"] = "Số tiền thanh toán không hợp lệ.";
                 return RedirectToAction("StartPayment", new { hoaDonId });
             }
 
-            long amount = (long)soTien;
+            var amount = (long)soTien;
 
             // Lấy config giống bên PaymentController
             string baseUrl = _config["VnPay:BaseUrl"] ?? "";
@@ -133,7 +133,7 @@ namespace dacn_dtgplx.Controllers
             string returnUrl = Url.Action("VnPayReturn", "PaymentRent", null, Request.Scheme)!;
 
             var vnp = new VnPayLibrary();
-            vnp.AddRequestData("vnp_Version", VnPayLibrary.VERSION);
+            vnp.AddRequestData("vnp_Version", "2.1.0");
             vnp.AddRequestData("vnp_Command", "pay");
             vnp.AddRequestData("vnp_TmnCode", tmnCode);
             vnp.AddRequestData("vnp_Amount", (amount * 100).ToString());
@@ -147,11 +147,14 @@ namespace dacn_dtgplx.Controllers
             vnp.AddRequestData("vnp_Locale", locale);
 
             // Bỏ dấu tiếng Việt trong OrderInfo
-            string infoRaw = string.IsNullOrWhiteSpace(hd.NoiDung)
-                ? $"Thanh toan thue xe {hd.PhieuTx.Xe.LoaiXe}"
-                : hd.NoiDung;
-            vnp.AddRequestData("vnp_OrderInfo", RemoveVietnamese(infoRaw));
+            //string infoRaw = string.IsNullOrWhiteSpace(hd.NoiDung)
+            //    ? $"Thanh toan thue xe {hd.PhieuTx.Xe.LoaiXe}"
+            //    : hd.NoiDung;
+            //vnp.AddRequestData("vnp_OrderInfo", RemoveVietnamese(infoRaw));
 
+
+            string orderInfo = $"Thanh toan hoa don {hoaDonId}";
+            vnp.AddRequestData("vnp_OrderInfo", orderInfo);
             vnp.AddRequestData("vnp_OrderType", orderType);
             vnp.AddRequestData("vnp_ReturnUrl", returnUrl);
 
@@ -162,33 +165,21 @@ namespace dacn_dtgplx.Controllers
             return Redirect(paymentUrl);
         }
 
-        // Helper bỏ dấu
-        private static string RemoveVietnamese(string text)
-        {
-            if (string.IsNullOrWhiteSpace(text)) return "";
-
-            string normalized = text.Normalize(NormalizationForm.FormD);
-            var sb = new StringBuilder();
-
-            foreach (var ch in normalized)
-            {
-                if (CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark)
-                    sb.Append(ch);
-            }
-
-            return sb.ToString()
-                .Normalize(NormalizationForm.FormC)
-                .Replace("đ", "d")
-                .Replace("Đ", "D");
-        }
-
         // RETURN TỪ VNPAY
         [HttpGet("vnpayreturn")]
         public async Task<IActionResult> VnPayReturn()
         {
             var vnp = new VnPayLibrary();
+
             foreach (var key in Request.Query.Keys)
-                vnp.AddResponseData(key, Request.Query[key]);
+            {
+                if (key.StartsWith("vnp_") &&
+                    key != "vnp_SecureHash" &&
+                    key != "vnp_SecureHashType")
+                {
+                    vnp.AddResponseData(key, Request.Query[key]);
+                }
+            }
 
             string secureHash = Request.Query["vnp_SecureHash"];
             bool valid = vnp.ValidateSignature(secureHash, _config["VnPay:HashSecret"]);
