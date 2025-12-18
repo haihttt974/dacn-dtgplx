@@ -641,7 +641,10 @@ CREATE TABLE PhieuThueXe (
         FOREIGN KEY (xeTapLaiId) REFERENCES xeTapLai(xeTapLaiId)
 );
 GO
-
+ALTER TABLE PhieuThueXe
+ADD daLayXe BIT NOT NULL
+    CONSTRAINT DF_PhieuThueXe_daLayXe DEFAULT 0;
+GO
 ALTER TABLE hoaDonThanhToan
 ALTER COLUMN idDangKy INT NULL;
 GO

@@ -373,5 +373,23 @@ namespace dacn_dtgplx.Controllers
                 valid = bill.TrangThai == true
             });
         }
+
+        [HttpPost]
+        public async Task<IActionResult> ConfirmTakeVehicle(int phieuId)
+        {
+            var phieu = await _context.PhieuThueXe
+                .FirstOrDefaultAsync(p => p.PhieuTxId == phieuId);
+
+            if (phieu == null)
+                return Json(new { success = false, message = "Phiếu thuê không tồn tại" });
+
+            if (phieu.DaLayXe)
+                return Json(new { success = false, message = "Xe đã được lấy trước đó" });
+
+            phieu.DaLayXe = true;
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
     }
 }
