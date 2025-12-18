@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Text.Json;
 
 [Authorize]
 public class HoaDonThanhToanController : Controller
@@ -12,12 +13,13 @@ public class HoaDonThanhToanController : Controller
     private readonly DtGplxContext _context;
     private readonly IInvoiceService _invoiceService;
     private readonly IQrService _qrService;
-
-    public HoaDonThanhToanController(DtGplxContext context, IInvoiceService invoiceService, IQrService qrService)
+    private readonly QrCryptoService _qrCryptoService;
+    public HoaDonThanhToanController(DtGplxContext context, IInvoiceService invoiceService, IQrService qrService, QrCryptoService qrCryptoService)
     {
         _context = context;
         _invoiceService = invoiceService;
         _qrService = qrService;
+        _qrCryptoService = qrCryptoService;
     }
 
     public async Task<IActionResult> Index()
@@ -93,17 +95,34 @@ public class HoaDonThanhToanController : Controller
     }
     public IActionResult ViewQr(int id)
     {
-        string content = $"RENT-{id}";
-        byte[] qr = _qrService.GenerateQrCode(content);
+        var payload = new
+        {
+            type = "RENT_PAYMENT",
+            paymentId = id,
+            ts = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+        };
+
+        string json = JsonSerializer.Serialize(payload);
+        string encrypted = _qrCryptoService.Encrypt(json);
+
+        byte[] qr = _qrService.GenerateQrCode(encrypted);
 
         string base64 = Convert.ToBase64String(qr);
         return Json(new { img = "data:image/png;base64," + base64 });
     }
-
     public IActionResult DownloadQr(int id)
     {
-        string content = $"RENT-{id}";
-        byte[] qr = _qrService.GenerateQrCode(content);
+        var payload = new
+        {
+            type = "RENT_PAYMENT",
+            paymentId = id,
+            ts = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+        };
+
+        string json = JsonSerializer.Serialize(payload);
+        string encrypted = _qrCryptoService.Encrypt(json);
+
+        byte[] qr = _qrService.GenerateQrCode(encrypted);
 
         return File(qr, "image/png", $"QR_Rent_{id}.png");
     }

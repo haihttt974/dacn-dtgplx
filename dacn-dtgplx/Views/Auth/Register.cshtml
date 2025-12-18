@@ -155,8 +155,16 @@
 
                     <!-- Email -->
                     <div class="form-floating mb-3">
-                        <input type="email" class="form-control" name="email" required placeholder="Email" />
+                        <input type="email"
+                               class="form-control"
+                               name="email"
+                               id="email"
+                               required
+                               placeholder="Email" />
                         <label>Email</label>
+                        <small id="emailError" class="text-danger d-none">
+                            Email không đúng định dạng
+                        </small>
                     </div>
 
                     <!-- Fullname -->
@@ -234,9 +242,13 @@
         const strength = document.getElementById("pwdStrength");
         const match = document.getElementById("pwdMatch");
         const submit = document.getElementById("btnSubmit");
+        const email = document.getElementById("email");
+        const emailRegex = /^[A-Za-z0-9._%+-]+@@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
 
         pwd.addEventListener("input", validate);
         confirmPwd.addEventListener("input", validate);
+        email.addEventListener("input", validate);
 
         function validate() {
             const p = pwd.value;
@@ -257,6 +269,15 @@
                     match.innerHTML = "<span style='color:red'>✘ Mật khẩu không khớp</span>";
                 }
             } else match.innerHTML = "";
+
+            // ================= EMAIL =================
+            let emailValid = false;
+            if (email && emailRegex.test(email.value.trim())) {
+                email.classList.remove("is-invalid");
+                emailValid = true;
+            } else {
+                email.classList.add("is-invalid");
+            }
 
             // Enable submit
             submit.disabled = !(p.length >= 6 && p === c);

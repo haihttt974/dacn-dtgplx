@@ -1,17 +1,21 @@
 ﻿using dacn_dtgplx.Models;
+using dacn_dtgplx.Services;
 using dacn_dtgplx.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace dacn_dtgplx.Controllers
 {
     public class AdminVehiclesController : Controller
     {
         private readonly DtGplxContext _context;
+        private readonly QrCryptoService _qrCryptoService;
 
-        public AdminVehiclesController(DtGplxContext context)
+        public AdminVehiclesController(DtGplxContext context, QrCryptoService qrCryptoService)
         {
             _context = context;
+            _qrCryptoService = qrCryptoService;
         }
 
         // ======================= INDEX =========================
@@ -305,33 +309,68 @@ namespace dacn_dtgplx.Controllers
         public async Task<IActionResult> ScanResult(string code)
         {
             if (string.IsNullOrWhiteSpace(code))
-                return Json(new { success = false, message = "Mã không hợp lệ!" });
+                return Json(new { success = false, message = "Mã QR trống" });
 
-            // Format chuẩn: RENT-67
-            if (!code.StartsWith("RENT-"))
-                return Json(new { success = false, message = "Mã QR không hợp lệ!" });
+            JsonElement payload;
 
-            if (!int.TryParse(code.Replace("RENT-", ""), out int id))
-                return Json(new { success = false, message = "Mã QR không hợp lệ!" });
+            try
+            {
+                // 1. Giải mã QR
+                string json = _qrCryptoService.Decrypt(code);
 
+                payload = JsonSerializer.Deserialize<JsonElement>(json);
+            }
+            catch
+            {
+                // Sai key / bị sửa / QR giả
+                return Json(new { success = false, message = "Mã QR không hợp lệ hoặc đã bị chỉnh sửa" });
+            }
+
+            // 2. Validate payload bắt buộc
+            if (!payload.TryGetProperty("paymentId", out var paymentIdProp)
+                || !paymentIdProp.TryGetInt32(out int paymentId))
+            {
+                return Json(new { success = false, message = "QR không hợp lệ" });
+            }
+
+            // (khuyến nghị) validate type
+            if (!payload.TryGetProperty("type", out var typeProp)
+                || typeProp.GetString() != "RENT_PAYMENT")
+            {
+                return Json(new { success = false, message = "QR sai loại" });
+            }
+
+            // (khuyến nghị) validate thời gian
+            if (payload.TryGetProperty("ts", out var tsProp))
+            {
+                long ts = tsProp.GetInt64();
+                var qrTime = DateTimeOffset.FromUnixTimeSeconds(ts);
+
+                if (DateTimeOffset.UtcNow - qrTime > TimeSpan.FromMinutes(10))
+                {
+                    return Json(new { success = false, message = "QR đã hết hạn" });
+                }
+            }
+
+            // 3. Lấy hóa đơn
             var bill = await _context.HoaDonThanhToans
                 .Include(h => h.PhieuTx)
                     .ThenInclude(p => p.Xe)
                 .Include(h => h.PhieuTx)
                     .ThenInclude(p => p.User)
-                .FirstOrDefaultAsync(h => h.IdThanhToan == id);
+                .FirstOrDefaultAsync(h => h.IdThanhToan == paymentId);
 
             if (bill == null)
-                return Json(new { success = false, message = "Không tìm thấy hóa đơn!" });
+                return Json(new { success = false, message = "Không tìm thấy hóa đơn" });
 
-            // Render lại partial để show lên modal
+            // 4. Render partial
             string html = await this.RenderViewAsync("_ScanBillDetail", bill, true);
 
             return Json(new
             {
                 success = true,
                 html,
-                valid = bill.TrangThai == true // thanh toán hợp lệ
+                valid = bill.TrangThai == true
             });
         }
     }
