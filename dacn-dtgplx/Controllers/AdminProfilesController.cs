@@ -28,7 +28,8 @@ namespace dacn_dtgplx.Controllers.Admin
         {
             var query = _context.HoSoThiSinhs
                 .Include(h => h.User)
-                .Include(h => h.DangKyHocs)
+                .Include(h => h.DangKyHocs
+                    .Where(d => d.TrangThai == true))
                     .ThenInclude(d => d.KhoaHoc)
                 .AsQueryable();
 

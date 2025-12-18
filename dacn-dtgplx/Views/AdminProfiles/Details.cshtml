@@ -10,7 +10,11 @@
     {
         avatarPath = avatarPath.Substring(prefix.Length);
     }
-    var avatarUrl = Url.Content("~/" + avatarPath.TrimStart('/'));
+    var avatarUrl = Url.Content(
+        string.IsNullOrWhiteSpace(avatarPath)
+            ? "~/images/avatar/default.png"
+            : "~/" + avatarPath.TrimStart('/')
+    );
 
     var rawIdPhoto = hoSo.KhamSucKhoe ?? "";
     var cleanIdPhoto = rawIdPhoto.StartsWith("wwwroot", StringComparison.OrdinalIgnoreCase)

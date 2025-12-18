@@ -1,5 +1,13 @@
 ﻿@using dacn_dtgplx.ViewModels
-@model List<AdminFeedbackItem>
+@* @model List<AdminFeedbackItem> *@
+@model AdminFeedbackIndexVM
+@{
+    decimal avg = Model.AvgRating;
+    int full = (int)Math.Floor(avg);
+    bool half = avg - full >= 0.5m;
+}
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
 
 <div class="card shadow-lg p-4 border-0">
 
@@ -8,14 +16,37 @@
         <h3 class="fw-bold text-primary m-0">
             <i class="fa fa-comments"></i> Phản hồi từ người dùng
         </h3>
+        @if (Model.TotalCount > 0)
+        {
+            <div class="d-flex align-items-center gap-1">
+                @for (int i = 1; i <= full; i++)
+                {
+                    <i class="fa fa-star text-warning"></i>
+                }
+                @if (half)
+                {
+                    <i class="fa fa-star-half-alt text-warning"></i>
+                }
+                @for (int i = full + (half ? 1 : 0) + 1; i <= 5; i++)
+                {
+                    <i class="fa fa-star-o text-muted"></i>
+                }
 
+                <span class="fw-bold text-primary ms-2">
+                    @avg.ToString("0.0")
+                </span>
+                <span class="text-muted">
+                    (@Model.TotalCount)
+                </span>
+            </div>
+        }
         <input id="searchBox"
                class="form-control shadow-sm"
                style="width: 260px;"
                placeholder="Tìm kiếm nhanh... (Gõ để lọc)">
     </div>
 
-    @if (Model == null || !Model.Any())
+    @if (Model == null || !Model.Items.Any())
     {
         <div class="text-center text-muted py-5">
             <i class="fa fa-inbox fa-3x mb-3"></i>
@@ -37,7 +68,7 @@
             </thead>
 
             <tbody id="fbTable">
-                @foreach (var item in Model.Select((f, i) => new { f, i }))
+                @foreach (var item in Model.Items.Select((f, i) => new { f, i }))
                 {
                     <tr class="align-middle text-center">
                         <td>@(item.i + 1)</td>
@@ -52,30 +83,28 @@
                         <td>
                             @{
                                 decimal rating = item.f.SoSao;
-                                int full = (int)Math.Floor(rating);
-                                bool half = rating - full >= 0.5m;
+                                int fullStars = (int)Math.Floor(rating);
+                                bool hasHalfStar = rating - fullStars >= 0.5m;
                             }
 
-                            <!-- Full stars -->
-                            @for (int s = 1; s <= full; s++)
+                            <!-- Sao đầy -->
+                            @for (int i = 1; i <= fullStars; i++)
                             {
                                 <i class="fa fa-star text-warning"></i>
                             }
 
-                            <!-- Half star -->
-                            @if (half)
+                            <!-- Sao nửa -->
+                            @if (hasHalfStar)
                             {
-                                <i class="fa fa-star-half-alt text-warning"></i>   <!-- FA5 -->
-                                @* <i class="fa-solid fa-star-half-stroke text-warning"></i>  FA6 *@
+                                <i class="fa fa-star-half-alt text-warning"></i>
                             }
 
-                            <!-- Empty stars -->
-                            @for (int s = full + (half ? 1 : 0) + 1; s <= 5; s++)
+                            <!-- Sao rỗng (để đủ 5 sao) -->
+                            @for (int i = fullStars + (hasHalfStar ? 1 : 0) + 1; i <= 5; i++)
                             {
-                                <i class="fa fa-star-o text-muted"></i>
+                                <i class="far fa-star text-warning"></i>
                             }
 
-                            <!-- Số sao -->
                             <div class="text-primary fw-bold mt-1">
                                 @rating.ToString("0.0")
                             </div>

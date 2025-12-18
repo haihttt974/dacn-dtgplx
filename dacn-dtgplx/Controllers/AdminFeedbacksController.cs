@@ -41,7 +41,14 @@ public class AdminFeedbacksController : Controller
                 Phone = p.User.SoDienThoai
             })
             .ToListAsync();
+        
+        var vm = new AdminFeedbackIndexVM
+        {
+            Items = items,
+            TotalCount = items.Count,
+            AvgRating = items.Any() ? Math.Round(items.Average(x => x.SoSao), 1) : 0
+        };
 
-        return View(items);
+        return View(vm);
     }
 }
