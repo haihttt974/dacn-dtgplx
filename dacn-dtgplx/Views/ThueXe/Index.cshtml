@@ -229,12 +229,24 @@
 
                             <div class="col-md-6">
                                 <label class="form-label">Email *</label>
-                                <input class="form-control" id="rentEmail" />
+                                <input class="form-control"
+                                       id="rentEmail"
+                                       required
+                                       type="email"
+                                       placeholder="email@example.com" />
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label">Số điện thoại</label>
-                                <input class="form-control" id="rentPhone" />
+                                <label class="form-label">Số điện thoại *</label>
+                                <input class="form-control"
+                                       id="rentPhone"
+                                       required
+                                       pattern="^0[1-9][0-9]{8}$"
+                                       maxlength="10"
+                                       inputmode="numeric"
+                                       oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                                       placeholder="0xxxxxxxxx"
+                                       title="Số điện thoại phải đủ 10 số, bắt đầu bằng 0" />
                             </div>
 
                             <div class="col-md-6">
@@ -310,6 +322,14 @@
     // ========================
     let rentLocked = false;      // đã lock giờ sau khi check lịch chưa?
     let currentPrice = 0;        // giá / giờ hiện tại
+
+    // Email cơ bản
+    const emailRegex = /^[A-Za-z0-9._%+-]+@@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+    // SĐT: 0 + (1–9) + 8 số = đủ 10 số
+    const phoneRegex = /^0[1-9][0-9]{8}$/;
+
+    const cccdRegex  = /^[0-9]{12}$/;
 
     function resetModalLock() {
         rentLocked = false;
@@ -433,10 +453,60 @@
         }
     });
 
+    function validateRentContact() {
+        const email = $("#rentEmail").val().trim();
+        const phone = $("#rentPhone").val().trim();
+        const cccd  = $("#rentCCCD").val().trim();
+
+        // EMAIL
+        if (!email) {
+            alert("Vui lòng nhập Email.");
+            $("#rentEmail").focus();
+            return false;
+        }
+        if (!emailRegex.test(email)) {
+            alert("Email không đúng định dạng.");
+            $("#rentEmail").focus();
+            return false;
+        }
+
+        // SĐT
+        if (!phone) {
+            alert("Vui lòng nhập số điện thoại.");
+            $("#rentPhone").focus();
+            return false;
+        }
+        if (!phoneRegex.test(phone)) {
+            alert("Số điện thoại phải đủ 10 số và bắt đầu bằng 0.");
+            $("#rentPhone").focus();
+            return false;
+        }
+
+        // CCCD
+        if (!cccd) {
+            alert("Vui lòng nhập CCCD.");
+            $("#rentCCCD").focus();
+            return false;
+        }
+        if (!cccdRegex.test(cccd)) {
+            alert("CCCD phải đủ đúng 12 số.");
+            $("#rentCCCD").focus();
+            return false;
+        }
+
+        return true;
+    }
+
+
     // ========================
     // SUBMIT / TIẾP TỤC
     // ========================
     $("#btnRentConfirm").on("click", function () {
+        
+        if (!validateRentContact()) {
+            return;
+        }
+
         const dto = {
             Ten: $("#rentName").val(),
             Email: $("#rentEmail").val(),
