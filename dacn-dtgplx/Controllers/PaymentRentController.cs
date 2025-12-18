@@ -9,6 +9,7 @@ using QuestPDF.Fluent;
 using System.Globalization;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 
 namespace dacn_dtgplx.Controllers
 {
@@ -22,19 +23,22 @@ namespace dacn_dtgplx.Controllers
         private readonly IMailService _mail;
         private readonly IPayPalService _payPal;
         private readonly IMomoService _momo;
+        private readonly QrCryptoService _qrCryptoService;
 
         public PaymentRentController(
             DtGplxContext context,
             IConfiguration config,
             IMailService mail,
             IPayPalService payPal,
-            IMomoService momo)
+            IMomoService momo,
+            QrCryptoService qrCryptoService)
         {
             _context = context;
             _config = config;
             _mail = mail;
             _payPal = payPal;
             _momo = momo;
+            _qrCryptoService = qrCryptoService;
         }
 
         private int? GetUserId()
@@ -396,7 +400,18 @@ namespace dacn_dtgplx.Controllers
                 return;
             }
 
-            byte[] qr = GenerateQr("RENT-" + hd.IdThanhToan);
+            var payload = new
+            {
+                type = "RENT_PAYMENT",
+                paymentId = hd.IdThanhToan,
+                phieuTxId = hd.PhieuTxId,
+                ts = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+            };
+
+            string json = JsonSerializer.Serialize(payload);
+            string encrypted = _qrCryptoService.Encrypt(json);
+            byte[] qr = GenerateQr(encrypted);
+
             byte[] pdf = GenerateHoaDonPdf(phieu, hd, name);
 
             await _mail.SendRentPaymentEmail(
