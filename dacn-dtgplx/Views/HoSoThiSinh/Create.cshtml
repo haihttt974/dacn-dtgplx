@@ -8,6 +8,7 @@
 
 <div class="container mt-4">
 
+
     <h2 class="fw-bold mb-4">
         <i class="fa-solid fa-file-circle-plus me-2"></i>
         Thêm Hồ Sơ Thí Sinh
@@ -136,26 +137,30 @@
             <div class="col-md-6 mb-3">
                 <label class="form-label">Mắt trái</label>
                 <input asp-for="SucKhoe.mat.mat_trai"
-                       type="number"
-                       class="form-control"
-                       required />
+                       type="text"
+                       placeholder="VD: 8/10"
+                       class="form-control" />
+                <span asp-validation-for="SucKhoe.mat.mat_trai" class="text-danger"></span>
             </div>
 
             <div class="col-md-6 mb-3">
                 <label class="form-label">Mắt phải</label>
                 <input asp-for="SucKhoe.mat.mat_phai"
-                       type="number"
-                       class="form-control"
-                       required />
+                       type="text"
+                       placeholder="VD: 10/10"
+                       class="form-control" />
+                <span asp-validation-for="SucKhoe.mat.mat_phai" class="text-danger"></span>
             </div>
+
 
             <div class="col-md-6 mb-3">
                 <label class="form-label">Huyết áp</label>
                 <input asp-for="SucKhoe.huyet_ap"
                        placeholder="VD: 120/80"
-                       class="form-control"
-                       required />
+                       class="form-control" />
+                <span asp-validation-for="SucKhoe.huyet_ap" class="text-danger"></span>
             </div>
+
 
             <div class="col-md-6 mb-3">
                 <label class="form-label">Chiều cao (cm)</label>
@@ -174,11 +179,21 @@
             </div>
 
             <div class="col-md-6 mb-3">
-                <label class="form-label">Thời hạn giấy khám</label>
+                <label class="form-label">Ngày khám</label>
                 <input asp-for="SucKhoe.thoi_han"
                        type="date"
                        class="form-control"
-                       required />
+                       max="@DateTime.Today.ToString("yyyy-MM-dd")"
+                       min="@DateTime.Today.AddMonths(-12).ToString("yyyy-MM-dd")" />
+                <span asp-validation-for="SucKhoe.thoi_han" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Ngày hết hạn</label>
+                <input type="date"
+                       id="NgayHetHan"
+                       class="form-control"
+                       readonly />
             </div>
 
         </div>
@@ -227,40 +242,37 @@
 
 @section Scripts {
     <script>
-        // Preview ảnh thẻ
-        document.getElementById("AnhTheInput")?.addEventListener("change", function (e) {
-            const file = e.target.files?.[0];
-            const img = document.getElementById("previewAnhThe");
-            const def = img.getAttribute("data-default");
+        // ===== Preview ảnh thẻ =====
+        const anhTheInput = document.getElementById("AnhTheInput");
+        const previewAnhThe = document.getElementById("previewAnhThe");
+        const defaultAnhThe = previewAnhThe.getAttribute("data-default");
 
+        anhTheInput?.addEventListener("change", function (e) {
+            const file = e.target.files?.[0];
             if (!file || !file.type.startsWith("image/")) {
-                img.src = def;
+                previewAnhThe.src = defaultAnhThe;
                 return;
             }
-
-            img.src = URL.createObjectURL(file);
+            previewAnhThe.src = URL.createObjectURL(file);
         });
 
-        // Zoom ảnh giấy khám
+        // ===== Preview & zoom ảnh giấy khám =====
+        const giayKhamInput = document.getElementById("GiayKhamInput");
+        const wrapperGiayKham = document.getElementById("previewGiayKhamWrapper");
+
         function enableZoom() {
-            document
-                .querySelectorAll("#previewGiayKhamWrapper img")
-                .forEach(img => {
-                    img.style.cursor = "zoom-in";
-                    img.onclick = () => {
-                        document.getElementById("zoomImage").src = img.src;
-                        new bootstrap.Modal(
-                            document.getElementById("imageZoomModal")
-                        ).show();
-                    };
-                });
+            wrapperGiayKham.querySelectorAll("img").forEach(img => {
+                img.style.cursor = "zoom-in";
+                img.onclick = () => {
+                    document.getElementById("zoomImage").src = img.src;
+                    new bootstrap.Modal(document.getElementById("imageZoomModal")).show();
+                };
+            });
         }
 
-        // Preview ảnh giấy khám
-        document.getElementById("GiayKhamInput")?.addEventListener("change", function (e) {
+        giayKhamInput?.addEventListener("change", function (e) {
             const files = Array.from(e.target.files || []);
-            const wrapper = document.getElementById("previewGiayKhamWrapper");
-            wrapper.innerHTML = "";
+            wrapperGiayKham.innerHTML = "";
 
             files.forEach((file, idx) => {
                 if (!file.type.startsWith("image/")) return;
@@ -284,10 +296,98 @@
 
                 box.appendChild(img);
                 box.appendChild(badge);
-                wrapper.appendChild(box);
+                wrapperGiayKham.appendChild(box);
             });
 
             enableZoom();
+        });
+
+        // ===== Realtime validation =====
+        const matRegex = /^(10|[1-9])\/10$/;
+        const huyetApRegex = /^(9[0-9]|1[0-9]{2}|200)\/(6[0-9]|7[0-9]|8[0-9]|90)$/;
+
+        function showError(input, message) {
+            if (!input) return;
+            let span = input.nextElementSibling;
+            if (!span || !span.classList.contains("js-error")) {
+                span = document.createElement("span");
+                span.className = "text-danger js-error";
+                input.after(span);
+            }
+            span.textContent = message;
+        }
+
+        function clearError(input) {
+            let span = input?.nextElementSibling;
+            if (span && span.classList.contains("js-error")) {
+                span.remove();
+            }
+        }
+
+        // Validate từng trường ngay khi nhập
+        const matTraiInput = document.querySelector("[name='SucKhoe.mat.mat_trai']");
+        const matPhaiInput = document.querySelector("[name='SucKhoe.mat.mat_phai']");
+        const huyetApInput = document.querySelector("[name='SucKhoe.huyet_ap']");
+        const ngayInput = document.querySelector("[name='SucKhoe.thoi_han']");
+
+        matTraiInput?.addEventListener("input", () => {
+            if (!matRegex.test(matTraiInput.value)) {
+                showError(matTraiInput, "Thị lực phải theo định dạng X/10 (VD: 8/10)");
+            } else clearError(matTraiInput);
+        });
+
+        matPhaiInput?.addEventListener("input", () => {
+            if (!matRegex.test(matPhaiInput.value)) {
+                showError(matPhaiInput, "Thị lực phải theo định dạng X/10 (VD: 10/10)");
+            } else clearError(matPhaiInput);
+        });
+
+        huyetApInput?.addEventListener("input", () => {
+            if (!huyetApRegex.test(huyetApInput.value)) {
+                showError(huyetApInput, "Huyết áp không hợp lệ (VD: 120/80)");
+            } else clearError(huyetApInput);
+        });
+
+                // ===== Tự động tính Ngày hết hạn =====
+        const ngayHetHanInput = document.getElementById("NgayHetHan");
+
+        ngayInput?.addEventListener("change", () => {
+            const today = new Date();
+            const selected = new Date(ngayInput.value);
+            const minDate = new Date();
+            minDate.setMonth(minDate.getMonth() - 12);
+
+            if (!ngayInput.value) {
+                showError(ngayInput, "Vui lòng chọn ngày khám");
+                ngayHetHanInput.value = "";
+            } else if (selected > today || selected < minDate) {
+                showError(ngayInput, "Ngày khám phải trong vòng 12 tháng và không lớn hơn hôm nay");
+                ngayHetHanInput.value = "";
+            } else {
+                clearError(ngayInput);
+                // Tính Ngày hết hạn = Ngày khám + 12 tháng
+                const hetHan = new Date(selected);
+                hetHan.setFullYear(hetHan.getFullYear() + 1); // cộng 12 tháng
+                const yyyy = hetHan.getFullYear();
+                const mm = String(hetHan.getMonth() + 1).padStart(2, '0');
+                const dd = String(hetHan.getDate()).padStart(2, '0');
+                ngayHetHanInput.value = `${yyyy}-${mm}-${dd}`;
+            }
+        });
+
+
+        // ===== Kiểm tra trước khi submit =====
+        document.querySelector("form")?.addEventListener("submit", function (e) {
+            let valid = true;
+
+            [matTraiInput, matPhaiInput, huyetApInput, ngayInput].forEach(input => {
+                if (!input) return;
+                const event = new Event('input');
+                input.dispatchEvent(event);
+                if (input.nextElementSibling?.classList.contains("js-error")) valid = false;
+            });
+
+            if (!valid) e.preventDefault(); // 🚫 Ngăn submit nếu còn lỗi
         });
     </script>
 }
