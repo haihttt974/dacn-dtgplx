@@ -1,0 +1,317 @@
+﻿@model dacn_dtgplx.ViewModels.ScheduleWeekVm
+@{
+    ViewData["Title"] = "Thời khóa biểu";
+
+    var days = Enumerable.Range(0, 7)
+        .Select(i => Model.WeekStart.AddDays(i))
+        .ToList();
+
+    var prevWeek = Model.WeekStart.AddDays(-7);
+    var nextWeek = Model.WeekStart.AddDays(7);
+}
+
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
+
+<style>
+    :root {
+        --time-col: 110px;
+        --row-h: 80px; /* 2h */
+        --rows: 12; /* 24h / 2h */
+        --header-h: 56px; /* chiều cao hàng header (sẽ đồng bộ bằng CSS dưới) */
+        --border: #e5e7eb;
+        --text: #111827;
+        --muted: #6b7280;
+        --bg: #ffffff;
+        --headbg: #f3f4f6;
+    }
+
+    /* ================= HEADER BAR ================= */
+    .tkb-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .tkb-count {
+        font-weight: 700;
+        color: #374151;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .tkb-count .num {
+            color: #2563eb;
+            font-size: 18px;
+        }
+
+    /* ================= WRAPPER ================= */
+    .schedule-wrapper {
+        position: relative;
+        border: 1px solid #d1d5db;
+        background: var(--bg);
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    /* GRID */
+    .schedule-grid {
+        display: grid;
+        grid-template-columns: var(--time-col) repeat(7, 1fr);
+    }
+
+    /* header cells */
+    .header {
+        height: var(--header-h);
+        background: var(--headbg);
+        border-bottom: 1px solid var(--border);
+        border-right: 1px solid var(--border);
+        font-weight: 700;
+        text-align: center;
+        padding: 10px 6px;
+        font-size: 14px;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+        .header:first-child {
+            border-right: 1px solid var(--border);
+        }
+
+        .header small {
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+    /* time col */
+    .time-cell {
+        height: var(--row-h);
+        background: #fbfcfe;
+        border-right: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+        font-weight: 700;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+    }
+
+    /* body grid cells */
+    .grid-cell {
+        height: var(--row-h);
+        border-bottom: 1px solid var(--border);
+        border-right: 1px solid var(--border);
+        background: #fff;
+    }
+
+    /* ================= DAY LAYERS (overlay) =================
+           CỰC QUAN TRỌNG: top = header height, height = body height
+        */
+    .day-layer {
+        position: absolute;
+        top: var(--header-h);
+        height: calc(var(--rows) * var(--row-h));
+        width: calc((100% - var(--time-col)) / 7);
+        pointer-events: none;
+        z-index: 5; /* nằm trên grid */
+    }
+
+    /* ================= EVENT ================= */
+    .event-block {
+        position: absolute;
+        left: 1px;
+        right: 1px;
+        border-radius: 0px;
+        padding: 8px 10px;
+        color: #fff;
+        pointer-events: auto;
+        cursor: pointer;
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
+        transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.18);
+        backdrop-filter: blur(2px);
+    }
+
+        .event-block:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 16px 28px rgba(15, 23, 42, 0.26);
+            filter: brightness(1.03);
+        }
+
+    .event-title {
+        font-weight: 800;
+        font-size: 13px;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .event-sub {
+        margin-top: 4px;
+        font-size: 12px;
+        opacity: .92;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* ================= TOOLTIP ================= */
+    .tooltip-float {
+        position: fixed;
+        z-index: 9999;
+        background: #0b1220;
+        color: #fff;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: 13px;
+        max-width: 360px;
+        pointer-events: none;
+        display: none;
+        box-shadow: 0 18px 44px rgba(0,0,0,0.45);
+        line-height: 1.5;
+    }
+</style>
+
+<!-- ================= HEADER ================= -->
+<div class="tkb-header">
+    <div class="tkb-count">
+        <span>📚</span>
+        <span class="num">@Model.TotalSessions</span>
+        <span>buổi trong tuần</span>
+    </div>
+
+    <h5 class="m-0 fw-semibold">
+        <i class="bi bi-calendar-week text-primary"></i>
+        Thời khóa biểu tuần
+        <span class="text-muted fw-normal">
+            (@Model.WeekStart.ToString("dd/MM/yyyy")
+            →
+            @Model.WeekEnd.ToString("dd/MM/yyyy"))
+        </span>
+    </h5>
+
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary btn-sm"
+           href="@Url.Action("Index", new { week = prevWeek })" title="Tuần trước">
+            <i class="bi bi-chevron-left"></i>
+        </a>
+
+        <a class="btn btn-sm @(Model.IsCurrentWeek ? "btn-secondary disabled" : "btn-primary")"
+           href="@Url.Action("Index")" title="Về tuần hiện tại">
+            Tuần hiện tại
+        </a>
+
+        <a class="btn btn-outline-secondary btn-sm"
+           href="@Url.Action("Index", new { week = nextWeek })" title="Tuần sau">
+            <i class="bi bi-chevron-right"></i>
+        </a>
+    </div>
+</div>
+
+<!-- ================= SCHEDULE ================= -->
+<div class="schedule-wrapper" id="scheduleWrapper">
+
+    <div class="schedule-grid">
+        <div class="header">Giờ</div>
+        @foreach (var d in days)
+        {
+            <div class="header">
+                @d.ToString("dddd")
+                <small>@d.ToString("dd/MM")</small>
+            </div>
+        }
+
+        @for (int h = 0; h < 24; h += 2)
+        {
+            <div class="time-cell">@($"{h:00}:00 - {h + 2:00}:00")</div>
+            @foreach (var d in days)
+            {
+                <div class="grid-cell"></div>
+            }
+        }
+    </div>
+
+    <!-- DAY OVERLAY LAYERS -->
+    @for (int i = 0; i < days.Count; i++)
+    {
+        <div class="day-layer"
+             data-day="@days[i].ToString("yyyy-MM-dd")"
+             style="left: calc(var(--time-col) + (@i * (100% - var(--time-col)) / 7));">
+        </div>
+    }
+</div>
+
+<div id="tooltip" class="tooltip-float"></div>
+
+<script>
+    const scheduleItems = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Items));
+    const tooltip = document.getElementById("tooltip");
+
+    function showTooltip(e, html) {
+        tooltip.innerHTML = html;
+        tooltip.style.display = "block";
+
+        // tránh tooltip bị tràn ra ngoài màn hình
+        const padding = 14;
+        const x = e.clientX + 16;
+        const y = e.clientY + 16;
+
+        tooltip.style.left = Math.min(x, window.innerWidth - tooltip.offsetWidth - padding) + "px";
+        tooltip.style.top = Math.min(y, window.innerHeight - tooltip.offsetHeight - padding) + "px";
+    }
+
+    function hideTooltip() {
+        tooltip.style.display = "none";
+    }
+
+    function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+
+    function renderEvents() {
+        scheduleItems.forEach(item => {
+
+            const layer = document.querySelector(`.day-layer[data-day="${item.Ngay}"]`);
+            if (!layer) return;
+
+            // giờ dạng double: 3.5 = 03:30
+            const start = clamp(item.GioBatDau, 0, 24);
+            const end = clamp(item.GioKetThuc, 0, 24);
+            if (end <= start) return;
+
+            // ✅ Tính theo PIXEL dựa trên đúng bodyHeight, không lệch
+            const bodyHeight = layer.clientHeight; // = 12 * 80
+            const topPx = (start / 24) * bodyHeight;
+            const heightPx = ((end - start) / 24) * bodyHeight;
+
+            const div = document.createElement("div");
+            div.className = "event-block";
+            div.style.top = topPx + "px";
+            div.style.height = heightPx + "px";
+            div.style.background = item.Mau;
+
+            div.innerHTML = `
+                <div class="event-title">${item.TieuDe}</div>
+                ${item.NoiDung ? `<div class="event-sub">${item.NoiDung}</div>` : ``}
+            `;
+
+            div.addEventListener("mousemove", e => showTooltip(e, item.HoverHtml));
+            div.addEventListener("mouseleave", hideTooltip);
+
+            layer.appendChild(div);
+        });
+    }
+
+    // đảm bảo render sau layout
+    window.requestAnimationFrame(renderEvents);
+</script>
