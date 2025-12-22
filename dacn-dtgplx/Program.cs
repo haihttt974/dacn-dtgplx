@@ -3,6 +3,8 @@ using dacn_dtgplx.Hubs;
 using dacn_dtgplx.Models;
 using dacn_dtgplx.Services;
 using dacn_dtgplx.ViewModels;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -44,37 +46,74 @@ builder.Services.AddScoped<AutoUpdateKhoaHocService>();
 builder.Services.AddScoped<SteganographyService>();
 builder.Services.AddScoped<DashboardService>();
 
+
 builder.Services.AddSignalR();
 builder.Services.AddHostedService<OnlineUserMonitor>();
-// Cookie Auth (dùng cho web + SignalR)
-builder.Services.AddAuthentication("Cookies")
-    .AddCookie("Cookies", options =>
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+})
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+{
+    options.LoginPath = "/auth/login";
+    options.LogoutPath = "/auth/logout";
+    options.AccessDeniedPath = "/Error/403";
+})
+.AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
+{
+    options.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+    options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+    options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.SaveTokens = true;
+})
+.AddJwtBearer("Bearer", options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+
+    var jwt = builder.Configuration.GetSection("Jwt");
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        options.LoginPath = "/auth/login";
-        options.LogoutPath = "/auth/logout";
-        options.AccessDeniedPath = "/Error/403";
-    });
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidIssuer = jwt["Issuer"],
+        ValidAudience = jwt["Audience"],
+        IssuerSigningKey =
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Key"]))
+    };
+});
+
+// Cookie Auth (dùng cho web + SignalR)
+//builder.Services.AddAuthentication("Cookies")
+//    .AddCookie("Cookies", options =>
+//    {
+//        options.LoginPath = "/auth/login";
+//        options.LogoutPath = "/auth/logout";
+//        options.AccessDeniedPath = "/Error/403";
+//    });
 //
 builder.Services.Configure<SteganographyOptions>(
     builder.Configuration.GetSection("Steganography"));
 builder.Services.AddScoped<ISteganographyService, SteganographyService>();
 
 // JWT Auth (dùng API)
-builder.Services.AddAuthentication()
-    .AddJwtBearer("Bearer", options =>
-    {
-        options.RequireHttpsMetadata = false;
-        options.SaveToken = true;
-        var jwt = builder.Configuration.GetSection("Jwt");
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidIssuer = jwt["Issuer"],
-            ValidAudience = jwt["Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Key"]))
-        };
-    });
+//builder.Services.AddAuthentication()
+//    .AddJwtBearer("Bearer", options =>
+//    {
+//        options.RequireHttpsMetadata = false;
+//        options.SaveToken = true;
+//        var jwt = builder.Configuration.GetSection("Jwt");
+//        options.TokenValidationParameters = new TokenValidationParameters
+//        {
+//            ValidateIssuer = true,
+//            ValidateAudience = true,
+//            ValidIssuer = jwt["Issuer"],
+//            ValidAudience = jwt["Audience"],
+//            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Key"]))
+//        };
+//    });
 
 builder.Services.AddAuthorization();
 
