@@ -264,7 +264,13 @@
                         </a>
                     </div>
                 </form>
-
+                <a class="btn btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-2"
+                   asp-controller="ExternalAuth"
+                   asp-action="FacebookLogin"
+                   asp-route-returnUrl="@Url.Action("Index", "Home")">
+                    <i class="fa-brands fa-facebook"></i>
+                    <span>Đăng nhập bằng Facebook</span>
+                </a>
                 <!-- Register Link -->
                 <div class="login-links">
                     <div class="divider">

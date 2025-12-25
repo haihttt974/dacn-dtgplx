@@ -68,6 +68,13 @@ builder.Services.AddAuthentication(options =>
     options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
     options.SaveTokens = true;
 })
+.AddFacebook("Facebook", options =>
+{
+    options.AppId = builder.Configuration["Authentication:Facebook:AppId"]!;
+    options.AppSecret = builder.Configuration["Authentication:Facebook:AppSecret"]!;
+    options.SaveTokens = true;
+    // options.Fields.Add("email");
+})
 .AddJwtBearer("Bearer", options =>
 {
     options.RequireHttpsMetadata = false;

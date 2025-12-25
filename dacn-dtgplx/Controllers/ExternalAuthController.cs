@@ -14,51 +14,85 @@ public class ExternalAuthController : Controller
         _context = context;
     }
 
-    // 1️⃣ Gọi Google
+    // =====================================================
+    // GOOGLE
+    // =====================================================
+
     [HttpGet]
     public IActionResult GoogleLogin(string returnUrl = "/")
     {
         var props = new AuthenticationProperties
         {
-            RedirectUri = Url.Action(
-                nameof(GoogleCallback),
-                "ExternalAuth",
-                new { returnUrl }
-            )
+            RedirectUri = Url.Action(nameof(GoogleCallback), "ExternalAuth", new { returnUrl })
         };
 
         return Challenge(props, GoogleDefaults.AuthenticationScheme);
     }
 
-    // 2️⃣ Google trả về đây
     [HttpGet]
     public async Task<IActionResult> GoogleCallback(string returnUrl = "/")
     {
-        var result = await HttpContext.AuthenticateAsync(
-            GoogleDefaults.AuthenticationScheme
+        return await ExternalLoginCallback(
+            GoogleDefaults.AuthenticationScheme,
+            returnUrl
         );
+    }
+
+    // =====================================================
+    // FACEBOOK
+    // =====================================================
+
+    [HttpGet]
+    public IActionResult FacebookLogin(string returnUrl = "/")
+    {
+        var props = new AuthenticationProperties
+        {
+            RedirectUri = Url.Action(nameof(FacebookCallback), "ExternalAuth", new { returnUrl })
+        };
+
+        return Challenge(props, "Facebook");
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> FacebookCallback(string returnUrl = "/")
+    {
+        return await ExternalLoginCallback(
+            "Facebook",
+            returnUrl
+        );
+    }
+
+    // =====================================================
+    // COMMON HANDLER (GOOGLE + FACEBOOK)
+    // =====================================================
+
+    private async Task<IActionResult> ExternalLoginCallback(
+        string scheme,
+        string returnUrl
+    )
+    {
+        var result = await HttpContext.AuthenticateAsync(scheme);
 
         if (!result.Succeeded)
         {
-            TempData["Error"] = "Đăng nhập Google thất bại";
+            TempData["Error"] = "Đăng nhập thất bại";
             return RedirectToAction("Login", "Auth");
         }
 
-        // ===== LẤY THÔNG TIN GOOGLE =====
+        // ===== LẤY CLAIM =====
         var email = result.Principal.FindFirstValue(ClaimTypes.Email);
         var name = result.Principal.FindFirstValue(ClaimTypes.Name);
-        var googleId = result.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        if (email == null)
+        if (string.IsNullOrEmpty(email))
         {
-            TempData["Error"] = "Không lấy được email Google";
+            TempData["Error"] = "Không lấy được email từ tài khoản ngoài";
             return RedirectToAction("Login", "Auth");
         }
 
-        // ===== TÌM USER TRONG DB =====
+        // ===== TÌM USER =====
         var user = _context.Users.FirstOrDefault(u => u.Email == email);
 
-        // ===== NẾU CHƯA CÓ → TẠO MỚI =====
+        // ===== CHƯA CÓ → TẠO MỚI =====
         if (user == null)
         {
             user = new User
@@ -68,7 +102,7 @@ public class ExternalAuthController : Controller
                 TenDayDu = name,
                 TrangThai = true,
                 LaGiaoVien = false,
-                RoleId = 2,
+                RoleId = 2, // Học viên
                 Password = "",
                 LanDangNhapGanNhat = DateTime.UtcNow
             };
@@ -76,8 +110,13 @@ public class ExternalAuthController : Controller
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
         }
+        else
+        {
+            user.LanDangNhapGanNhat = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
 
-        // ===== CLAIMS + COOKIE LOGIN =====
+        // ===== COOKIE LOGIN =====
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
@@ -86,7 +125,11 @@ public class ExternalAuthController : Controller
             new Claim(ClaimTypes.Role, user.RoleId.ToString())
         };
 
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var identity = new ClaimsIdentity(
+            claims,
+            CookieAuthenticationDefaults.AuthenticationScheme
+        );
+
         var principal = new ClaimsPrincipal(identity);
 
         await HttpContext.SignInAsync(
