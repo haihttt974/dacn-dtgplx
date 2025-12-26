@@ -6,59 +6,41 @@ namespace dacn_dtgplx.Controllers
     {
         private readonly AiChatService _aiChatService;
 
-        // Constructor
-        public ChatbotController()
+        public ChatbotController(AiChatService aiChatService)
         {
-            _aiChatService = new AiChatService();
+            _aiChatService = aiChatService;
         }
 
-        // GET: /Chatbot
         [HttpGet]
         public IActionResult Index()
         {
             return View();
         }
 
-        // POST: /Chatbot/SendMessage
         [HttpPost]
         public async Task<IActionResult> SendMessage([FromBody] ChatRequest request)
         {
             if (request == null || string.IsNullOrWhiteSpace(request.Message))
             {
-                return BadRequest(new
-                {
-                    error = "Câu hỏi không hợp lệ."
-                });
+                return BadRequest(new { error = "Câu hỏi không hợp lệ." });
             }
 
             try
             {
                 var reply = await _aiChatService.AskAsync(request.Message);
-
-                return Json(new
-                {
-                    reply = reply
-                });
-            }
-            catch (HttpRequestException)
-            {
-                return StatusCode(503, new
-                {
-                    error = "Không kết nối được AI. Vui lòng kiểm tra Ollama."
-                });
+                return Ok(new { reply });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new
                 {
-                    error = "Đã xảy ra lỗi trong quá trình xử lý.",
+                    error = "Gemini API error",
                     detail = ex.Message
                 });
             }
         }
     }
 
-    // DTO nhận dữ liệu từ frontend
     public class ChatRequest
     {
         public string Message { get; set; } = string.Empty;
