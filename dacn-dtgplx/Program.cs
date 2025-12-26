@@ -31,6 +31,7 @@ builder.Services.AddScoped<IPayPalService, PayPalService>();
 builder.Services.AddScoped<IMomoService, MomoService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddSingleton<IQrService, QrService>();
+builder.Services.AddScoped<AiChatService>();
 builder.Services.AddScoped<ReportService>();
 builder.Services.Configure<CryptoSettingsVM>(
     builder.Configuration.GetSection("CryptoSettings"));

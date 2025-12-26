@@ -1,69 +1,57 @@
 ﻿using dacn_dtgplx.Configs;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
-using System.Net.Http;
 using System.Text;
 
 public class AiChatService
 {
     private readonly HttpClient _httpClient;
+    private readonly string _apiKey;
 
-    public AiChatService()
+    public AiChatService(IConfiguration configuration)
     {
+        _apiKey = configuration["GoogleAI:ApiKey"]
+            ?? throw new InvalidOperationException("Thiếu Google AI API Key");
+
         _httpClient = new HttpClient
         {
-            Timeout = Timeout.InfiniteTimeSpan
+            BaseAddress = new Uri("https://generativelanguage.googleapis.com/v1/")
         };
     }
 
     public async Task<string> AskAsync(string userMessage)
     {
+        var prompt =
+            $"{SystemPrompt.GPLX_VIETNAM}\n\nNgười dùng: {userMessage}";
+
         var requestBody = new
         {
-            model = "llama3",
-            messages = new[]
+            contents = new[]
             {
-                new { role = "system", content = SystemPrompt.GPLX_VIETNAM },
-                new { role = "user", content = userMessage }
-            },
-            stream = true
+                new
+                {
+                    parts = new[]
+                    {
+                        new { text = prompt }
+                    }
+                }
+            }
         };
 
         var json = JsonConvert.SerializeObject(requestBody);
 
-        var request = new HttpRequestMessage(
-            HttpMethod.Post,
-            "http://localhost:11434/api/chat"
-        )
-        {
-            Content = new StringContent(json, Encoding.UTF8, "application/json")
-        };
-
-        using var response = await _httpClient.SendAsync(
-            request,
-            HttpCompletionOption.ResponseHeadersRead
+        var response = await _httpClient.PostAsync(
+            $"models/gemini-2.5-flash:generateContent?key={_apiKey}",
+            new StringContent(json, Encoding.UTF8, "application/json")
         );
 
-        response.EnsureSuccessStatusCode();
+        var raw = await response.Content.ReadAsStringAsync();
 
-        using var stream = await response.Content.ReadAsStreamAsync();
-        using var reader = new StreamReader(stream);
+        if (!response.IsSuccessStatusCode)
+            throw new Exception(raw);
 
-        var sb = new StringBuilder();
+        dynamic result = JsonConvert.DeserializeObject(raw);
 
-        while (!reader.EndOfStream)
-        {
-            var line = await reader.ReadLineAsync();
-            if (string.IsNullOrWhiteSpace(line)) continue;
-
-            dynamic chunk = JsonConvert.DeserializeObject(line);
-
-            if (chunk.message?.content != null)
-                sb.Append((string)chunk.message.content);
-
-            if (chunk.done == true)
-                break;
-        }
-
-        return sb.ToString();
+        return (string)result.candidates[0].content.parts[0].text;
     }
 }

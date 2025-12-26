@@ -156,14 +156,22 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ message: text })
         })
-        .then(res => res.json())
+        .then(async res => {
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.detail || data.error || "Lỗi không xác định");
+            }
+
+            return data;
+        })
         .then(data => {
             typing.remove();
             addMessage(data.reply, "bot");
         })
-        .catch(() => {
+        .catch(err => {
             typing.remove();
-            addMessage("❌ Không kết nối được AI.", "bot");
+            addMessage("❌ " + err.message, "bot");
         });
     }
 </script>
