@@ -1,39 +1,132 @@
-﻿<div class="container py-5">
+﻿@{
+    ViewData["Title"] = "Liên hệ";
+}
 
-    <h2 class="fw-bold text-primary mb-4">
-        <i class="fa fa-phone"></i> Liên hệ
-    </h2>
+<link rel="stylesheet" href="~/css/formspree.css" />
 
-    <p class="text-muted mb-4">
-        Nếu bạn có thắc mắc hoặc cần tư vấn khóa học, hãy liên hệ với chúng tôi:
-    </p>
+<div class="container py-5">
+    <div class="row g-5">
 
-    <div class="row">
+        <!-- Thông tin liên hệ -->
         <div class="col-md-6">
+            <h2 class="fw-bold text-primary mb-4">
+                <i class="fa fa-phone"></i> Liên hệ
+            </h2>
 
-            <h4 class="fw-bold">📍 Địa chỉ</h4>
-            <p>506 Hoàng Hữu Nam – Quận 9 – TP Thủ Đức – TP.HCM</p>
+            <p class="text-muted mb-4">
+                Nếu bạn có thắc mắc hoặc cần tư vấn khóa học, hãy liên hệ với chúng tôi:
+            </p>
 
-            <h4 class="fw-bold">📞 Hotline</h4>
-            <p class="text-danger fw-bold fs-5">0968 123 456</p>
+            <div class="mb-3">
+                <h4 class="fw-bold">📍 Địa chỉ</h4>
+                <p>506 Hoàng Hữu Nam – TP Thủ Đức – TP.HCM</p>
+            </div>
 
-            <h4 class="fw-bold">✉ Email</h4>
-            <p>contact@dtgplx.com</p>
+            <div class="mb-3">
+                <h4 class="fw-bold">📞 Hotline</h4>
+                <p class="text-danger fw-bold fs-5">0968 123 456</p>
+            </div>
 
+            <div>
+                <h4 class="fw-bold">✉ Email</h4>
+                <p>contact@dtgplx.com</p>
+            </div>
         </div>
 
+        <!-- Form liên hệ (Formspree – không redirect) -->
         <div class="col-md-6">
-            <h4 class="fw-bold mb-3">📝 Gửi yêu cầu tư vấn</h4>
+            <form id="contactForm" class="fs-form">
 
-            <form>
-                <input type="text" class="form-control mb-3" placeholder="Họ và tên">
-                <input type="email" class="form-control mb-3" placeholder="Email">
-                <textarea class="form-control mb-3" rows="4" placeholder="Nội dung cần hỗ trợ"></textarea>
+                <div class="fs-field">
+                    <label class="fs-label" for="name">Họ và tên</label>
+                    <input class="fs-input"
+                           id="name"
+                           name="name"
+                           placeholder="Nhập họ và tên"
+                           required />
+                </div>
 
-                <button class="btn btn-primary px-4">
-                    <i class="fa fa-paper-plane"></i> Gửi
-                </button>
+                <div class="fs-field">
+                    <label class="fs-label" for="email">Email</label>
+                    <input class="fs-input"
+                           id="email"
+                           name="email"
+                           type="email"
+                           placeholder="Nhập email"
+                           required />
+                </div>
+
+                <div class="fs-field">
+                    <label class="fs-label" for="phone">Số điện thoại</label>
+                    <input class="fs-input"
+                           id="phone"
+                           name="phone"
+                           placeholder="Không bắt buộc" />
+                </div>
+
+                <div class="fs-field">
+                    <label class="fs-label" for="message">Nội dung</label>
+                    <textarea class="fs-textarea"
+                              id="message"
+                              name="message"
+                              rows="4"
+                              placeholder="Nhập nội dung cần hỗ trợ"
+                              required></textarea>
+                </div>
+
+                <!-- Cấu hình Formspree -->
+                <input type="hidden" name="_subject" value="Liên hệ từ website DTGPLX" />
+                <input type="hidden" name="_captcha" value="false" />
+
+                <div class="fs-button-group">
+                    <button class="fs-button" type="submit">
+                        Gửi liên hệ
+                    </button>
+                </div>
             </form>
+
+            <!-- Thông báo thành công -->
+            <div id="successMessage"
+                 class="alert alert-success mt-3"
+                 style="display:none">
+                Gửi liên hệ thành công
+            </div>
         </div>
+
     </div>
 </div>
+
+<script>
+    document.getElementById("contactForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const form = e.target;
+        const formData = new FormData(form);
+
+        const response = await fetch("https://formspree.io/f/xwvkvdjj", {
+            method: "POST",
+            body: formData,
+            headers: {
+                "Accept": "application/json"
+            }
+        });
+
+        if (response.ok) {
+            form.reset();
+
+            const msg = document.getElementById("successMessage");
+            msg.style.display = "block";
+            msg.style.opacity = "1";
+
+            // Hiện 3 giây rồi mờ dần và ẩn
+            setTimeout(() => {
+                msg.style.transition = "opacity 1s";
+                msg.style.opacity = "0";
+
+                setTimeout(() => {
+                    msg.style.display = "none";
+                }, 1000);
+            }, 3000);
+        }
+    });
+</script>
