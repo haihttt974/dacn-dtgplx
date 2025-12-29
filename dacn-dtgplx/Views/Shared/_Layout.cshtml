@@ -577,12 +577,16 @@
                 </ul>
                 <div class="d-flex align-items-center ms-auto">
                     <!-- SEARCH -->
-                    <form class="search-box me-4" asp-controller="Home" asp-action="Search" method="get">
-                        <input type="search" name="q" placeholder="Tìm kiếm..." />
-                        <button type="submit">
-                            <i class="fa fa-search"></i>
-                        </button>
-                    </form>
+                    <div class="search-box position-relative me-4">
+                        <input type="search" id="featureSearch"
+                               placeholder="Tìm chức năng..."
+                               autocomplete="off" />
+
+                        <div id="searchResult"
+                             class="position-absolute bg-white shadow rounded-3 d-none"
+                             style="top:110%; width:100%; z-index:1000;">
+                        </div>
+                    </div>
                     <!-- Notification Bell -->
                     @if (Context.Session.GetString("Username") != null)
                     {
@@ -1037,6 +1041,43 @@
                     }
                 });
         }
+
+        const input = document.getElementById("featureSearch");
+        const box = document.getElementById("searchResult");
+
+        input.addEventListener("input", async () => {
+            const q = input.value.trim();
+            if (q.length < 2) {
+                box.classList.add("d-none");
+                box.innerHTML = "";
+                return;
+            }
+
+            const res = await fetch(`/search/features?q=${encodeURIComponent(q)}`);
+            const data = await res.json();
+
+            if (data.length === 0) {
+                box.innerHTML = `<div class="p-3 text-muted">Không tìm thấy chức năng</div>`;
+                box.classList.remove("d-none");
+                return;
+            }
+
+            const regex = new RegExp(`(${q})`, "gi");
+
+            box.innerHTML = data.map(f => `
+                <a href="${f.url}"
+                   class="d-block px-3 py-2 text-decoration-none text-dark border-bottom search-item">
+                    <div class="fw-semibold">
+                        ${f.title.replace(regex, `<mark>$1</mark>`)}
+                    </div>
+                    <div class="small text-muted">
+                        ${f.description.replace(regex, `<mark>$1</mark>`)}
+                    </div>
+                </a>
+            `).join("");
+
+            box.classList.remove("d-none");
+        });
 
     </script>
 
