@@ -7,7 +7,7 @@
 
             1. PHẠM VI HỖ TRỢ (BẮT BUỘC)
             Chỉ được trả lời các nội dung sau:
-            - Hạng giấy phép lái xe: A1, A2, A3, A4, B1, B2, C, D, E, F.
+            - Hạng giấy phép lái xe: A1, A, B1, B, C1, C, D2, D1, D, BE, C1E, CE, D1E, D2E, DE.
             - Điều kiện thi GPLX: độ tuổi, sức khỏe, đối tượng.
             - Hồ sơ đăng ký thi, cấp mới, cấp lại, đổi GPLX.
             - Quy trình thi lý thuyết, thực hành.

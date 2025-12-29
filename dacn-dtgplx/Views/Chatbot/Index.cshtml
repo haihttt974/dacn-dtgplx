@@ -8,170 +8,366 @@
     }
 
     .chat-container {
-        max-width: 900px;
-        margin: 30px auto;
+        max-width: 980px;
+        margin: 26px auto;
         background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0,0,0,.1);
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(0,0,0,.10);
         display: flex;
         flex-direction: column;
-        height: 75vh;
+        height: 78vh;
+        overflow: hidden;
     }
 
+    /* Header */
     .chat-header {
-        padding: 15px 20px;
-        border-bottom: 1px solid #eee;
-        font-weight: 600;
+        padding: 12px 16px;
+        border-bottom: 1px solid #eef0f3;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #fff;
+    }
+
+    .chat-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+        .chat-title i {
+            color: #2563eb;
+        }
+
+    .chat-actions {
         display: flex;
         align-items: center;
         gap: 10px;
     }
 
-        .chat-header i {
-            color: #2563eb;
+    .btn-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        border: 1px solid #e6e8ee;
+        background: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all .15s ease;
+        color: #0f172a;
+    }
+
+        .btn-icon:hover {
+            background: #f8fafc;
+            border-color: #d7dbe5;
         }
 
+    /* Body */
     .chat-body {
         flex: 1;
-        padding: 20px;
+        padding: 18px 14px;
         overflow-y: auto;
-        background: #f9fafb;
+        background: linear-gradient(180deg, #f9fafb 0%, #f7f8fb 100%);
     }
 
+    /* Message row */
     .message {
         display: flex;
-        margin-bottom: 15px;
+        margin-bottom: 12px;
+        align-items: flex-end;
+        gap: 10px;
     }
+
+        .message.bot {
+            justify-content: flex-start;
+        }
 
         .message.user {
             justify-content: flex-end;
         }
 
+    /* Avatar */
+    .avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        flex: 0 0 auto;
+        user-select: none;
+    }
+
+        .avatar.bot {
+            background: #eef2ff;
+            color: #1d4ed8;
+            border: 1px solid #e0e7ff;
+        }
+
+        .avatar.user {
+            background: #2563eb;
+            color: #fff;
+            border: 1px solid #1d4ed8;
+        }
+
+    /* Bubble */
     .bubble {
-        max-width: 70%;
-        padding: 12px 15px;
-        border-radius: 15px;
-        line-height: 1.4;
-        font-size: 15px;
+        max-width: 72%;
+        padding: 11px 14px;
+        border-radius: 16px;
+        line-height: 1.55;
+        font-size: 14.5px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        box-shadow: 0 2px 10px rgba(15, 23, 42, .06);
+    }
+
+    .bot .bubble {
+        background: #ffffff;
+        color: #0f172a;
+        border: 1px solid #e6e8ee;
+        border-bottom-left-radius: 6px;
     }
 
     .user .bubble {
         background: #2563eb;
         color: #fff;
-        border-bottom-right-radius: 5px;
+        border: 1px solid #1d4ed8;
+        border-bottom-right-radius: 6px;
     }
 
-    .bot .bubble {
-        background: #e5e7eb;
-        color: #111;
-        border-bottom-left-radius: 5px;
+    /* Typing */
+    .typing-dots {
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+        padding: 2px 0;
     }
 
+        .typing-dots span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #94a3b8;
+            display: inline-block;
+            animation: bounce 1s infinite ease-in-out;
+        }
+
+            .typing-dots span:nth-child(2) {
+                animation-delay: .15s;
+            }
+
+            .typing-dots span:nth-child(3) {
+                animation-delay: .30s;
+            }
+
+    @@keyframes bounce {
+        0%, 80%, 100% {
+            transform: translateY(0);
+            opacity: .6;
+        }
+
+        40% {
+            transform: translateY(-4px);
+            opacity: 1;
+        }
+    }
+
+    /* Footer */
     .chat-footer {
         display: flex;
-        padding: 15px;
-        border-top: 1px solid #eee;
+        padding: 12px 12px;
+        border-top: 1px solid #eef0f3;
         gap: 10px;
+        background: #fff;
     }
 
         .chat-footer input {
             flex: 1;
-            padding: 12px 15px;
-            border-radius: 25px;
-            border: 1px solid #ddd;
+            padding: 12px 16px;
+            border-radius: 999px;
+            border: 1px solid #e6e8ee;
             outline: none;
+            font-size: 14px;
+            background: #fff;
         }
+
+            .chat-footer input:focus {
+                border-color: #2563eb;
+                box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+            }
 
         .chat-footer button {
             background: #2563eb;
             color: #fff;
             border: none;
-            padding: 0 25px;
-            border-radius: 25px;
+            padding: 0 18px;
+            border-radius: 999px;
             cursor: pointer;
+            font-weight: 600;
+            min-width: 84px;
+            transition: all .15s ease;
         }
 
             .chat-footer button:hover {
                 background: #1e40af;
             }
 
-    .typing {
-        font-style: italic;
-        color: #666;
-        margin-bottom: 10px;
+            .chat-footer button:disabled {
+                opacity: .6;
+                cursor: not-allowed;
+            }
+
+    /* Mobile */
+    @@media (max-width: 768px) {
+        .chat-container {
+            height: 82vh;
+            margin: 14px auto;
+            border-radius: 12px;
+        }
+
+        .bubble {
+            max-width: 84%;
+        }
     }
 </style>
 
 <div class="chat-container">
     <div class="chat-header">
-        <i class="fa-solid fa-robot"></i>
-        Chatbot AI GPLX
-    </div>
+        <div class="chat-title">
+            <i class="fa-solid fa-robot"></i>
+            <span>Chatbot AI GPLX</span>
+        </div>
 
-    <div id="chatBody" class="chat-body">
-        <div class="message bot">
-            <div class="bubble">
-                👋 Xin chào! Tôi là AI hỗ trợ. Bạn muốn hỏi điều gì?
-            </div>
+        <div class="chat-actions">
+            <!-- New chat -->
+            <button class="btn-icon" type="button" title="Chat mới" onclick="newChat()">
+                <i class="fa-solid fa-plus"></i>
+            </button>
         </div>
     </div>
 
+    <div id="chatBody" class="chat-body"></div>
+
     <div class="chat-footer">
-        <input id="messageInput" placeholder="Nhập câu hỏi và nhấn Enter..." />
-        <button onclick="sendMessage()">Gửi</button>
+        <input id="messageInput" placeholder="Nhập câu hỏi và nhấn Enter..." autocomplete="off" />
+        <button id="sendBtn" type="button" onclick="sendMessage()">Gửi</button>
     </div>
 </div>
 
 <script>
     const chatBody = document.getElementById("chatBody");
     const input = document.getElementById("messageInput");
+    const sendBtn = document.getElementById("sendBtn");
 
-    input.addEventListener("keypress", function (e) {
-        if (e.key === "Enter") sendMessage();
-    });
-
-    function addMessage(text, type) {
-        const msg = document.createElement("div");
-        msg.className = `message ${type}`;
-        msg.innerHTML = `<div class="bubble">${text}</div>`;
-        chatBody.appendChild(msg);
-        chatBody.scrollTop = chatBody.scrollHeight;
+    function escapeHtml(s) {
+        return (s ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
     }
 
-    function sendMessage() {
+    function formatText(text) {
+        return escapeHtml(text).replace(/\n/g, "<br>");
+    }
+
+    function addMessage(text, type, opts = {}) {
+        const msg = document.createElement("div");
+        msg.className = `message ${type}`;
+
+        const avatar = document.createElement("div");
+        avatar.className = `avatar ${type}`;
+        avatar.innerHTML = (type === "bot")
+            ? `<i class="fa-solid fa-robot"></i>`
+            : `<i class="fa-solid fa-user"></i>`;
+
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
+
+        if (opts.rawHtml === true) {
+            bubble.innerHTML = text;
+        } else {
+            bubble.innerHTML = formatText(text);
+        }
+
+        // Bot: avatar trái - bubble; User: bubble - avatar
+        if (type === "bot") {
+            msg.appendChild(avatar);
+            msg.appendChild(bubble);
+        } else {
+            msg.appendChild(bubble);
+            msg.appendChild(avatar);
+        }
+
+        chatBody.appendChild(msg);
+        chatBody.scrollTop = chatBody.scrollHeight;
+        return msg;
+    }
+
+    function addTyping() {
+        const html = `
+            <div class="typing-dots" aria-label="typing">
+                <span></span><span></span><span></span>
+            </div>`;
+        return addMessage(html, "bot", { rawHtml: true });
+    }
+
+    function newChat() {
+        chatBody.innerHTML = "";
+        addMessage("👋 Xin chào! Tôi là AI hỗ trợ GPLX.\nBạn muốn hỏi điều gì?", "bot");
+        input.value = "";
+        input.focus();
+    }
+
+    input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    async function sendMessage() {
         const text = input.value.trim();
         if (!text) return;
 
         addMessage(text, "user");
         input.value = "";
+        input.focus();
 
-        const typing = document.createElement("div");
-        typing.className = "typing";
-        typing.innerText = "AI đang trả lời...";
-        chatBody.appendChild(typing);
-        chatBody.scrollTop = chatBody.scrollHeight;
+        sendBtn.disabled = true;
+        input.disabled = true;
 
-        fetch("/Chatbot/SendMessage", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: text })
-        })
-        .then(async res => {
-            const data = await res.json();
+        const typingMsg = addTyping();
+
+        try {
+            const res = await fetch("/Chatbot/SendMessage", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: text })
+            });
+
+            const data = await res.json().catch(() => ({}));
 
             if (!res.ok) {
                 throw new Error(data.detail || data.error || "Lỗi không xác định");
             }
 
-            return data;
-        })
-        .then(data => {
-            typing.remove();
-            addMessage(data.reply, "bot");
-        })
-        .catch(err => {
-            typing.remove();
-            addMessage("❌ " + err.message, "bot");
-        });
+            typingMsg.remove();
+            addMessage(data.reply ?? "", "bot");
+        } catch (err) {
+            typingMsg.remove();
+            addMessage("❌ " + (err?.message ?? "Lỗi không xác định"), "bot");
+        } finally {
+            sendBtn.disabled = false;
+            input.disabled = false;
+        }
     }
+
+    // init
+    newChat();
 </script>
