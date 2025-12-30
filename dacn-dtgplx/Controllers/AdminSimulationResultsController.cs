@@ -46,5 +46,30 @@ namespace dacn_dtgplx.Controllers.Admin
 
             return View(results);
         }
+
+        // ===================== CHI TIẾT BÀI LÀM =====================
+        public async Task<IActionResult> Details(int id)
+        {
+            var baiLam = await _context.BaiLamMoPhongs
+                .Include(bl => bl.User)
+
+                // Bộ đề mô phỏng + thứ tự tình huống admin chọn
+                .Include(bl => bl.IdBoDeMoPhongNavigation)
+                    .ThenInclude(bd => bd.ChiTietBoDeMoPhongs)
+                        .ThenInclude(ct => ct.IdThMpNavigation)
+
+                // Điểm từng tình huống người dùng bấm
+                .Include(bl => bl.DiemTungTinhHuongs)
+                    .ThenInclude(d => d.IdThMpNavigation)
+
+                .FirstOrDefaultAsync(bl => bl.IdBaiLamTongDiem == id);
+
+            if (baiLam == null)
+            {
+                return NotFound();
+            }
+
+            return View(baiLam);
+        }
     }
 }

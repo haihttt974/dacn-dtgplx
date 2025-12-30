@@ -1,0 +1,178 @@
+﻿@model dacn_dtgplx.Models.BaiLamMoPhong
+
+@{
+    ViewData["Title"] = "Chi tiết bài thi mô phỏng";
+
+    var boDe = Model.IdBoDeMoPhongNavigation;
+
+    var dsTinhHuong = boDe.ChiTietBoDeMoPhongs
+        .OrderBy(x => x.ThuTu)
+        .ToList();
+
+    var diemNguoiDung = Model.DiemTungTinhHuongs.ToList();
+
+    string NormalizeStaticPath(string? p)
+    {
+        if (string.IsNullOrWhiteSpace(p)) return "";
+        var s = p.Trim().Replace('\\', '/');
+
+        const string prefix = "wwwroot/";
+        if (s.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            s = s.Substring(prefix.Length);
+
+        if (!s.StartsWith("/") &&
+            !s.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+            !s.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            s = "/" + s;
+        }
+        return s;
+    }
+
+    double? ToMinutes(double? seconds) => seconds.HasValue ? seconds.Value / 60.0 : (double?)null;
+    string Fm(double? minutes) => minutes.HasValue ? minutes.Value.ToString("0.##") : "N/A";
+}
+
+<div class="container mt-4">
+
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white fw-bold">
+            <i class="fa fa-info-circle"></i> Thông tin bài thi mô phỏng
+        </div>
+        <div class="card-body row">
+            <div class="col-md-6">
+                <p><b>Thí sinh:</b> @Model.User.TenDayDu</p>
+                <p><b>Bộ đề:</b> @boDe.TenBoDe</p>
+                <p><b>Số tình huống:</b> @boDe.SoTinhHuong</p>
+            </div>
+            <div class="col-md-6">
+                <p>
+                    <b>Kết quả:</b>
+                    @if (Model.KetQua == true)
+                    {
+                        <span class="badge bg-success">ĐẠT</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">KHÔNG ĐẠT</span>
+                    }
+                </p>
+
+                <p>
+                    <b>Tổng điểm:</b>
+                    <span class="fw-bold text-primary">@Model.TongDiem</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-secondary text-white fw-bold">
+            <i class="fa fa-list"></i> Chi tiết từng tình huống
+        </div>
+        <div class="card-body">
+
+            @if (!dsTinhHuong.Any())
+            {
+                <p class="text-muted text-center">Không có dữ liệu tình huống</p>
+            }
+            else
+            {
+                int stt = 1;
+
+                foreach (var ct in dsTinhHuong)
+                {
+                    var th = ct.IdThMpNavigation;
+                    var diem = diemNguoiDung.FirstOrDefault(x => x.IdThMp == th.IdThMp);
+
+                    bool coBam = diem != null;
+
+                    var tgBatDauMin = ToMinutes((double?)th.TgBatDau);
+                    var tgKetThucMin = ToMinutes((double?)th.TgKetThuc);
+                    var nguoiDungBamMin = ToMinutes(coBam ? (double?)diem.ThoiDiemNguoiDungNhan : null);
+
+                    bool dungThoiDiem = false;
+                    if (coBam && tgBatDauMin.HasValue && tgKetThucMin.HasValue && nguoiDungBamMin.HasValue)
+                    {
+                        dungThoiDiem =
+                        nguoiDungBamMin.Value >= tgBatDauMin.Value &&
+                        nguoiDungBamMin.Value <= tgKetThucMin.Value;
+                    }
+
+                    var videoSrc = NormalizeStaticPath(th.VideoUrl);
+
+                    <div class="border rounded p-3 mb-4">
+
+                        <h6 class="fw-bold mb-2">
+                            Tình huống @stt: @th.TieuDe
+                        </h6>
+
+                        @if (!string.IsNullOrEmpty(videoSrc))
+                        {
+                            <video class="w-100 mb-3" controls>
+                                <source src="@videoSrc" type="video/mp4" />
+                                Trình duyệt không hỗ trợ video
+                            </video>
+                        }
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p>
+                                    <b>Thời gian đúng:</b>
+                                    @($"{Fm(tgBatDauMin)} giây → {Fm(tgKetThucMin)} giây")
+                                </p>
+
+                                <p>
+                                    <b>Độ khó:</b>
+                                    @if (th.Kho == true)
+                                    {
+                                        <span class="badge bg-danger">Khó</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">Thường</span>
+                                    }
+                                </p>
+                            </div>
+
+                            <div class="col-md-6">
+                                <p>
+                                    <b>Người dùng bấm:</b>
+                                    @if (coBam)
+                                    {
+                                        <span>@($"{Fm(nguoiDungBamMin)} Giây")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Không bấm</span>
+                                    }
+                                </p>
+
+                                <p>
+                                    <b>Kết quả:</b>
+                                    @if (dungThoiDiem)
+                                    {
+                                        <span class="text-success fw-bold">ĐÚNG</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-danger fw-bold">SAI</span>
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    stt++;
+                }
+            }
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="fa fa-arrow-left"></i> Quay lại
+        </a>
+    </div>
+
+</div>

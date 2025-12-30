@@ -1,0 +1,163 @@
+﻿@model dacn_dtgplx.Models.BaiLam
+
+@{
+    ViewData["Title"] = "Chi tiết bài thi";
+    var hang = Model.IdBoDeNavigation.IdHangNavigation;
+    int soCauHoi = hang.SoCauHoi;
+    int soCauSai = Model.SoCauSai ?? 0;
+    int soCauDung = soCauHoi - soCauSai;
+}
+
+<div class="container mt-4">
+
+    <!-- ===== THÔNG TIN CHUNG ===== -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white fw-bold">
+            <i class="fa fa-info-circle"></i> Thông tin bài thi
+        </div>
+        <div class="card-body row">
+            <div class="col-md-6">
+                <p><b>Thí sinh:</b> @Model.User.TenDayDu</p>
+                <p><b>Hạng:</b> @hang.MaHang</p>
+                <p><b>Bộ đề:</b> @Model.IdBoDeNavigation.TenBoDe</p>
+            </div>
+            <div class="col-md-6">
+                <p>
+                    <b>Kết quả:</b>
+                    @if (Model.KetQua == true)
+                    {
+                        <span class="badge bg-success">ĐẬU</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">RỚT</span>
+                    }
+                </p>
+
+                <p>
+                    <b>Số câu đúng:</b> @soCauDung / @soCauHoi
+                    <span class="badge bg-warning text-dark ms-2">Sai: @soCauSai</span>
+                </p>
+
+                <p>
+                    <b>Thời gian làm:</b>
+                    @(Model.ThoiGianLamBai / 60) phút @(Model.ThoiGianLamBai % 60) giây
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== CHI TIẾT CÂU HỎI ===== -->
+    <div class="card">
+        <div class="card-header bg-secondary text-white fw-bold">
+            <i class="fa fa-list"></i> Chi tiết câu hỏi
+        </div>
+        <div class="card-body">
+
+            @if (!Model.ChiTietBaiLams.Any())
+            {
+                <p class="text-muted text-center">Không có dữ liệu</p>
+            }
+            else
+            {
+                int cauSo = 1;
+
+                foreach (var ct in Model.ChiTietBaiLams)
+                {
+                    var cauHoi = ct.IdCauHoiNavigation;
+
+                    // ID đáp án học viên chọn
+                    int? dapAnChonId = null;
+                    if (!string.IsNullOrEmpty(ct.DapAnDaChon))
+                    {
+                        dapAnChonId = int.Parse(ct.DapAnDaChon);
+                    }
+
+                    // ID đáp án đúng
+                    var dapAnDung = cauHoi.DapAns.FirstOrDefault(d => d.DapAnDung);
+
+                    bool cauDung = dapAnChonId != null
+                    && dapAnDung != null
+                    && dapAnChonId == dapAnDung.IdDapAn;
+
+                    <div class="border rounded p-3 mb-4">
+
+                        <!-- Câu hỏi -->
+                        <p class="fw-bold mb-2">
+                            Câu @cauSo: @cauHoi.NoiDung
+                        </p>
+
+                        <!-- Đáp án -->
+                        <ul class="list-group">
+                            @foreach (var da in cauHoi.DapAns.OrderBy(d => d.ThuTu))
+                            {
+                                bool isChon = dapAnChonId == da.IdDapAn;
+                                bool isDung = da.DapAnDung;
+
+                                string css = "list-group-item";
+
+                                if (cauDung && isChon)
+                                {
+                                    // Chọn đúng
+                                    css += " list-group-item-success";
+                                }
+                                else if (!cauDung)
+                                {
+                                    if (isChon)
+                                    {
+                                        // Chọn sai
+                                        css += " list-group-item-danger";
+                                    }
+                                    else if (isDung)
+                                    {
+                                        // Đáp án đúng
+                                        css += " list-group-item-success";
+                                    }
+                                }
+
+                                <li class="@css">
+                                    <b>@((char)('A' + da.ThuTu - 1)).</b> @da.NoiDung
+
+                                    @if (cauDung && isChon)
+                                    {
+                                        <span class="badge bg-success ms-2">Chọn đúng</span>
+                                    }
+                                    else if (!cauDung && isChon)
+                                    {
+                                        <span class="badge bg-danger ms-2">Chọn sai</span>
+                                    }
+                                    else if (!cauDung && isDung)
+                                    {
+                                        <span class="badge bg-success ms-2">Đáp án đúng</span>
+                                    }
+                                </li>
+                            }
+                        </ul>
+
+                        <!-- Kết quả -->
+                        <div class="mt-2">
+                            <b>Kết quả:</b>
+                            @if (cauDung)
+                            {
+                                <span class="text-success fw-bold">Đúng</span>
+                            }
+                            else
+                            {
+                                <span class="text-danger fw-bold">Sai</span>
+                            }
+                        </div>
+                    </div>
+
+                    cauSo++;
+                }
+            }
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="fa fa-arrow-left"></i> Quay lại
+        </a>
+    </div>
+
+</div>
