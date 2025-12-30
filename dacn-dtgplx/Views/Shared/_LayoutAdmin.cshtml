@@ -126,6 +126,25 @@
             </ul>
 
             <ul class="navbar-nav ms-auto">
+                <!-- SEARCH -->
+                <li class="nav-item me-3">
+                    <div class="position-relative">
+                        <input type="search"
+                               id="adminFeatureSearch"
+                               class="form-control form-control-sm rounded-pill"
+                               placeholder="Tìm chức năng..."
+                               autocomplete="off"
+                               style="width:220px; padding-right:36px;" />
+
+                        <i class="fa fa-search position-absolute text-muted"
+                           style="right:12px; top:50%; transform:translateY(-50%); font-size:0.85rem;"></i>
+
+                        <div id="adminSearchResult"
+                             class="position-absolute bg-white shadow rounded-3 d-none"
+                             style="top:110%; width:100%; z-index:1050;">
+                        </div>
+                    </div>
+                </li>
                 <!-- Badge online -->
                 <li class="nav-item me-3 d-flex align-items-center">
                     <span class="badge bg-success navbar-online-badge">
@@ -455,6 +474,65 @@
                 cache: "no-cache"
             });
         }, 5000);
+
+        // ========================= ADMIN FEATURE SEARCH =========================
+        const adminInput = document.getElementById("adminFeatureSearch");
+        const adminBox = document.getElementById("adminSearchResult");
+
+        if (adminInput && adminBox) {
+            adminInput.addEventListener("input", async () => {
+                const q = adminInput.value.trim();
+
+                if (q.length < 2) {
+                    adminBox.classList.add("d-none");
+                    adminBox.innerHTML = "";
+                    return;
+                }
+
+                const res = await fetch(`/search/features?q=${encodeURIComponent(q)}`, { cache: "no-cache" });
+                const data = await res.json();
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    adminBox.innerHTML = `<div class="p-3 text-muted">Không tìm thấy chức năng</div>`;
+                    adminBox.classList.remove("d-none");
+                    return;
+                }
+
+                const regex = new RegExp(`(${q})`, "gi");
+
+                adminBox.innerHTML = data.map(f => `
+                    <a href="${f.url}"
+                       class="d-block px-3 py-2 text-decoration-none text-dark border-bottom">
+                        <div class="fw-semibold">
+                            ${(f.title || "").replace(regex, `<mark>$1</mark>`)}
+                        </div>
+                        <div class="small text-muted">
+                            ${(f.description || "").replace(regex, `<mark>$1</mark>`)}
+                        </div>
+                    </a>
+                `).join("");
+
+                adminBox.classList.remove("d-none");
+            });
+
+            // Click ngoài để đóng dropdown
+            document.addEventListener("click", (e) => {
+                const isInside = adminInput.contains(e.target) || adminBox.contains(e.target);
+                if (!isInside) {
+                    adminBox.classList.add("d-none");
+                }
+            });
+
+            // ESC để đóng
+            adminInput.addEventListener("keydown", (e) => {
+                if (e.key === "Escape") {
+                    adminBox.classList.add("d-none");
+                    adminBox.innerHTML = "";
+                    adminInput.blur();
+                }
+            });
+        }
+
     </script>
 
     @RenderSection("Scripts", required: false)
